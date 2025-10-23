@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS news_summaries (
 
 -- 인덱스 생성
 CREATE INDEX IF NOT EXISTS idx_news_summaries_news_url ON news_summaries(news_url);
+CREATE INDEX IF NOT EXISTS idx_news_summaries_news_url ON news_summaries(key_points);
 CREATE INDEX IF NOT EXISTS idx_news_summaries_created_at ON news_summaries(created_at DESC);
 
 -- updated_at 자동 업데이트 트리거
