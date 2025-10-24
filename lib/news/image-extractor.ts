@@ -12,7 +12,7 @@ export async function fetchOGImage(url: string): Promise<string | undefined> {
       headers: {
         "User-Agent": "Mozilla/5.0 (compatible; NewsBot/1.0)",
       },
-      next: { revalidate: 3600 }, // 1시간 캐시
+      cache: "no-store", // 캐시 비활성화 (대용량 페이지로 인한 2MB 제한 회피)
       signal: controller.signal,
     })
 
@@ -20,7 +20,38 @@ export async function fetchOGImage(url: string): Promise<string | undefined> {
 
     if (!response.ok) return undefined
 
-    const html = await response.text()
+    // 응답 크기가 너무 크면 head 부분만 읽기 (최대 500KB)
+    const contentLength = response.headers.get("content-length")
+    let html: string
+
+    if (contentLength && Number.parseInt(contentLength) > 500000) {
+      // 스트림에서 일부만 읽기
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      let chunks = ""
+      let bytesRead = 0
+      const maxBytes = 500000 // 500KB
+
+      if (reader) {
+        while (bytesRead < maxBytes) {
+          const { done, value } = await reader.read()
+          if (done) break
+          chunks += decoder.decode(value, { stream: true })
+          bytesRead += value.length
+
+          // head 태그를 찾았으면 중단
+          if (chunks.includes("</head>")) {
+            reader.cancel()
+            break
+          }
+        }
+        html = chunks
+      } else {
+        html = await response.text()
+      }
+    } else {
+      html = await response.text()
+    }
 
     // OG 이미지 추출 시도
     const ogImage = extractOGImage(html)
