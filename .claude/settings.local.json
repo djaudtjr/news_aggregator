@@ -6,13 +6,17 @@
       "Bash(npm run dev)",
       "Bash(cat .env)",
       "WebFetch(domain:api.ncloud-docs.com)",
-      "Bash(curl \"http://localhost:3001/api/test-translate?text=인공지능\")",
-      "Bash(curl -v \"http://localhost:3001/api/test-translate?text=%EC%9D%B8%EA%B3%B5%EC%A7%80%EB%8A%A5\")",
+      "Bash(curl \"http://localhost:3000/api/test-translate?text=인공지능\")",
+      "Bash(curl -v \"http://localhost:3000/api/test-translate?text=%EC%9D%B8%EA%B3%B5%EC%A7%80%EB%8A%A5\")",
       "Read(//Users/flyfish/Develop/ICT/windsurf/my-news/src/utils/**)",
       "Read(//Users/flyfish/Develop/ICT/windsurf/my-news/src/api/**)",
       "Bash(npm install @supabase/supabase-js)",
       "Bash(npm install @supabase/supabase-js --legacy-peer-deps)",
-      "Bash(pnpm add @supabase/supabase-js cheerio)"
+      "Bash(pnpm add @supabase/supabase-js cheerio)",
+      "Bash(cat:*)",
+      "Bash(npm install:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm build:*)"
     ],
     "deny": [],
     "ask": []
