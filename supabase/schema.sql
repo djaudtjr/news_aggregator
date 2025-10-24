@@ -59,3 +59,89 @@ COMMENT ON COLUMN news_summaries.news_id IS '뉴스 기사의 고유 ID (link UR
 COMMENT ON COLUMN news_summaries.summary IS 'AI가 생성한 요약 텍스트';
 COMMENT ON COLUMN news_summaries.key_points IS 'AI가 추출한 핵심 포인트 배열';
 COMMENT ON COLUMN news_summaries.view_count IS '요약이 조회된 횟수';
+
+
+-- ============================================================================
+-- AI 요약 사용 통계 테이블
+-- 사용자별 AI 요약 요청 및 뉴스 링크 클릭 추적
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS news_summary_analytics (
+  -- 복합 기본 키: 사용자 + 뉴스 ID
+  id BIGSERIAL PRIMARY KEY,
+
+  -- 사용자 정보 (비로그인 사용자는 'Anonymous')
+  user_id TEXT NOT NULL DEFAULT 'Anonymous',
+
+  -- 뉴스 ID (news_summaries 테이블 참조)
+  news_id TEXT NOT NULL,
+
+  -- Cron Job ID (Vercel cron job에서 실행될 때만 사용, nullable)
+  job_id TEXT,
+
+  -- AI 요약 요청 횟수
+  summary_request_count INTEGER DEFAULT 1 NOT NULL,
+
+  -- 뉴스 전문 링크 클릭 횟수
+  link_click_count INTEGER DEFAULT 0 NOT NULL,
+
+  -- 타임스탬프
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+
+  -- 제약 조건: user_id + news_id 조합은 유일해야 함
+  CONSTRAINT unique_user_news UNIQUE (user_id, news_id)
+);
+
+-- 외래 키 제약 조건 (news_summaries 테이블 참조)
+ALTER TABLE news_summary_analytics
+  ADD CONSTRAINT fk_news_summary
+  FOREIGN KEY (news_id)
+  REFERENCES news_summaries(news_id)
+  ON DELETE CASCADE;
+
+-- 인덱스 생성
+CREATE INDEX IF NOT EXISTS idx_news_summary_analytics_user_id
+  ON news_summary_analytics(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_news_summary_analytics_news_id
+  ON news_summary_analytics(news_id);
+
+CREATE INDEX IF NOT EXISTS idx_news_summary_analytics_job_id
+  ON news_summary_analytics(job_id) WHERE job_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_news_summary_analytics_created_at
+  ON news_summary_analytics(created_at DESC);
+
+-- updated_at 자동 업데이트 트리거
+CREATE TRIGGER update_news_summary_analytics_updated_at
+  BEFORE UPDATE ON news_summary_analytics
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- Row Level Security (RLS) 활성화
+ALTER TABLE news_summary_analytics ENABLE ROW LEVEL SECURITY;
+
+-- 모든 사용자가 읽기 가능
+CREATE POLICY "Enable read access for all users" ON news_summary_analytics
+  FOR SELECT USING (true);
+
+-- 모든 사용자가 삽입 가능 (통계 기록)
+CREATE POLICY "Enable insert for all users" ON news_summary_analytics
+  FOR INSERT WITH CHECK (true);
+
+-- 모든 사용자가 업데이트 가능 (카운트 증가)
+CREATE POLICY "Enable update for all users" ON news_summary_analytics
+  FOR UPDATE USING (true);
+
+-- 인증된 사용자만 자신의 데이터 삭제 가능
+CREATE POLICY "Enable delete for users based on user_id" ON news_summary_analytics
+  FOR DELETE USING (auth.uid()::text = user_id);
+
+-- 설명
+COMMENT ON TABLE news_summary_analytics IS '사용자별 AI 요약 요청 및 뉴스 링크 클릭 통계';
+COMMENT ON COLUMN news_summary_analytics.user_id IS '사용자 UID (Supabase Auth), 비로그인은 Anonymous';
+COMMENT ON COLUMN news_summary_analytics.news_id IS '뉴스 기사 ID (news_summaries 참조)';
+COMMENT ON COLUMN news_summary_analytics.job_id IS 'Vercel Cron Job ID (cron 실행 시에만)';
+COMMENT ON COLUMN news_summary_analytics.summary_request_count IS 'AI 요약 요청 횟수';
+COMMENT ON COLUMN news_summary_analytics.link_click_count IS '뉴스 전문 링크 클릭 횟수';
