@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     let fullContent = ""
 
     try {
-      const crawlResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001"}/api/crawl`, {
+      const crawlResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/crawl`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: link }),

@@ -1,10 +1,12 @@
 "use client"
 import { useState, useEffect } from "react"
-import { Search, Menu, Radio, RefreshCw } from "lucide-react"
+import { Search, Menu, Radio, RefreshCw, LogIn, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { LoginModal } from "@/components/auth/login-modal"
+import { useAuth } from "@/hooks/useAuth"
 
 interface NewsHeaderProps {
   searchQuery: string
@@ -14,6 +16,8 @@ interface NewsHeaderProps {
 
 export function NewsHeader({ searchQuery, onSearchChange, onRefresh }: NewsHeaderProps) {
   const [inputValue, setInputValue] = useState(searchQuery)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const { user, signOut } = useAuth()
 
   // searchQuery가 외부에서 변경되면 inputValue도 동기화 (예: 새로고침)
   useEffect(() => {
@@ -30,6 +34,14 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh }: NewsHeade
 
   const handleSearchClick = () => {
     onSearchChange(inputValue)
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+    } catch (error) {
+      console.error("Logout failed:", error)
+    }
   }
 
   return (
@@ -64,6 +76,17 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh }: NewsHeade
             <RefreshCw className="h-5 w-5" />
           </Button>
           <ThemeToggle />
+          {user ? (
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">로그아웃</span>
+            </Button>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={() => setIsLoginModalOpen(true)} className="gap-2">
+              <LogIn className="h-4 w-4" />
+              <span className="hidden sm:inline">로그인</span>
+            </Button>
+          )}
           <Sheet>
             <SheetTrigger asChild className="md:hidden">
               <Button variant="ghost" size="icon">
@@ -93,6 +116,7 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh }: NewsHeade
           </Sheet>
         </div>
       </div>
+      <LoginModal open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen} />
     </header>
   )
 }
