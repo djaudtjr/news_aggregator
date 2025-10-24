@@ -9,6 +9,7 @@ import { ExternalLink, Clock, Sparkles } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import Image from "next/image"
 import { useArticleSummary } from "@/hooks/useArticleSummary"
+import { useAuth } from "@/hooks/useAuth"
 import { getNewsLogo } from "@/lib/utils/news-logos"
 import type { NewsArticle } from "@/types/article"
 
@@ -20,12 +21,32 @@ interface NewsCardProps {
 
 export function NewsCard({ article, isSelected, onToggleSelection }: NewsCardProps) {
   const timeAgo = formatDistanceToNow(new Date(article.pubDate), { addSuffix: true })
+  const { user } = useAuth()
   const { summary, keyPoints, isLoading, fromCache, generateSummary } = useArticleSummary()
   const [imageUrl, setImageUrl] = useState(article.imageUrl)
   const [retryCount, setRetryCount] = useState(0)
 
   const handleSummarize = () => {
     generateSummary(article.title, article.description, article.link, article.id)
+  }
+
+  const handleLinkClick = async () => {
+    // 링크 클릭 추적 (백그라운드로 실행, 에러 무시)
+    try {
+      await fetch("/api/analytics/link-click", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user?.id || null,
+          newsId: article.id,
+        }),
+      })
+    } catch (error) {
+      // 추적 실패해도 사용자 경험에 영향 없음
+      console.error("Failed to track link click:", error)
+    }
   }
 
   const handleImageError = () => {
@@ -115,7 +136,7 @@ export function NewsCard({ article, isSelected, onToggleSelection }: NewsCardPro
           {isLoading ? "요약 중..." : summary ? "요약 완료" : "AI 요약"}
         </Button>
         <Button variant="outline" className="flex-1 bg-transparent" asChild>
-          <a href={article.link} target="_blank" rel="noopener noreferrer">
+          <a href={article.link} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>
             Read More
             <ExternalLink className="ml-2 h-4 w-4" />
           </a>

@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase/client"
 
 export async function POST(request: NextRequest) {
   try {
-    const { title, description, link, apiKey, newsId } = await request.json()
+    const { title, description, link, apiKey, newsId, userId } = await request.json()
 
     console.log("[v0] Summarize request received")
 
@@ -14,6 +14,9 @@ export async function POST(request: NextRequest) {
     if (!newsId) {
       return NextResponse.json({ error: "News ID is required" }, { status: 400 })
     }
+
+    // 사용자 ID (비로그인은 'Anonymous')
+    const effectiveUserId = userId || "Anonymous"
 
     // 1. DB에서 기존 요약 확인
     try {
@@ -31,6 +34,9 @@ export async function POST(request: NextRequest) {
           .from("news_summaries")
           .update({ view_count: (existingSummary.view_count || 0) + 1 })
           .eq("news_id", newsId)
+
+        // 사용자별 통계 기록 (UPSERT)
+        await recordSummaryRequest(effectiveUserId, newsId)
 
         return NextResponse.json({
           summary: existingSummary.summary,
@@ -171,6 +177,9 @@ export async function POST(request: NextRequest) {
         } else {
           console.log(`[v0] Summary saved to DB for newsId: ${newsId}`)
         }
+
+        // 사용자별 통계 기록 (UPSERT)
+        await recordSummaryRequest(effectiveUserId, newsId)
       } catch (error) {
         console.error("[v0] DB save error:", error)
       }
@@ -194,5 +203,55 @@ export async function POST(request: NextRequest) {
       console.error("[v0] Error stack:", error.stack)
     }
     return NextResponse.json({ error: "Failed to generate summary. Please try again." }, { status: 500 })
+  }
+}
+
+/**
+ * 사용자별 AI 요약 요청 통계 기록
+ * @param userId 사용자 UID (비로그인은 'Anonymous')
+ * @param newsId 뉴스 ID
+ */
+async function recordSummaryRequest(userId: string, newsId: string) {
+  try {
+    // 기존 레코드 확인
+    const { data: existing } = await supabase
+      .from("news_summary_analytics")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("news_id", newsId)
+      .single()
+
+    if (existing) {
+      // 기존 레코드가 있으면 카운트 증가
+      const { error } = await supabase
+        .from("news_summary_analytics")
+        .update({
+          summary_request_count: existing.summary_request_count + 1,
+        })
+        .eq("user_id", userId)
+        .eq("news_id", newsId)
+
+      if (error) {
+        console.error("[v0] Failed to update analytics:", error)
+      } else {
+        console.log(`[v0] Analytics updated for user ${userId}, news ${newsId}`)
+      }
+    } else {
+      // 새 레코드 생성
+      const { error } = await supabase.from("news_summary_analytics").insert({
+        user_id: userId,
+        news_id: newsId,
+        summary_request_count: 1,
+        link_click_count: 0,
+      })
+
+      if (error) {
+        console.error("[v0] Failed to insert analytics:", error)
+      } else {
+        console.log(`[v0] Analytics created for user ${userId}, news ${newsId}`)
+      }
+    }
+  } catch (error) {
+    console.error("[v0] Error recording analytics:", error)
   }
 }

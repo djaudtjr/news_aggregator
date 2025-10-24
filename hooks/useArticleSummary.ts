@@ -1,10 +1,12 @@
 import { useState } from "react"
+import { useAuth } from "./useAuth"
 
 /**
  * 기사 AI 요약 커스텀 훅
  * 전문 크롤링 + OpenAI API + Supabase 저장/조회
  */
 export function useArticleSummary() {
+  const { user } = useAuth()
   const [summary, setSummary] = useState<string | null>(null)
   const [keyPoints, setKeyPoints] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -34,6 +36,7 @@ export function useArticleSummary() {
           link,
           newsId,
           apiKey,
+          userId: user?.id || null, // 로그인한 사용자 ID 전달 (비로그인은 null -> 'Anonymous')
         }),
       })
 
