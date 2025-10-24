@@ -139,8 +139,8 @@ news-aggregator/
    Create a `.env.local` file in the root directory:
    ```env
    # Supabase
-   VITE_SUPABASE_URL=your_supabase_project_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   NEXT_SUPABASE_URL=your_supabase_project_url
+   NEXT_SUPABASE_ANON_KEY=your_supabase_anon_key
 
    # OpenAI
    OPENAI_API_KEY=your_openai_api_key
@@ -154,7 +154,7 @@ news-aggregator/
    NAVER_CLIENT_SECRET=your_naver_client_secret
 
    # Base URL
-   NEXT_PUBLIC_BASE_URL=http://localhost:3001
+   NEXT_PUBLIC_BASE_URL=http://localhost:3000
    ```
 
 4. **Set up Supabase database**
@@ -169,7 +169,7 @@ news-aggregator/
    ```
 
 6. **Open the application**
-   Navigate to [http://localhost:3001](http://localhost:3001)
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## API Endpoints
 

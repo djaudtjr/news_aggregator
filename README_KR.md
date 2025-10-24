@@ -154,8 +154,8 @@ news-aggregator/
 
    ```env
    # Supabase
-   VITE_SUPABASE_URL=your_supabase_project_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   NEXT_SUPABASE_URL=your_supabase_project_url
+   NEXT_SUPABASE_ANON_KEY=your_supabase_anon_key
 
    # OpenAI
    OPENAI_API_KEY=your_openai_api_key
@@ -169,7 +169,7 @@ news-aggregator/
    NAVER_CLIENT_SECRET=your_naver_client_secret
 
    # Base URL
-   NEXT_PUBLIC_BASE_URL=http://localhost:3001
+   NEXT_PUBLIC_BASE_URL=http://localhost:3000
    ```
 
 4. **Supabase 데이터베이스 설정**
@@ -188,7 +188,7 @@ news-aggregator/
 
 6. **애플리케이션 열기**
 
-   [http://localhost:3001](http://localhost:3001)로 이동
+   [http://localhost:3000](http://localhost:3000)로 이동
 
 ## API 엔드포인트
 
