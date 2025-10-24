@@ -26,14 +26,41 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh }: NewsHeade
     }
   }, [searchQuery])
 
+  const handleSearch = async (keyword: string) => {
+    if (!keyword || keyword.trim().length === 0) {
+      onSearchChange("")
+      return
+    }
+
+    // 검색 키워드 통계 기록 (백그라운드로 실행, 에러 무시)
+    try {
+      await fetch("/api/analytics/search-keyword", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user?.id || null,
+          keyword: keyword.trim(),
+        }),
+      })
+    } catch (error) {
+      // 통계 추적 실패해도 검색은 계속 진행
+      console.error("Failed to track search keyword:", error)
+    }
+
+    // 검색 실행
+    onSearchChange(keyword)
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      onSearchChange(inputValue)
+      handleSearch(inputValue)
     }
   }
 
   const handleSearchClick = () => {
-    onSearchChange(inputValue)
+    handleSearch(inputValue)
   }
 
   const handleLogout = async () => {

@@ -145,3 +145,83 @@ COMMENT ON COLUMN news_summary_analytics.news_id IS '뉴스 기사 ID (news_summ
 COMMENT ON COLUMN news_summary_analytics.job_id IS 'Vercel Cron Job ID (cron 실행 시에만)';
 COMMENT ON COLUMN news_summary_analytics.summary_request_count IS 'AI 요약 요청 횟수';
 COMMENT ON COLUMN news_summary_analytics.link_click_count IS '뉴스 전문 링크 클릭 횟수';
+
+
+-- ============================================================================
+-- 검색 키워드 통계 테이블
+-- 사용자별 검색 키워드 조회 통계 추적
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS search_keyword_analytics (
+  -- 기본 키
+  id BIGSERIAL PRIMARY KEY,
+
+  -- 사용자 정보 (비로그인 사용자는 'Anonymous')
+  user_id TEXT NOT NULL DEFAULT 'Anonymous',
+
+  -- 검색 키워드
+  keyword TEXT NOT NULL,
+
+  -- 조회수 (해당 사용자가 이 키워드로 검색한 횟수)
+  search_count INTEGER DEFAULT 1 NOT NULL,
+
+  -- 타임스탬프
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  last_searched_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+
+  -- 제약 조건: user_id + keyword 조합은 유일해야 함
+  CONSTRAINT unique_user_keyword UNIQUE (user_id, keyword)
+);
+
+-- 인덱스 생성
+CREATE INDEX IF NOT EXISTS idx_search_keyword_analytics_user_id
+  ON search_keyword_analytics(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_search_keyword_analytics_keyword
+  ON search_keyword_analytics(keyword);
+
+CREATE INDEX IF NOT EXISTS idx_search_keyword_analytics_last_searched
+  ON search_keyword_analytics(last_searched_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_search_keyword_analytics_search_count
+  ON search_keyword_analytics(search_count DESC);
+
+-- last_searched_at 자동 업데이트 트리거
+CREATE OR REPLACE FUNCTION update_last_searched_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.last_searched_at = TIMEZONE('utc'::text, NOW());
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_search_keyword_analytics_last_searched
+  BEFORE UPDATE ON search_keyword_analytics
+  FOR EACH ROW
+  EXECUTE FUNCTION update_last_searched_at_column();
+
+-- Row Level Security (RLS) 활성화
+ALTER TABLE search_keyword_analytics ENABLE ROW LEVEL SECURITY;
+
+-- 모든 사용자가 읽기 가능
+CREATE POLICY "Enable read access for all users" ON search_keyword_analytics
+  FOR SELECT USING (true);
+
+-- 모든 사용자가 삽입 가능 (검색 기록)
+CREATE POLICY "Enable insert for all users" ON search_keyword_analytics
+  FOR INSERT WITH CHECK (true);
+
+-- 모든 사용자가 업데이트 가능 (카운트 증가)
+CREATE POLICY "Enable update for all users" ON search_keyword_analytics
+  FOR UPDATE USING (true);
+
+-- 인증된 사용자만 자신의 데이터 삭제 가능
+CREATE POLICY "Enable delete for users based on user_id" ON search_keyword_analytics
+  FOR DELETE USING (auth.uid()::text = user_id);
+
+-- 설명
+COMMENT ON TABLE search_keyword_analytics IS '사용자별 검색 키워드 조회 통계';
+COMMENT ON COLUMN search_keyword_analytics.user_id IS '사용자 UID (Supabase Auth), 비로그인은 Anonymous';
+COMMENT ON COLUMN search_keyword_analytics.keyword IS '검색한 키워드';
+COMMENT ON COLUMN search_keyword_analytics.search_count IS '해당 사용자가 이 키워드로 검색한 총 횟수';
+COMMENT ON COLUMN search_keyword_analytics.last_searched_at IS '마지막 검색 일시';
