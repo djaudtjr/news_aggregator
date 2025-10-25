@@ -26,31 +26,29 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh }: NewsHeade
     }
   }, [searchQuery])
 
-  const handleSearch = async (keyword: string) => {
+  const handleSearch = (keyword: string) => {
     if (!keyword || keyword.trim().length === 0) {
       onSearchChange("")
       return
     }
 
-    // 검색 키워드 통계 기록 (백그라운드로 실행, 에러 무시)
-    try {
-      await fetch("/api/analytics/search-keyword", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: user?.id || null,
-          keyword: keyword.trim(),
-        }),
-      })
-    } catch (error) {
-      // 통계 추적 실패해도 검색은 계속 진행
-      console.error("Failed to track search keyword:", error)
-    }
-
-    // 검색 실행
+    // 1. 먼저 검색 실행 (사용자에게 빠르게 결과 표시)
     onSearchChange(keyword)
+
+    // 2. 검색 키워드 통계 기록 (백그라운드로 비동기 실행, await 없이)
+    fetch("/api/analytics/search-keyword", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: user?.id || null,
+        keyword: keyword.trim(),
+      }),
+    }).catch((error) => {
+      // 통계 추적 실패해도 검색에는 영향 없음
+      console.error("Failed to track search keyword:", error)
+    })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
