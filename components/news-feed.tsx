@@ -13,6 +13,7 @@ interface NewsFeedProps {
   timeRange: number
   refreshTrigger: number
   activeRegion: string
+  onAvailableCategoriesChange?: (categories: Set<string>) => void
 }
 
 export function NewsFeed({
@@ -21,6 +22,7 @@ export function NewsFeed({
   timeRange,
   refreshTrigger,
   activeRegion,
+  onAvailableCategoriesChange,
 }: NewsFeedProps) {
   const [articles, setArticles] = useState<NewsArticle[]>([])
   const [loading, setLoading] = useState(true)
@@ -53,27 +55,17 @@ export function NewsFeed({
   }, [refreshTrigger, searchQuery, activeRegion])
 
   const filteredArticles = articles.filter((article) => {
-    // 검색 모드일 때는 카테고리 필터만 무시 (지역 필터는 API에서 처리됨)
-    const isSearchMode = searchQuery.trim().length > 0
-
-    if (isSearchMode) {
-      // 검색 모드: 시간 범위만 적용 (지역은 API에서 이미 필터링됨)
-      const articleDate = new Date(article.pubDate)
-      const cutoffDate = new Date()
-      cutoffDate.setDate(cutoffDate.getDate() - timeRange)
-      const matchesTimeRange = articleDate >= cutoffDate
-
-      return matchesTimeRange
-    }
-
-    // 일반 모드: 기존 필터 적용
     // 카테고리 필터링:
     // - activeCategory === "all": 모든 기사 표시 (article.category가 "all"인 것도 포함)
     // - activeCategory가 특정 카테고리: 정확히 매칭되는 것만 표시 (article.category === "all"인 애매한 분류는 제외)
     const matchesCategory =
       activeCategory === "all" || (article.category && article.category === activeCategory && article.category !== "all")
-    const matchesRegion = activeRegion === "all" || article.region === activeRegion
 
+    // 지역 필터링 (검색 모드에서는 API에서 이미 처리됨)
+    const isSearchMode = searchQuery.trim().length > 0
+    const matchesRegion = isSearchMode || activeRegion === "all" || article.region === activeRegion
+
+    // 시간 범위 필터링
     const articleDate = new Date(article.pubDate)
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() - timeRange)
@@ -81,6 +73,22 @@ export function NewsFeed({
 
     return matchesCategory && matchesTimeRange && matchesRegion
   })
+
+  // 검색 모드일 때: 사용 가능한 카테고리 목록을 상위 컴포넌트로 전달
+  useEffect(() => {
+    if (searchQuery.trim().length > 0 && onAvailableCategoriesChange) {
+      const availableCategories = new Set<string>(["all"]) // "all"은 항상 활성화
+      articles.forEach((article) => {
+        if (article.category && article.category !== "all") {
+          availableCategories.add(article.category)
+        }
+      })
+      onAvailableCategoriesChange(availableCategories)
+    } else if (onAvailableCategoriesChange) {
+      // 일반 모드에서는 모든 카테고리 활성화
+      onAvailableCategoriesChange(new Set(["all", "world", "business", "technology", "science", "health", "sports", "entertainment"]))
+    }
+  }, [articles, searchQuery, onAvailableCategoriesChange])
 
   if (loading) {
     return (

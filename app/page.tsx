@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { NewsHeader } from "@/components/news-header"
 import { NewsFeed } from "@/components/news-feed"
 import { NewsCategories } from "@/components/news-categories"
@@ -21,13 +22,19 @@ export default function HomePage() {
     refresh,
   } = useNewsFilters()
 
+  const [availableCategories, setAvailableCategories] = useState<Set<string> | undefined>(undefined)
+
   return (
     <div className="min-h-screen bg-background">
       <NewsHeader searchQuery={searchQuery} onSearchChange={setSearchQuery} onRefresh={refresh} />
       <main className="container mx-auto px-4 py-6">
         <div className="flex flex-col gap-6">
           <RegionFilter activeRegion={activeRegion} onRegionChange={setActiveRegion} />
-          <NewsCategories activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
+          <NewsCategories
+            activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
+            availableCategories={availableCategories}
+          />
           <TimeRangeFilter timeRange={timeRange} onTimeRangeChange={setTimeRange} />
           <NewsFeed
             activeCategory={activeCategory}
@@ -35,6 +42,7 @@ export default function HomePage() {
             timeRange={timeRange}
             refreshTrigger={refreshTrigger}
             activeRegion={activeRegion}
+            onAvailableCategoriesChange={setAvailableCategories}
           />
         </div>
       </main>

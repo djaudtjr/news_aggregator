@@ -17,22 +17,28 @@ const categories = [
 interface NewsCategoriesProps {
   activeCategory: string
   onCategoryChange: (category: string) => void
+  availableCategories?: Set<string>
 }
 
-export function NewsCategories({ activeCategory, onCategoryChange }: NewsCategoriesProps) {
+export function NewsCategories({ activeCategory, onCategoryChange, availableCategories }: NewsCategoriesProps) {
   return (
     <ScrollArea className="w-full whitespace-nowrap">
       <div className="flex gap-2 pb-4">
-        {categories.map((category) => (
-          <Button
-            key={category.id}
-            variant={activeCategory === category.id ? "default" : "outline"}
-            onClick={() => onCategoryChange(category.id)}
-            className="shrink-0"
-          >
-            {category.label}
-          </Button>
-        ))}
+        {categories.map((category) => {
+          const isAvailable = !availableCategories || availableCategories.has(category.id)
+
+          return (
+            <Button
+              key={category.id}
+              variant={activeCategory === category.id ? "default" : "outline"}
+              onClick={() => onCategoryChange(category.id)}
+              disabled={!isAvailable}
+              className="shrink-0"
+            >
+              {category.label}
+            </Button>
+          )
+        })}
       </div>
       <ScrollBar orientation="horizontal" />
     </ScrollArea>

@@ -61,6 +61,14 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh }: NewsHeade
     handleSearch(inputValue)
   }
 
+  const handleRefresh = () => {
+    // 검색창이 비어있으면 검색 모드 초기화
+    if (inputValue.trim().length === 0) {
+      onSearchChange("")
+    }
+    onRefresh()
+  }
+
   const handleLogout = async () => {
     try {
       await signOut()
@@ -97,7 +105,7 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh }: NewsHeade
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={onRefresh} title="Refresh news">
+          <Button variant="ghost" size="icon" onClick={handleRefresh} title="Refresh news">
             <RefreshCw className="h-5 w-5" />
           </Button>
           <ThemeToggle />
