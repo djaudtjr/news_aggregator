@@ -41,12 +41,20 @@ async function splitKeywordsByAI(keyword: string): Promise<string[]> {
 1. 첫 번째 요소는 항상 원본 키워드 전체
 2. 그 다음부터는 의미 있는 단어 단위로 분리
 3. 중복 제거
-4. **의미 없는 키워드는 제외**: 숫자만으로 이루어진 단어, 한 글자짜리 영문자, 특수기호만 있는 단어는 제외
+4. **의미 없는 키워드는 제외**:
+   - 숫자만으로 이루어진 단어 (예: "123", "2024")
+   - 한글 한 글자 (예: "가", "나", "를")
+   - 영문 관사, 전치사, be동사 등 의미 없는 단어 (예: "a", "an", "the", "is", "are", "in", "on", "at", "to", "of")
+   - 한 글자 또는 두 글자 영문 약어 중 일반적이지 않은 것 (단, "AI", "IT" 같은 의미 있는 약어는 포함)
+   - 특수기호만 있는 단어
 5. JSON 배열 형식으로만 응답 (다른 텍스트 없이)
 
 예시:
 입력: "인공지능 컴퓨터"
 출력: ["인공지능 컴퓨터", "인공지능", "컴퓨터"]
+
+입력: "기 사용법"
+출력: ["기 사용법", "사용법"]
 
 입력: "machine learning algorithm"
 출력: ["machine learning algorithm", "machine learning", "machine", "learning", "algorithm"]
@@ -55,7 +63,13 @@ async function splitKeywordsByAI(keyword: string): Promise<string[]> {
 출력: ["machine learning 123", "machine learning", "machine", "learning"]
 
 입력: "AI 2024 news"
-출력: ["ai 2024 news", "news"]`,
+출력: ["ai 2024 news", "ai", "news"]
+
+입력: "the future of technology"
+출력: ["the future of technology", "future", "technology"]
+
+입력: "인공지능을 이용한 분석"
+출력: ["인공지능을 이용한 분석", "인공지능", "이용한", "분석"]`,
           },
           {
             role: "user",
