@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 
 const categories = [
-  { id: "all", label: "All News" },
-  { id: "world", label: "World" },
-  { id: "business", label: "Business" },
-  { id: "technology", label: "Technology" },
-  { id: "science", label: "Science" },
-  { id: "health", label: "Health" },
-  { id: "sports", label: "Sports" },
-  { id: "entertainment", label: "Entertainment" },
+  { id: "all", label: "전체" },
+  { id: "world", label: "세계" },
+  { id: "business", label: "비즈니스" },
+  { id: "technology", label: "기술" },
+  { id: "science", label: "과학" },
+  { id: "health", label: "건강" },
+  { id: "sports", label: "스포츠" },
+  { id: "entertainment", label: "엔터테인먼트" },
 ]
 
 interface NewsCategoriesProps {
