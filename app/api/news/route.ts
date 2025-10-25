@@ -88,8 +88,23 @@ export async function GET() {
     const [rssArticles, naverArticles] = await Promise.all([
       Promise.all(RSS_FEEDS.map((feed) => fetchRSSFeed(feed))),
       fetchNaverNewsByQueries(
-        ["최신뉴스", "IT", "경제", "정치", "사회", "과학", "건강", "스포츠", "연예", "엔터테인먼트"],
-        4
+        [
+          "최신뉴스",
+          "IT",
+          "경제",
+          "정치",
+          "사회",
+          "과학",
+          "건강",
+          "스포츠",
+          "KBO",
+          "프리미어리그",
+          "연예",
+          "케이팝",
+          "하이브",
+          "SM엔터",
+        ],
+        3
       ),
     ])
 
@@ -109,7 +124,7 @@ export async function GET() {
     // 카테고리별 통계 출력
     const categoryStats = articles.reduce(
       (acc, article) => {
-        const cat = article.category || "uncategorized"
+        const cat = article.category || "all"
         acc[cat] = (acc[cat] || 0) + 1
         return acc
       },
@@ -117,8 +132,8 @@ export async function GET() {
     )
     console.log("[v0] Category distribution:", categoryStats)
     console.log(
-      "[v0] Uncategorized articles will only show in 'all' category:",
-      categoryStats["uncategorized"] || 0
+      "[v0] Ambiguous articles (category='all') will only show in 'all' category filter:",
+      categoryStats["all"] || 0
     )
 
     return NextResponse.json({ articles })

@@ -11,7 +11,7 @@ export function categorizeArticle(
   title: string,
   description: string,
   rssCategory?: string | string[]
-): NewsCategory | undefined {
+): NewsCategory {
   const text = `${title} ${description}`.toLowerCase()
 
   // RSS 카테고리 기반 분류
@@ -29,11 +29,11 @@ export function categorizeArticle(
   // 키워드 기반 분류
   const category = categorizeByKeywords(text)
 
-  // 카테고리 분류 결과 로깅 (분류된 경우에만)
-  if (category) {
+  // 카테고리 분류 결과 로깅
+  if (category !== "all") {
     console.log(`[Categorizer] Keyword matched: "${title.substring(0, 50)}..." -> ${category}`)
   } else {
-    console.log(`[Categorizer] Uncategorized: "${title.substring(0, 50)}..."`)
+    console.log(`[Categorizer] Ambiguous category (marked as 'all'): "${title.substring(0, 50)}..."`)
   }
 
   return category
@@ -97,7 +97,18 @@ function checkRSSCategory(categoryLower: string): NewsCategory | null {
     categoryLower.includes("sport") ||
     categoryLower.includes("스포츠") ||
     categoryLower.includes("축구") ||
-    categoryLower.includes("야구")
+    categoryLower.includes("야구") ||
+    categoryLower.includes("농구") ||
+    categoryLower.includes("배구") ||
+    categoryLower.includes("골프") ||
+    categoryLower.includes("테니스") ||
+    categoryLower.includes("올림픽") ||
+    categoryLower.includes("kbo") ||
+    categoryLower.includes("mlb") ||
+    categoryLower.includes("nba") ||
+    categoryLower.includes("프리미어리그") ||
+    categoryLower.includes("premier league") ||
+    categoryLower.includes("champions league")
   ) {
     return "sports"
   }
@@ -106,8 +117,15 @@ function checkRSSCategory(categoryLower: string): NewsCategory | null {
     categoryLower.includes("culture") ||
     categoryLower.includes("movie") ||
     categoryLower.includes("music") ||
+    categoryLower.includes("celebrity") ||
     categoryLower.includes("연예") ||
-    categoryLower.includes("엔터")
+    categoryLower.includes("엔터") ||
+    categoryLower.includes("영화") ||
+    categoryLower.includes("음악") ||
+    categoryLower.includes("드라마") ||
+    categoryLower.includes("케이팝") ||
+    categoryLower.includes("kpop") ||
+    categoryLower.includes("k-pop")
   ) {
     return "entertainment"
   }
@@ -116,9 +134,9 @@ function checkRSSCategory(categoryLower: string): NewsCategory | null {
 
 /**
  * 키워드 기반 카테고리 분류
- * 애매한 분류는 undefined 반환 (전체 카테고리에서만 표시)
+ * 애매한 분류는 "all" 반환 (전체 카테고리에서만 표시)
  */
-function categorizeByKeywords(text: string): NewsCategory | undefined {
+function categorizeByKeywords(text: string): NewsCategory {
   // Business (비즈니스)
   if (
     // 영문 키워드
@@ -260,7 +278,7 @@ function categorizeByKeywords(text: string): NewsCategory | undefined {
 
   // Sports (스포츠)
   if (
-    // 영문 키워드
+    // 영문 키워드 - 일반
     text.includes("sport") ||
     text.includes("football") ||
     text.includes("basketball") ||
@@ -272,7 +290,46 @@ function categorizeByKeywords(text: string): NewsCategory | undefined {
     text.includes("athlete") ||
     text.includes("player") ||
     text.includes("match") ||
-    // 한글 키워드
+    text.includes("coach") ||
+    text.includes("stadium") ||
+    text.includes("league") ||
+    text.includes("world cup") ||
+    // 영문 키워드 - 종목
+    text.includes("golf") ||
+    text.includes("tennis") ||
+    text.includes("badminton") ||
+    text.includes("volleyball") ||
+    text.includes("hockey") ||
+    text.includes("cricket") ||
+    text.includes("rugby") ||
+    text.includes("boxing") ||
+    text.includes("mma") ||
+    text.includes("ufc") ||
+    text.includes("wrestling") ||
+    text.includes("swimming") ||
+    text.includes("athletics") ||
+    text.includes("marathon") ||
+    text.includes("skiing") ||
+    text.includes("skating") ||
+    // 영문 키워드 - 주요 리그
+    text.includes("nba") || // 미국 프로농구
+    text.includes("nfl") || // 미국 프로풋볼
+    text.includes("mlb") || // 메이저리그 야구
+    text.includes("major league") ||
+    text.includes("nhl") || // 북미 아이스하키
+    text.includes("premier league") || // 영국 프리미어리그
+    text.includes("la liga") || // 스페인 라리가
+    text.includes("serie a") || // 이탈리아 세리에A
+    text.includes("bundesliga") || // 독일 분데스리가
+    text.includes("ligue 1") || // 프랑스 리그1
+    text.includes("champions league") || // UEFA 챔피언스리그
+    text.includes("uefa") ||
+    text.includes("fifa") ||
+    text.includes("wimbledon") || // 윔블던 테니스
+    text.includes("pga") || // 프로골프
+    text.includes("f1") || // 포뮬러 원
+    text.includes("formula one") ||
+    // 한글 키워드 - 일반
     text.includes("스포츠") ||
     text.includes("축구") ||
     text.includes("야구") ||
@@ -281,9 +338,61 @@ function categorizeByKeywords(text: string): NewsCategory | undefined {
     text.includes("올림픽") ||
     text.includes("선수") ||
     text.includes("우승") ||
+    text.includes("감독") ||
+    text.includes("코치") ||
+    text.includes("경기장") ||
+    text.includes("리그") ||
+    text.includes("월드컵") ||
+    // 한글 키워드 - 종목
     text.includes("골프") ||
     text.includes("테니스") ||
     text.includes("배드민턴") ||
+    text.includes("탁구") ||
+    text.includes("수영") ||
+    text.includes("육상") ||
+    text.includes("마라톤") ||
+    text.includes("권투") ||
+    text.includes("태권도") ||
+    text.includes("유도") ||
+    text.includes("레슬링") ||
+    text.includes("격투기") ||
+    text.includes("피겨") ||
+    text.includes("스케이팅") ||
+    text.includes("스키") ||
+    text.includes("e스포츠") ||
+    text.includes("이스포츠") ||
+    // 한글 키워드 - 한국 리그
+    text.includes("kbo") || // 한국프로야구
+    text.includes("프로야구") ||
+    text.includes("kbl") || // 한국프로농구
+    text.includes("프로농구") ||
+    text.includes("k리그") || // 한국프로축구
+    text.includes("프로축구") ||
+    text.includes("v리그") || // 한국프로배구
+    text.includes("프로배구") ||
+    text.includes("klpga") || // 한국여자프로골프
+    text.includes("kpga") || // 한국프로골프
+    // 한글 키워드 - 해외 리그
+    text.includes("메이저리그") ||
+    text.includes("프리미어리그") ||
+    text.includes("라리가") ||
+    text.includes("세리에") ||
+    text.includes("분데스리가") ||
+    text.includes("챔피언스리그") ||
+    text.includes("챔스") ||
+    // 한글 키워드 - 팀명 (주요)
+    text.includes("맨유") ||
+    text.includes("첼시") ||
+    text.includes("레알") ||
+    text.includes("바르샤") ||
+    text.includes("바이에른") ||
+    text.includes("한화") ||
+    text.includes("두산") ||
+    text.includes("롯데") ||
+    text.includes("kt위즈") ||
+    text.includes("lg트윈스") ||
+    text.includes("ssr") ||
+    text.includes("nc다이노스") ||
     // "경기"는 스포츠 관련 단어와 함께 있을 때만 매칭
     (text.includes("경기") &&
       (text.includes("스포츠") ||
@@ -300,10 +409,11 @@ function categorizeByKeywords(text: string): NewsCategory | undefined {
 
   // Entertainment (엔터테인먼트)
   if (
-    // 영문 키워드
+    // 영문 키워드 - 일반
     text.includes("entertainment") ||
     text.includes("movie") ||
     text.includes("film") ||
+    text.includes("cinema") ||
     text.includes("music") ||
     text.includes("celebrity") ||
     text.includes("actor") ||
@@ -314,17 +424,105 @@ function categorizeByKeywords(text: string): NewsCategory | undefined {
     text.includes("show") ||
     text.includes("series") ||
     text.includes("drama") ||
-    // 한글 키워드
+    text.includes("theater") ||
+    text.includes("broadway") ||
+    text.includes("hollywood") ||
+    text.includes("festival") ||
+    text.includes("grammy") ||
+    text.includes("oscar") ||
+    text.includes("emmy") ||
+    text.includes("award") ||
+    text.includes("idol") ||
+    text.includes("kpop") ||
+    text.includes("k-pop") ||
+    text.includes("billboard") ||
+    // 영문 키워드 - 해외 엔터사
+    text.includes("disney") ||
+    text.includes("warner bros") ||
+    text.includes("universal pictures") ||
+    text.includes("universal studios") ||
+    text.includes("paramount") ||
+    text.includes("sony pictures") ||
+    text.includes("netflix") ||
+    text.includes("mgm") ||
+    text.includes("dreamworks") ||
+    text.includes("marvel") ||
+    text.includes("dc comics") ||
+    text.includes("hbo") ||
+    text.includes("amazon studios") ||
+    text.includes("apple tv") ||
+    // 한글 키워드 - 일반
     text.includes("엔터") ||
     text.includes("연예") ||
     text.includes("영화") ||
     text.includes("음악") ||
     text.includes("배우") ||
     text.includes("가수") ||
+    text.includes("아이돌") ||
+    text.includes("걸그룹") ||
+    text.includes("보이그룹") ||
     text.includes("콘서트") ||
     text.includes("앨범") ||
     text.includes("드라마") ||
-    text.includes("방송")
+    text.includes("방송") ||
+    text.includes("예능") ||
+    text.includes("뮤지컬") ||
+    text.includes("공연") ||
+    text.includes("시상식") ||
+    text.includes("영화제") ||
+    text.includes("음악축제") ||
+    text.includes("페스티벌") ||
+    text.includes("케이팝") ||
+    text.includes("한류") ||
+    // 한글 키워드 - 한국 엔터사 (Big 3 + 주요사)
+    text.includes("sm엔터") ||
+    text.includes("sm엔터테인먼트") ||
+    text.includes("에스엠") ||
+    text.includes("jyp") ||
+    text.includes("제이와이피") ||
+    text.includes("yg") ||
+    text.includes("와이지") ||
+    text.includes("하이브") ||
+    text.includes("hybe") ||
+    text.includes("빅히트") ||
+    text.includes("어도어") ||
+    text.includes("ador") ||
+    text.includes("소스뮤직") ||
+    text.includes("플레디스") ||
+    text.includes("큐브") ||
+    text.includes("cube") ||
+    text.includes("fnc") ||
+    text.includes("스타쉽") ||
+    text.includes("starship") ||
+    text.includes("울림") ||
+    text.includes("판타지오") ||
+    text.includes("안테나") ||
+    text.includes("피네이션") ||
+    text.includes("모스트콘텐츠") ||
+    text.includes("넥스타") ||
+    text.includes("키이스트") ||
+    text.includes("젤리피쉬") ||
+    text.includes("크래커") ||
+    text.includes("rbw") ||
+    text.includes("wm") ||
+    text.includes("dsp") ||
+    // 한글 키워드 - 한국 엔터사 (방송사 계열)
+    text.includes("카카오엔터") ||
+    text.includes("카카오m") ||
+    text.includes("스튜디오드래곤") ||
+    text.includes("초록뱀") ||
+    text.includes("넷플릭스") ||
+    text.includes("티빙") ||
+    text.includes("웨이브") ||
+    text.includes("왓챠") ||
+    // 한글 키워드 - 해외 엔터사
+    text.includes("디즈니") ||
+    text.includes("워너브라더스") ||
+    text.includes("유니버설") ||
+    text.includes("파라마운트") ||
+    text.includes("소니픽처스") ||
+    text.includes("마블") ||
+    text.includes("디씨")
   ) {
     return "entertainment"
   }
@@ -359,6 +557,6 @@ function categorizeByKeywords(text: string): NewsCategory | undefined {
     return "world"
   }
 
-  // Default: 애매한 분류는 undefined (전체 카테고리에서만 표시)
-  return undefined
+  // Default: 애매한 분류는 "all" (전체 카테고리에서만 표시)
+  return "all"
 }
