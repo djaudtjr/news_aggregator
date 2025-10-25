@@ -87,7 +87,10 @@ export async function GET() {
     // RSS 피드와 네이버 뉴스를 병렬로 수집
     const [rssArticles, naverArticles] = await Promise.all([
       Promise.all(RSS_FEEDS.map((feed) => fetchRSSFeed(feed))),
-      fetchNaverNewsByQueries(["최신뉴스", "IT", "경제", "정치", "사회"], 5),
+      fetchNaverNewsByQueries(
+        ["최신뉴스", "IT", "경제", "정치", "사회", "과학", "건강", "스포츠", "연예", "엔터테인먼트"],
+        4
+      ),
     ])
 
     // 결과 병합
@@ -102,6 +105,21 @@ export async function GET() {
 
     // 날짜순 정렬
     const articles = uniqueArticles.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
+
+    // 카테고리별 통계 출력
+    const categoryStats = articles.reduce(
+      (acc, article) => {
+        const cat = article.category || "uncategorized"
+        acc[cat] = (acc[cat] || 0) + 1
+        return acc
+      },
+      {} as Record<string, number>
+    )
+    console.log("[v0] Category distribution:", categoryStats)
+    console.log(
+      "[v0] Uncategorized articles will only show in 'all' category:",
+      categoryStats["uncategorized"] || 0
+    )
 
     return NextResponse.json({ articles })
   } catch (error) {
