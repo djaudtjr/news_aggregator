@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS news_summaries (
   -- 뉴스 기본 정보
   news_url TEXT NOT NULL,
   news_title TEXT,
+  category TEXT, -- 뉴스 카테고리 (world, business, technology, science, health, sports, entertainment)
 
   -- AI 요약 정보
   summary TEXT NOT NULL,
@@ -23,7 +24,8 @@ CREATE TABLE IF NOT EXISTS news_summaries (
 
 -- 인덱스 생성
 CREATE INDEX IF NOT EXISTS idx_news_summaries_news_url ON news_summaries(news_url);
-CREATE INDEX IF NOT EXISTS idx_news_summaries_news_url ON news_summaries(key_points);
+CREATE INDEX IF NOT EXISTS idx_news_summaries_key_points ON news_summaries(key_points);
+CREATE INDEX IF NOT EXISTS idx_news_summaries_category ON news_summaries(category);
 CREATE INDEX IF NOT EXISTS idx_news_summaries_created_at ON news_summaries(created_at DESC);
 
 -- updated_at 자동 업데이트 트리거
@@ -56,6 +58,7 @@ CREATE POLICY "Enable update for all users" ON news_summaries
 -- 설명
 COMMENT ON TABLE news_summaries IS 'AI로 요약된 뉴스 기사 정보 저장';
 COMMENT ON COLUMN news_summaries.news_id IS '뉴스 기사의 고유 ID (link URL 기반 해시)';
+COMMENT ON COLUMN news_summaries.category IS '뉴스 카테고리 (world, business, technology, science, health, sports, entertainment)';
 COMMENT ON COLUMN news_summaries.summary IS 'AI가 생성한 요약 텍스트';
 COMMENT ON COLUMN news_summaries.key_points IS 'AI가 추출한 핵심 포인트 배열';
 COMMENT ON COLUMN news_summaries.view_count IS '요약이 조회된 횟수';
