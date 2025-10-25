@@ -16,7 +16,13 @@ export function useArticleSummary() {
   /**
    * 기사 요약 생성 (전문 크롤링 + DB 캐싱)
    */
-  const generateSummary = async (title: string, description: string, link: string, newsId: string) => {
+  const generateSummary = async (
+    title: string,
+    description: string,
+    link: string,
+    newsId: string,
+    category?: string
+  ) => {
     // API 키 확인 (localStorage 또는 환경변수)
     const apiKey = localStorage.getItem("openai_api_key")
 
@@ -35,6 +41,7 @@ export function useArticleSummary() {
           description,
           link,
           newsId,
+          category,
           apiKey,
           userId: user?.id || null, // 로그인한 사용자 ID 전달 (비로그인은 null -> 'Anonymous')
         }),

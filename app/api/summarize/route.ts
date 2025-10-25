@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase/client"
 
 export async function POST(request: NextRequest) {
   try {
-    const { title, description, link, apiKey, newsId, userId } = await request.json()
+    const { title, description, link, apiKey, newsId, userId, category } = await request.json()
 
     console.log("[v0] Summarize request received")
 
@@ -170,6 +170,7 @@ export async function POST(request: NextRequest) {
             news_id: newsId,
             news_url: link,
             news_title: title,
+            category: category || null,
             summary,
             key_points: keyPoints.length > 0 ? keyPoints : null,
             view_count: 1,

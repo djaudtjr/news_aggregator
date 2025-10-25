@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase/client"
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId, newsId, title, link } = await request.json()
+    const { userId, newsId, title, link, category } = await request.json()
 
     if (!newsId) {
       return NextResponse.json({ error: "News ID is required" }, { status: 400 })
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const effectiveUserId = userId || "Anonymous"
 
     // 링크 클릭 기록
-    await recordLinkClick(effectiveUserId, newsId, title, link)
+    await recordLinkClick(effectiveUserId, newsId, title, link, category)
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -31,8 +31,15 @@ export async function POST(request: NextRequest) {
  * @param newsId 뉴스 ID
  * @param title 뉴스 제목
  * @param link 뉴스 링크
+ * @param category 뉴스 카테고리
  */
-async function recordLinkClick(userId: string, newsId: string, title?: string, link?: string) {
+async function recordLinkClick(
+  userId: string,
+  newsId: string,
+  title?: string,
+  link?: string,
+  category?: string
+) {
   try {
     // 1. news_summaries에 해당 뉴스가 있는지 확인
     const { data: newsSummary } = await supabase
@@ -47,6 +54,7 @@ async function recordLinkClick(userId: string, newsId: string, title?: string, l
         news_id: newsId,
         news_url: link,
         news_title: title,
+        category: category || null,
         summary: "", // 빈 문자열로 저장 (AI 요약 없음 표시)
         key_points: null,
         view_count: 0,

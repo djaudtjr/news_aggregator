@@ -24,7 +24,7 @@ export function NewsCard({ article }: NewsCardProps) {
   const [retryCount, setRetryCount] = useState(0)
 
   const handleSummarize = () => {
-    generateSummary(article.title, article.description, article.link, article.id)
+    generateSummary(article.title, article.description, article.link, article.id, article.category)
   }
 
   const handleLinkClick = async () => {
@@ -40,6 +40,7 @@ export function NewsCard({ article }: NewsCardProps) {
           newsId: article.id,
           title: article.title,
           link: article.link,
+          category: article.category,
         }),
       })
     } catch (error) {
