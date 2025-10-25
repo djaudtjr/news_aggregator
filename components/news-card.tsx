@@ -4,7 +4,6 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { ExternalLink, Clock, Sparkles } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import Image from "next/image"
@@ -15,11 +14,9 @@ import type { NewsArticle } from "@/types/article"
 
 interface NewsCardProps {
   article: NewsArticle
-  isSelected: boolean
-  onToggleSelection: (id: string) => void
 }
 
-export function NewsCard({ article, isSelected, onToggleSelection }: NewsCardProps) {
+export function NewsCard({ article }: NewsCardProps) {
   const timeAgo = formatDistanceToNow(new Date(article.pubDate), { addSuffix: true })
   const { user } = useAuth()
   const { summary, keyPoints, isLoading, fromCache, generateSummary } = useArticleSummary()
@@ -70,14 +67,7 @@ export function NewsCard({ article, isSelected, onToggleSelection }: NewsCardPro
   }
 
   return (
-    <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg relative">
-      <div className="absolute top-3 left-3 z-10">
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={() => onToggleSelection(article.id)}
-          className="bg-background border-2"
-        />
-      </div>
+    <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg">
       {imageUrl && (
         <div className="relative h-48 w-full overflow-hidden bg-muted">
           <Image

@@ -12,8 +12,6 @@ interface NewsFeedProps {
   searchQuery: string
   timeRange: number
   refreshTrigger: number
-  selectedArticles: string[]
-  onSelectionChange: (selected: string[]) => void
   activeRegion: string
 }
 
@@ -22,8 +20,6 @@ export function NewsFeed({
   searchQuery,
   timeRange,
   refreshTrigger,
-  selectedArticles,
-  onSelectionChange,
   activeRegion,
 }: NewsFeedProps) {
   const [articles, setArticles] = useState<NewsArticle[]>([])
@@ -82,14 +78,6 @@ export function NewsFeed({
     return matchesCategory && matchesTimeRange && matchesRegion
   })
 
-  const handleToggleSelection = (articleId: string) => {
-    if (selectedArticles.includes(articleId)) {
-      onSelectionChange(selectedArticles.filter((id) => id !== articleId))
-    } else {
-      onSelectionChange([...selectedArticles, articleId])
-    }
-  }
-
   if (loading) {
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -136,12 +124,7 @@ export function NewsFeed({
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {filteredArticles.map((article) => (
-        <NewsCard
-          key={article.id}
-          article={article}
-          isSelected={selectedArticles.includes(article.id)}
-          onToggleSelection={handleToggleSelection}
-        />
+        <NewsCard key={article.id} article={article} />
       ))}
     </div>
   )
