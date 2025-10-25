@@ -67,7 +67,9 @@ export function NewsFeed({
     }
 
     // 일반 모드: 기존 필터 적용
-    const matchesCategory = activeCategory === "all" || article.category === activeCategory
+    // 카테고리 필터링: "all"이면 모든 기사 표시, 특정 카테고리면 정확히 매칭되는 것만 표시
+    // (category가 undefined인 애매한 분류는 "all"에서만 표시)
+    const matchesCategory = activeCategory === "all" || (article.category && article.category === activeCategory)
     const matchesRegion = activeRegion === "all" || article.region === activeRegion
 
     const articleDate = new Date(article.pubDate)
