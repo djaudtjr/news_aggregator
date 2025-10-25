@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
         .eq("news_id", newsId)
         .single()
 
-      if (existingSummary && !dbError) {
+      // 기존 요약이 있고, summary가 비어있지 않은 경우에만 캐시 사용
+      if (existingSummary && !dbError && existingSummary.summary && existingSummary.summary.trim() !== "") {
         console.log(`[v0] Found existing summary in DB for newsId: ${newsId}`)
 
         // 조회수 증가
@@ -162,18 +163,24 @@ export async function POST(request: NextRequest) {
       }
 
       // 4. DB에 저장 (AI 요약 정보만 저장, 크롤링된 전문은 저장하지 않음)
+      // UPSERT 사용: 링크 클릭으로 이미 레코드가 있을 수 있음
       try {
-        const { error: insertError } = await supabase.from("news_summaries").insert({
-          news_id: newsId,
-          news_url: link,
-          news_title: title,
-          summary,
-          key_points: keyPoints.length > 0 ? keyPoints : null,
-          view_count: 1,
-        })
+        const { error: upsertError } = await supabase.from("news_summaries").upsert(
+          {
+            news_id: newsId,
+            news_url: link,
+            news_title: title,
+            summary,
+            key_points: keyPoints.length > 0 ? keyPoints : null,
+            view_count: 1,
+          },
+          {
+            onConflict: "news_id",
+          },
+        )
 
-        if (insertError) {
-          console.error("[v0] Failed to save summary to DB:", insertError)
+        if (upsertError) {
+          console.error("[v0] Failed to save summary to DB:", upsertError)
         } else {
           console.log(`[v0] Summary saved to DB for newsId: ${newsId}`)
         }

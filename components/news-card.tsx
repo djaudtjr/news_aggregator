@@ -41,6 +41,8 @@ export function NewsCard({ article, isSelected, onToggleSelection }: NewsCardPro
         body: JSON.stringify({
           userId: user?.id || null,
           newsId: article.id,
+          title: article.title,
+          link: article.link,
         }),
       })
     } catch (error) {
