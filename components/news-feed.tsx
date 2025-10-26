@@ -60,7 +60,6 @@ export function NewsFeed({
   }, [refreshTrigger, searchQuery, activeRegion])
 
   const filteredArticles = articles.filter((article) => {
-    // 검색 모드일 때는 카테고리 필터만 무시 (지역 필터는 API에서 처리됨)
     const isSearchMode = searchQuery.trim().length > 0
 
     // 시간 범위 필터링 (밀리초 단위로 계산)
@@ -70,20 +69,14 @@ export function NewsFeed({
     cutoffDate.setTime(cutoffDate.getTime() - timeRange * millisecondsInDay)
     const matchesTimeRange = articleDate >= cutoffDate
 
-    if (isSearchMode) {
-      // 검색 모드: 시간 범위만 적용 (지역은 API에서 이미 필터링됨)
-      return matchesTimeRange
-    }
-
-    // 일반 모드: 기존 필터 적용
-    // 카테고리 필터링:
+    // 카테고리 필터링 (검색 모드와 일반 모드 모두 적용)
     // - activeCategory === "all": 모든 기사 표시 (article.category가 "all"인 것도 포함)
     // - activeCategory가 특정 카테고리: 정확히 매칭되는 것만 표시 (article.category === "all"인 애매한 분류는 제외)
     const matchesCategory =
       activeCategory === "all" || (article.category && article.category === activeCategory && article.category !== "all")
 
-    // 지역 필터링
-    const matchesRegion = activeRegion === "all" || article.region === activeRegion
+    // 지역 필터링 (일반 모드에서만 적용, 검색 모드는 API에서 이미 처리됨)
+    const matchesRegion = isSearchMode || activeRegion === "all" || article.region === activeRegion
 
     return matchesCategory && matchesTimeRange && matchesRegion
   })
