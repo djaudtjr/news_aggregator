@@ -45,7 +45,7 @@ export interface RSSItem {
 /**
  * 뉴스 카테고리 타입
  */
-export type NewsCategory = "all" | "world" | "technology" | "business" | "science" | "health" | "sports" | "entertainment"
+export type NewsCategory = "all" | "world" | "politics" | "technology" | "business" | "science" | "health" | "sports" | "entertainment"
 
 /**
  * 지역 필터 타입

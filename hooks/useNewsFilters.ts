@@ -9,7 +9,7 @@ export function useNewsFilters() {
   const [activeCategory, setActiveCategory] = useState<NewsCategory>("all")
   const [activeRegion, setActiveRegion] = useState<NewsRegion>("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const [timeRange, setTimeRange] = useState(7) // 기본 7일
+  const [timeRange, setTimeRange] = useState(1) // 기본 1일
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   /**
@@ -26,7 +26,7 @@ export function useNewsFilters() {
     setActiveCategory("all")
     setActiveRegion("all")
     setSearchQuery("")
-    setTimeRange(7)
+    setTimeRange(1)
   }, [])
 
   return {

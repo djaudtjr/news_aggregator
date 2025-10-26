@@ -1,0 +1,139 @@
+"use client"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Clock, ExternalLink, Bookmark, BookmarkCheck } from "lucide-react"
+import { formatDistanceToNow } from "date-fns"
+import { ko } from "date-fns/locale"
+import { useRecentArticles } from "@/hooks/useRecentArticles"
+import { useAuth } from "@/hooks/useAuth"
+import { useBookmarks } from "@/hooks/useBookmarks"
+import type { NewsArticle } from "@/types/article"
+
+interface NewsCardCompactProps {
+  article: NewsArticle
+}
+
+export function NewsCardCompact({ article }: NewsCardCompactProps) {
+  const timeAgo = formatDistanceToNow(new Date(article.pubDate), { addSuffix: true, locale: ko })
+  const { addRecentArticle } = useRecentArticles()
+  const { user } = useAuth()
+  const { toggleBookmark, isBookmarked } = useBookmarks()
+
+  // URL 유효성 검사
+  const isValidUrl = (url: string | undefined): boolean => {
+    if (!url) return false
+    try {
+      new URL(url)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const handleBookmark = async (e: React.MouseEvent) => {
+    e.stopPropagation() // 카드 클릭 이벤트 전파 방지
+    await toggleBookmark({
+      id: article.id,
+      title: article.title,
+      description: article.description,
+      link: article.link,
+      source: article.source,
+      imageUrl: article.imageUrl,
+      category: article.category,
+      region: article.region,
+      pubDate: article.pubDate,
+    })
+  }
+
+  const handleClick = async () => {
+    // 최근 본 기사에 추가
+    addRecentArticle({
+      id: article.id,
+      title: article.title,
+      description: article.description,
+      link: article.link,
+      source: article.source,
+      imageUrl: article.imageUrl,
+      category: article.category,
+      region: article.region,
+      pubDate: article.pubDate,
+    })
+
+    // 링크 클릭 추적
+    try {
+      await fetch("/api/analytics/link-click", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user?.id || null,
+          newsId: article.id,
+          title: article.title,
+          link: article.link,
+          category: article.category,
+        }),
+      })
+    } catch (error) {
+      console.error("Failed to track link click:", error)
+    }
+
+    // 새 탭에서 링크 열기
+    window.open(article.link, "_blank", "noopener,noreferrer")
+  }
+
+  return (
+    <div
+      className="group flex items-center gap-4 rounded-lg border p-3 hover:bg-accent cursor-pointer transition-colors"
+      onClick={handleClick}
+    >
+      {isValidUrl(article.imageUrl) && (
+        <div className="shrink-0">
+          <img
+            src={article.imageUrl}
+            alt={article.title}
+            className="w-20 h-20 object-cover rounded"
+            onError={(e) => {
+              e.currentTarget.style.display = "none"
+            }}
+          />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <Badge variant="secondary" className="text-xs">
+            {article.source}
+          </Badge>
+          {article.category && article.category !== "all" && (
+            <Badge variant="outline" className="text-xs">
+              {article.category}
+            </Badge>
+          )}
+        </div>
+        <h3 className="font-medium line-clamp-2 mb-1 text-sm">{article.title}</h3>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Clock className="h-3 w-3" />
+          <span>{timeAgo}</span>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={handleBookmark}
+          disabled={!user}
+          title={user ? (isBookmarked(article.id) ? "북마크 해제" : "북마크") : "로그인 필요"}
+        >
+          {isBookmarked(article.id) ? (
+            <BookmarkCheck className="h-4 w-4 fill-current" />
+          ) : (
+            <Bookmark className="h-4 w-4" />
+          )}
+        </Button>
+        <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
+    </div>
+  )
+}

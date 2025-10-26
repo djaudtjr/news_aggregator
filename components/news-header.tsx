@@ -1,12 +1,13 @@
 "use client"
 import { useState, useEffect } from "react"
-import { Search, Menu, Radio, RefreshCw, LogIn, LogOut } from "lucide-react"
+import { Search, Menu, Radio, RefreshCw, LogIn, LogOut, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { LoginModal } from "@/components/auth/login-modal"
 import { useAuth } from "@/hooks/useAuth"
+import Link from "next/link"
 
 interface NewsHeaderProps {
   searchQuery: string
@@ -72,10 +73,10 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh }: NewsHeade
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <Radio className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Pulse</h1>
-        </div>
+        </Link>
 
         <div className="hidden md:flex flex-1 max-w-md mx-8">
           <div className="relative w-full flex gap-2">
@@ -102,10 +103,18 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh }: NewsHeade
           </Button>
           <ThemeToggle />
           {user ? (
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">로그아웃</span>
-            </Button>
+            <>
+              <Button variant="ghost" size="sm" asChild className="gap-2">
+                <Link href="/mypage">
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline">마이페이지</span>
+                </Link>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">로그아웃</span>
+              </Button>
+            </>
           ) : (
             <Button variant="ghost" size="sm" onClick={() => setIsLoginModalOpen(true)} className="gap-2">
               <LogIn className="h-4 w-4" />

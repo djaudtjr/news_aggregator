@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { NewsCard } from "@/components/news-card"
+import { NewsCardCompact } from "@/components/news-card-compact"
+import { NewsCardList } from "@/components/news-card-list"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import type { NewsArticle } from "@/types/article"
+import type { LayoutMode } from "@/hooks/useLayoutMode"
 
 interface NewsFeedProps {
   activeCategory: string
@@ -13,6 +16,7 @@ interface NewsFeedProps {
   timeRange: number
   refreshTrigger: number
   activeRegion: string
+  layoutMode: LayoutMode
 }
 
 export function NewsFeed({
@@ -21,6 +25,7 @@ export function NewsFeed({
   timeRange,
   refreshTrigger,
   activeRegion,
+  layoutMode,
 }: NewsFeedProps) {
   const [articles, setArticles] = useState<NewsArticle[]>([])
   const [loading, setLoading] = useState(true)
@@ -56,13 +61,15 @@ export function NewsFeed({
     // 검색 모드일 때는 카테고리 필터만 무시 (지역 필터는 API에서 처리됨)
     const isSearchMode = searchQuery.trim().length > 0
 
+    // 시간 범위 필터링 (밀리초 단위로 계산)
+    const articleDate = new Date(article.pubDate)
+    const cutoffDate = new Date()
+    const millisecondsInDay = 24 * 60 * 60 * 1000
+    cutoffDate.setTime(cutoffDate.getTime() - timeRange * millisecondsInDay)
+    const matchesTimeRange = articleDate >= cutoffDate
+
     if (isSearchMode) {
       // 검색 모드: 시간 범위만 적용 (지역은 API에서 이미 필터링됨)
-      const articleDate = new Date(article.pubDate)
-      const cutoffDate = new Date()
-      cutoffDate.setDate(cutoffDate.getDate() - timeRange)
-      const matchesTimeRange = articleDate >= cutoffDate
-
       return matchesTimeRange
     }
 
@@ -73,11 +80,6 @@ export function NewsFeed({
     const matchesCategory =
       activeCategory === "all" || (article.category && article.category === activeCategory && article.category !== "all")
     const matchesRegion = activeRegion === "all" || article.region === activeRegion
-
-    const articleDate = new Date(article.pubDate)
-    const cutoffDate = new Date()
-    cutoffDate.setDate(cutoffDate.getDate() - timeRange)
-    const matchesTimeRange = articleDate >= cutoffDate
 
     return matchesCategory && matchesTimeRange && matchesRegion
   })
@@ -125,11 +127,25 @@ export function NewsFeed({
     )
   }
 
+  // 레이아웃 모드에 따른 컨테이너 클래스
+  const containerClass =
+    layoutMode === "grid"
+      ? "grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+      : layoutMode === "list"
+        ? "grid gap-6 md:grid-cols-1"
+        : "space-y-3"
+
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {filteredArticles.map((article) => (
-        <NewsCard key={article.id} article={article} />
-      ))}
+    <div className={containerClass}>
+      {filteredArticles.map((article) => {
+        if (layoutMode === "compact") {
+          return <NewsCardCompact key={article.id} article={article} />
+        } else if (layoutMode === "list") {
+          return <NewsCardList key={article.id} article={article} />
+        } else {
+          return <NewsCard key={article.id} article={article} />
+        }
+      })}
     </div>
   )
 }

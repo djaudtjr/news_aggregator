@@ -228,3 +228,94 @@ COMMENT ON COLUMN search_keyword_analytics.user_id IS '사용자 UID (Supabase A
 COMMENT ON COLUMN search_keyword_analytics.keyword IS '검색한 키워드';
 COMMENT ON COLUMN search_keyword_analytics.search_count IS '해당 사용자가 이 키워드로 검색한 총 횟수';
 COMMENT ON COLUMN search_keyword_analytics.last_searched_at IS '마지막 검색 일시';
+
+
+-- ============================================================================
+-- 북마크 테이블
+-- 사용자가 저장한 뉴스 기사를 저장
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS bookmarks (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  article_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  link TEXT NOT NULL,
+  source TEXT,
+  image_url TEXT,
+  category TEXT,
+  region TEXT,
+  pub_date TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(user_id, article_id)
+);
+
+-- 북마크 테이블 인덱스
+CREATE INDEX IF NOT EXISTS idx_bookmarks_user_id ON bookmarks(user_id);
+CREATE INDEX IF NOT EXISTS idx_bookmarks_created_at ON bookmarks(created_at DESC);
+
+-- Row Level Security (RLS) 정책 설정
+-- 북마크: 사용자는 자신의 북마크만 조회/수정/삭제 가능
+ALTER TABLE bookmarks ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own bookmarks"
+  ON bookmarks FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own bookmarks"
+  ON bookmarks FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own bookmarks"
+  ON bookmarks FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- 설명
+COMMENT ON TABLE bookmarks IS '사용자가 저장한 뉴스 기사 북마크';
+COMMENT ON COLUMN bookmarks.user_id IS '사용자 UID (Supabase Auth)';
+COMMENT ON COLUMN bookmarks.article_id IS '뉴스 기사의 고유 ID';
+COMMENT ON COLUMN bookmarks.title IS '뉴스 제목';
+COMMENT ON COLUMN bookmarks.link IS '뉴스 원문 링크';
+
+
+-- ============================================================================
+-- 사용자 설정 테이블
+-- 사용자의 관심 카테고리, 지역 등 개인화 설정 저장
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS user_preferences (
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  preferred_categories TEXT[] DEFAULT '{}',
+  preferred_region TEXT DEFAULT 'all',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- updated_at 자동 업데이트 트리거
+CREATE TRIGGER update_user_preferences_updated_at
+  BEFORE UPDATE ON user_preferences
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- Row Level Security (RLS) 정책 설정
+-- 사용자 설정: 사용자는 자신의 설정만 조회/수정 가능
+ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own preferences"
+  ON user_preferences FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own preferences"
+  ON user_preferences FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own preferences"
+  ON user_preferences FOR UPDATE
+  USING (auth.uid() = user_id);
+
+-- 설명
+COMMENT ON TABLE user_preferences IS '사용자 개인화 설정 (관심 카테고리, 지역 등)';
+COMMENT ON COLUMN user_preferences.user_id IS '사용자 UID (Supabase Auth)';
+COMMENT ON COLUMN user_preferences.preferred_categories IS '선호하는 뉴스 카테고리 배열';
+COMMENT ON COLUMN user_preferences.preferred_region IS '선호하는 지역 (all, domestic, international)';
