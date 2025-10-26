@@ -126,6 +126,21 @@ export function NewsCard({ article }: NewsCardProps) {
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             onError={handleImageError}
           />
+          {/* 북마크 버튼을 이미지 위에 배치 */}
+          <Button
+            variant="secondary"
+            size="icon"
+            className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm hover:bg-background/90 shadow-md"
+            onClick={handleBookmark}
+            disabled={!user}
+            title={user ? (isBookmarked(article.id) ? "북마크 해제" : "북마크") : "로그인 필요"}
+          >
+            {isBookmarked(article.id) ? (
+              <BookmarkCheck className="h-4 w-4 fill-current text-primary" />
+            ) : (
+              <Bookmark className="h-4 w-4" />
+            )}
+          </Button>
         </div>
       )}
       <CardHeader>
@@ -165,34 +180,22 @@ export function NewsCard({ article }: NewsCardProps) {
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex gap-2">
+      <CardFooter className="flex flex-col gap-2">
+        {/* AI 요약 버튼 - 전체 너비 */}
         <Button
           variant="outline"
-          className="flex-1 bg-transparent"
+          className="w-full bg-transparent"
           onClick={handleSummarize}
           disabled={isLoading || !!summary}
         >
           <Sparkles className="mr-2 h-4 w-4" />
           {isLoading ? "요약 중..." : summary ? "요약 완료" : "AI 요약"}
         </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          className="bg-transparent"
-          onClick={handleBookmark}
-          disabled={!user}
-          title={user ? (isBookmarked(article.id) ? "북마크 해제" : "북마크") : "로그인 필요"}
-        >
-          {isBookmarked(article.id) ? (
-            <BookmarkCheck className="h-4 w-4 fill-current" />
-          ) : (
-            <Bookmark className="h-4 w-4" />
-          )}
-        </Button>
-        <Button variant="outline" className="flex-1 bg-transparent" asChild>
+        {/* Read More 버튼 - 전체 너비 */}
+        <Button variant="default" className="w-full" asChild>
           <a href={article.link} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>
-            Read More
-            <ExternalLink className="ml-2 h-4 w-4" />
+            <ExternalLink className="mr-2 h-4 w-4" />
+            원문 보기
           </a>
         </Button>
       </CardFooter>

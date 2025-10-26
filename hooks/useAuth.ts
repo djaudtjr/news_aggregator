@@ -11,11 +11,29 @@ export function useAuth() {
   useEffect(() => {
     // 현재 사용자 정보 가져오기
     const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabaseBrowser.auth.getUser()
-      setUser(user)
-      setLoading(false)
+      try {
+        const {
+          data: { user },
+          error,
+        } = await supabaseBrowser.auth.getUser()
+
+        // Refresh token 에러 처리
+        if (error) {
+          console.warn("[Auth] Token error:", error.message)
+          // 토큰이 유효하지 않으면 세션 정리
+          if (error.message.includes("refresh") || error.message.includes("token")) {
+            await supabaseBrowser.auth.signOut()
+            setUser(null)
+          }
+        } else {
+          setUser(user)
+        }
+      } catch (err) {
+        console.error("[Auth] Fetch user error:", err)
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchUser()
@@ -23,7 +41,18 @@ export function useAuth() {
     // 인증 상태 변경 리스너
     const {
       data: { subscription },
-    } = supabaseBrowser.auth.onAuthStateChange((_event, session) => {
+    } = supabaseBrowser.auth.onAuthStateChange(async (event, session) => {
+      console.log("[Auth] State change:", event)
+
+      // 토큰 만료나 에러 발생 시 자동 로그아웃
+      if (event === "TOKEN_REFRESHED") {
+        console.log("[Auth] Token refreshed successfully")
+      } else if (event === "SIGNED_OUT") {
+        setUser(null)
+      } else if (event === "SIGNED_IN") {
+        setUser(session?.user ?? null)
+      }
+
       setUser(session?.user ?? null)
       setLoading(false)
     })

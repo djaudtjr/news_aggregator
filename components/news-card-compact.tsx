@@ -89,7 +89,7 @@ export function NewsCardCompact({ article }: NewsCardCompactProps) {
       onClick={handleClick}
     >
       {isValidUrl(article.imageUrl) && (
-        <div className="shrink-0">
+        <div className="relative shrink-0">
           <img
             src={article.imageUrl}
             alt={article.title}
@@ -98,6 +98,21 @@ export function NewsCardCompact({ article }: NewsCardCompactProps) {
               e.currentTarget.style.display = "none"
             }}
           />
+          {/* 이미지 위에 북마크 버튼 */}
+          <Button
+            variant="secondary"
+            size="icon"
+            className="absolute -top-1 -right-1 h-6 w-6 bg-background/90 backdrop-blur-sm hover:bg-background shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={handleBookmark}
+            disabled={!user}
+            title={user ? (isBookmarked(article.id) ? "북마크 해제" : "북마크") : "로그인 필요"}
+          >
+            {isBookmarked(article.id) ? (
+              <BookmarkCheck className="h-3 w-3 fill-current text-primary" />
+            ) : (
+              <Bookmark className="h-3 w-3" />
+            )}
+          </Button>
         </div>
       )}
       <div className="flex-1 min-w-0">
@@ -118,20 +133,23 @@ export function NewsCardCompact({ article }: NewsCardCompactProps) {
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={handleBookmark}
-          disabled={!user}
-          title={user ? (isBookmarked(article.id) ? "북마크 해제" : "북마크") : "로그인 필요"}
-        >
-          {isBookmarked(article.id) ? (
-            <BookmarkCheck className="h-4 w-4 fill-current" />
-          ) : (
-            <Bookmark className="h-4 w-4" />
-          )}
-        </Button>
+        {/* 이미지 없을 때만 북마크 버튼 표시 */}
+        {!isValidUrl(article.imageUrl) && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={handleBookmark}
+            disabled={!user}
+            title={user ? (isBookmarked(article.id) ? "북마크 해제" : "북마크") : "로그인 필요"}
+          >
+            {isBookmarked(article.id) ? (
+              <BookmarkCheck className="h-4 w-4 fill-current" />
+            ) : (
+              <Bookmark className="h-4 w-4" />
+            )}
+          </Button>
+        )}
         <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
     </div>
