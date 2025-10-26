@@ -530,7 +530,6 @@ export default function MyPage() {
                 <div className="flex gap-4">
                   {[
                     { value: 6, label: "오전 6시" },
-                    { value: 12, label: "오후 12시" },
                     { value: 18, label: "오후 6시" },
                   ].map((option) => (
                     <div key={option.value} className="flex items-center space-x-2">

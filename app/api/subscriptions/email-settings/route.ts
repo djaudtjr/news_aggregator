@@ -64,9 +64,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid delivery day (must be 0-6)" }, { status: 400 })
     }
 
-    // 발송 시간 유효성 검사 (6, 12, 18만 허용)
-    if (deliveryHour !== undefined && ![6, 12, 18].includes(deliveryHour)) {
-      return NextResponse.json({ error: "Invalid delivery hour (must be 6, 12, or 18)" }, { status: 400 })
+    // 발송 시간 유효성 검사 (6, 18만 허용)
+    if (deliveryHour !== undefined && ![6, 18].includes(deliveryHour)) {
+      return NextResponse.json({ error: "Invalid delivery hour (must be 6 or 18)" }, { status: 400 })
     }
 
     const settingsData = {
