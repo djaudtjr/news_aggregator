@@ -19,7 +19,7 @@ interface NewsItem {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId } = body
+    const { userId, scheduledDeliveryHour } = body
 
     if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
@@ -40,23 +40,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email subscription is disabled" }, { status: 400 })
     }
 
-    // 2. 현재 요일 및 시간 체크 (KST)
-    const now = new Date()
-    const kstOffset = 9 * 60 // KST는 UTC+9
-    const kstTime = new Date(now.getTime() + kstOffset * 60 * 1000)
-    const currentDay = kstTime.getUTCDay() // 0=일, 1=월, ..., 6=토
-    const currentHour = kstTime.getUTCHours()
-
-    // 발송 요일 체크
-    if (!settings.delivery_days.includes(currentDay)) {
-      return NextResponse.json({
-        message: "Today is not a delivery day",
-        currentDay,
-        deliveryDays: settings.delivery_days
-      })
-    }
-
-    // 3. 구독 키워드 조회
+    // 2. 구독 키워드 조회
+    // 참고: 요일/시간 체크는 Cron API에서 이미 수행됨
     const { data: keywords, error: keywordsError } = await supabase
       .from("subscribed_keywords")
       .select("keyword")
@@ -66,7 +51,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No subscribed keywords found" }, { status: 404 })
     }
 
-    // 4. 최근 24시간 이내 뉴스 검색
+    // 3. 최근 24시간 이내 뉴스 검색
+    const now = new Date()
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
 
     const allNews: NewsItem[] = []
@@ -122,17 +108,42 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // 5. 이메일 HTML 생성
+    // 4. 이메일 HTML 생성
     const emailHtml = generateEmailHtml(topNews, keywords.map(k => k.keyword))
 
-    // 6. 이메일 발송
+    // 5. 이메일 발송 (예약 발송 또는 즉시 발송)
+    let scheduledAt: string | undefined = undefined
+
+    // scheduledDeliveryHour가 제공된 경우 예약 발송
+    if (scheduledDeliveryHour !== undefined) {
+      const kstOffset = 9 * 60 // KST는 UTC+9
+      const kstNow = new Date(now.getTime() + kstOffset * 60 * 1000)
+
+      // 오늘 날짜의 scheduledDeliveryHour 시간으로 설정
+      const scheduledKstTime = new Date(kstNow)
+      scheduledKstTime.setUTCHours(scheduledDeliveryHour, 0, 0, 0)
+
+      // UTC로 변환
+      const scheduledUtcTime = new Date(scheduledKstTime.getTime() - kstOffset * 60 * 1000)
+      scheduledAt = scheduledUtcTime.toISOString()
+
+      console.log(`[Email Digest] Scheduling email for ${settings.email} at ${scheduledAt} (${scheduledDeliveryHour}:00 KST)`)
+    }
+
     try {
-      const { data: emailData, error: emailError } = await resend.emails.send({
+      const emailPayload: any = {
         from: "News Aggregator <onboarding@resend.dev>", // TODO: 실제 도메인으로 변경
         to: [settings.email],
         subject: `📰 오늘의 뉴스 다이제스트 - ${keywords.map(k => k.keyword).join(", ")}`,
         html: emailHtml,
-      })
+      }
+
+      // 예약 발송 시간이 있으면 추가
+      if (scheduledAt) {
+        emailPayload.scheduledAt = scheduledAt
+      }
+
+      const { data: emailData, error: emailError } = await resend.emails.send(emailPayload)
 
       if (emailError) {
         console.error("[Email Digest] Resend error:", emailError)
@@ -149,7 +160,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Failed to send email", details: emailError }, { status: 500 })
       }
 
-      // 7. 성공 로그 기록 및 last_sent_at 업데이트
+      // 6. 성공 로그 기록 및 last_sent_at 업데이트
       await Promise.all([
         supabase.from("email_delivery_logs").insert({
           user_id: userId,
@@ -166,7 +177,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         newsCount: topNews.length,
-        emailId: emailData?.id
+        emailId: emailData?.id,
+        scheduledAt: scheduledAt || null
       })
     } catch (emailError: any) {
       console.error("[Email Digest] Send error:", emailError)
