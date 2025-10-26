@@ -1,10 +1,10 @@
 import { createClient } from "@supabase/supabase-js"
 
 const supabaseUrl = process.env.NEXT_SUPABASE_URL || ""
-const supabaseSecretKey = process.env.NEXT_SUPABASE_SECRET_KEY || ""
+const supabaseAnonKey = process.env.NEXT_SUPABASE_ANON_KEY || ""
 
-if (!supabaseUrl || !supabaseSecretKey) {
+if (!supabaseUrl || !supabaseAnonKey) {
   console.warn("[v0] Supabase credentials not found in environment variables")
 }
 
-export const supabase = createClient(supabaseUrl, supabaseSecretKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)

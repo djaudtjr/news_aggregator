@@ -56,6 +56,18 @@ function normalizeCategoryString(rssCategory: string | string[]): string {
  * RSS 카테고리 문자열에서 카테고리 추출
  */
 function checkRSSCategory(categoryLower: string): NewsCategory | null {
+  // Politics (정치) - 우선순위 높임
+  if (
+    categoryLower.includes("politics") ||
+    categoryLower.includes("political") ||
+    categoryLower.includes("government") ||
+    categoryLower.includes("정치") ||
+    categoryLower.includes("국회") ||
+    categoryLower.includes("선거")
+  ) {
+    return "politics"
+  }
+
   if (
     categoryLower.includes("business") ||
     categoryLower.includes("economy") ||
@@ -187,20 +199,33 @@ function categorizeByKeywords(text: string): NewsCategory {
     text.includes("tech") ||
     text.includes("ai") ||
     text.includes("artificial intelligence") ||
+    text.includes("machine learning") ||
     text.includes("software") ||
+    text.includes("hardware") ||
     text.includes("computer") ||
     text.includes("digital") ||
     text.includes("internet") ||
-    text.includes("startup") ||
     text.includes("app") ||
     text.includes("mobile") ||
     text.includes("robot") ||
     text.includes("automation") ||
     text.includes("cyber") ||
+    text.includes("blockchain") ||
+    text.includes("crypto") ||
+    text.includes("metaverse") ||
+    text.includes("vr") ||
+    text.includes("ar") ||
+    text.includes("iot") ||
+    text.includes("cloud computing") ||
+    text.includes("5g") ||
+    text.includes("semiconductor") ||
     // 한글 키워드
     text.includes("기술") ||
     text.includes("인공지능") ||
+    text.includes("머신러닝") ||
+    text.includes("딥러닝") ||
     text.includes("소프트웨어") ||
+    text.includes("하드웨어") ||
     text.includes("컴퓨터") ||
     text.includes("디지털") ||
     text.includes("인터넷") ||
@@ -208,7 +233,14 @@ function categorizeByKeywords(text: string): NewsCategory {
     text.includes("모바일") ||
     text.includes("로봇") ||
     text.includes("자동화") ||
-    text.includes("사이버")
+    text.includes("사이버") ||
+    text.includes("블록체인") ||
+    text.includes("암호화폐") ||
+    text.includes("가상화폐") ||
+    text.includes("메타버스") ||
+    text.includes("반도체") ||
+    text.includes("칩") ||
+    text.includes("클라우드")
   ) {
     return "technology"
   }
@@ -527,7 +559,75 @@ function categorizeByKeywords(text: string): NewsCategory {
     return "entertainment"
   }
 
-  // World (세계/국제 뉴스)
+  // Politics (정치) - World보다 먼저 체크하여 우선순위 확보
+  if (
+    // 영문 키워드 - 정치 일반
+    text.includes("politics") ||
+    text.includes("political") ||
+    text.includes("politician") ||
+    text.includes("president") ||
+    text.includes("prime minister") ||
+    text.includes("minister") ||
+    text.includes("congress") ||
+    text.includes("parliament") ||
+    text.includes("senate") ||
+    text.includes("election") ||
+    text.includes("vote") ||
+    text.includes("voting") ||
+    text.includes("campaign") ||
+    text.includes("party") ||
+    text.includes("democrat") ||
+    text.includes("republican") ||
+    text.includes("liberal") ||
+    text.includes("conservative") ||
+    text.includes("legislation") ||
+    text.includes("law") ||
+    text.includes("policy") ||
+    text.includes("government") ||
+    text.includes("governance") ||
+    // 한글 키워드 - 정치 일반
+    text.includes("정치") ||
+    text.includes("정당") ||
+    text.includes("국회") ||
+    text.includes("의원") ||
+    text.includes("장관") ||
+    text.includes("선거") ||
+    text.includes("투표") ||
+    text.includes("대선") ||
+    text.includes("총선") ||
+    text.includes("지선") ||
+    text.includes("보궐선거") ||
+    text.includes("여당") ||
+    text.includes("야당") ||
+    text.includes("법안") ||
+    text.includes("정책") ||
+    text.includes("국정") ||
+    text.includes("정부") ||
+    text.includes("행정부") ||
+    text.includes("입법부") ||
+    text.includes("사법부") ||
+    // 한글 키워드 - 한국 정당
+    text.includes("민주당") ||
+    text.includes("국민의힘") ||
+    text.includes("진보당") ||
+    text.includes("정의당") ||
+    // 한글 키워드 - 정치인 직책
+    text.includes("대통령") ||
+    text.includes("총리") ||
+    text.includes("국무총리") ||
+    text.includes("청와대") ||
+    text.includes("대통령실") ||
+    // 정치 + 특정 키워드 조합 (정확도 향상)
+    (text.includes("법") &&
+      (text.includes("개정") ||
+        text.includes("제정") ||
+        text.includes("통과") ||
+        text.includes("발의")))
+  ) {
+    return "politics"
+  }
+
+  // World (세계/국제 뉴스) - 정치 제외한 국제 뉴스
   if (
     // 영문 키워드
     text.includes("world") ||
@@ -549,10 +649,7 @@ function categorizeByKeywords(text: string): NewsCategory {
     text.includes("유엔") ||
     text.includes("정상회담") ||
     text.includes("조약") ||
-    text.includes("국가") ||
-    text.includes("정부") ||
-    text.includes("대통령") ||
-    text.includes("총리")
+    text.includes("국가")
   ) {
     return "world"
   }

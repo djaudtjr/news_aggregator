@@ -4,11 +4,13 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, Clock, Sparkles } from "lucide-react"
+import { ExternalLink, Clock, Sparkles, Bookmark, BookmarkCheck } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import Image from "next/image"
 import { useArticleSummary } from "@/hooks/useArticleSummary"
 import { useAuth } from "@/hooks/useAuth"
+import { useRecentArticles } from "@/hooks/useRecentArticles"
+import { useBookmarks } from "@/hooks/useBookmarks"
 import { getNewsLogo } from "@/lib/utils/news-logos"
 import type { NewsArticle } from "@/types/article"
 
@@ -19,15 +21,56 @@ interface NewsCardProps {
 export function NewsCard({ article }: NewsCardProps) {
   const timeAgo = formatDistanceToNow(new Date(article.pubDate), { addSuffix: true })
   const { user } = useAuth()
-  const { summary, keyPoints, isLoading, fromCache, generateSummary } = useArticleSummary()
-  const [imageUrl, setImageUrl] = useState(article.imageUrl)
+  const { summary, keyPoints, isLoading, fromCache, generateSummary } = useArticleSummary(article.id)
+  const { addRecentArticle } = useRecentArticles()
+  const { toggleBookmark, isBookmarked } = useBookmarks()
+
+  // URL 유효성 검사
+  const isValidUrl = (url: string | undefined): boolean => {
+    if (!url) return false
+    try {
+      new URL(url)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const [imageUrl, setImageUrl] = useState(isValidUrl(article.imageUrl) ? article.imageUrl : null)
   const [retryCount, setRetryCount] = useState(0)
 
   const handleSummarize = () => {
     generateSummary(article.title, article.description, article.link, article.id, article.category)
   }
 
+  const handleBookmark = async () => {
+    await toggleBookmark({
+      id: article.id,
+      title: article.title,
+      description: article.description,
+      link: article.link,
+      source: article.source,
+      imageUrl: article.imageUrl,
+      category: article.category,
+      region: article.region,
+      pubDate: article.pubDate,
+    })
+  }
+
   const handleLinkClick = async () => {
+    // 최근 본 기사에 추가
+    addRecentArticle({
+      id: article.id,
+      title: article.title,
+      description: article.description,
+      link: article.link,
+      source: article.source,
+      imageUrl: article.imageUrl,
+      category: article.category,
+      region: article.region,
+      pubDate: article.pubDate,
+    })
+
     // 링크 클릭 추적 (백그라운드로 실행, 에러 무시)
     try {
       await fetch("/api/analytics/link-click", {
@@ -55,8 +98,12 @@ export function NewsCard({ article }: NewsCardProps) {
       console.log(`[v0] Image load failed for ${article.source}, retrying...`)
       setRetryCount(1)
       // 이미지 URL에 timestamp를 추가하여 재시도
-      if (article.imageUrl) {
+      if (article.imageUrl && isValidUrl(article.imageUrl)) {
         setImageUrl(`${article.imageUrl}?retry=1`)
+      } else {
+        // URL이 유효하지 않으면 바로 로고로 전환
+        const logoUrl = getNewsLogo(article.source)
+        setImageUrl(logoUrl)
       }
     }
     // 두 번째 실패: 뉴스 소스 로고로 fallback
@@ -127,6 +174,20 @@ export function NewsCard({ article }: NewsCardProps) {
         >
           <Sparkles className="mr-2 h-4 w-4" />
           {isLoading ? "요약 중..." : summary ? "요약 완료" : "AI 요약"}
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="bg-transparent"
+          onClick={handleBookmark}
+          disabled={!user}
+          title={user ? (isBookmarked(article.id) ? "북마크 해제" : "북마크") : "로그인 필요"}
+        >
+          {isBookmarked(article.id) ? (
+            <BookmarkCheck className="h-4 w-4 fill-current" />
+          ) : (
+            <Bookmark className="h-4 w-4" />
+          )}
         </Button>
         <Button variant="outline" className="flex-1 bg-transparent" asChild>
           <a href={article.link} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>

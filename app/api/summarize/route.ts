@@ -50,16 +50,22 @@ export async function POST(request: NextRequest) {
       console.log("[v0] DB check error (continuing with new summary):", error)
     }
 
-    // 2. 뉴스 전문 크롤링
+    // 2. 뉴스 전문 크롤링 (10초 타임아웃)
     console.log("[v0] Crawling article content from:", link)
     let fullContent = ""
 
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10초 타임아웃
+
       const crawlResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/crawl`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: link }),
+        signal: controller.signal,
       })
+
+      clearTimeout(timeoutId)
 
       if (crawlResponse.ok) {
         const crawlData = await crawlResponse.json()
@@ -68,8 +74,12 @@ export async function POST(request: NextRequest) {
       } else {
         console.log("[v0] Crawling failed, using title and description")
       }
-    } catch (error) {
-      console.log("[v0] Crawling error, using title and description:", error)
+    } catch (error: any) {
+      if (error.name === "AbortError") {
+        console.log("[v0] Crawling timeout (10s), using title and description")
+      } else {
+        console.log("[v0] Crawling error, using title and description:", error)
+      }
     }
 
     // 크롤링 실패 시 title + description 사용

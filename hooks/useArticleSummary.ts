@@ -1,17 +1,46 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "./useAuth"
 
 /**
  * 기사 AI 요약 커스텀 훅
  * 전문 크롤링 + OpenAI API + Supabase 저장/조회
  */
-export function useArticleSummary() {
+export function useArticleSummary(newsId: string) {
   const { user } = useAuth()
   const [summary, setSummary] = useState<string | null>(null)
   const [keyPoints, setKeyPoints] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fromCache, setFromCache] = useState(false)
+
+  // 컴포넌트 마운트 시 기존 요약 불러오기
+  useEffect(() => {
+    if (newsId) {
+      loadExistingSummary()
+    }
+  }, [newsId])
+
+  /**
+   * 기존 요약 불러오기 (캐시 확인)
+   */
+  const loadExistingSummary = async () => {
+    if (!newsId) return
+
+    try {
+      const response = await fetch(`/api/summary/${newsId}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.summary) {
+          setSummary(data.summary)
+          setKeyPoints(data.keyPoints || [])
+          setFromCache(true)
+        }
+      }
+    } catch (err) {
+      // 기존 요약이 없으면 무시
+      console.log(`[v0] No cached summary for ${newsId}`)
+    }
+  }
 
   /**
    * 기사 요약 생성 (전문 크롤링 + DB 캐싱)
