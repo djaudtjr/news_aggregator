@@ -15,11 +15,16 @@
 ### 2. 이메일 발송 설정
 - 이메일 주소 설정
 - 발송 요일 선택 (일~토)
-- 발송 시간 설정 (0-23시, 기본 7시)
+- 발송 시간 선택 (6시, 12시, 18시 중 라디오 버튼 선택)
 - 활성화/비활성화 토글
 
-### 3. 자동 이메일 발송
-- Vercel Cron Job으로 매일 오전 7시(KST) 실행
+### 3. 예약 이메일 발송 시스템
+- **Cron Job 실행 시간**: KST 기준 5시, 11시, 17시 (발송 1시간 전)
+- **실제 발송 시간**: KST 기준 6시, 12시, 18시 (Resend 예약 발송)
+- **처리 방식**:
+  - 5시 Cron: 6시 발송 구독자를 위한 뉴스 수집 및 예약 발송
+  - 11시 Cron: 12시 발송 구독자를 위한 뉴스 수집 및 예약 발송
+  - 17시 Cron: 18시 발송 구독자를 위한 뉴스 수집 및 예약 발송
 - 최근 24시간 이내 뉴스만 선별
 - 최대 10개 뉴스 포함
 - 깔끔한 HTML 이메일 템플릿
@@ -43,8 +48,8 @@ CREATE TABLE email_subscription_settings (
   user_id UUID PRIMARY KEY,
   enabled BOOLEAN DEFAULT false,
   email TEXT NOT NULL,
-  delivery_days INTEGER[] DEFAULT '{1,2,3,4,5}',
-  delivery_hour INTEGER DEFAULT 7,
+  delivery_days INTEGER[] DEFAULT '{1,2,3,4,5}',  -- 0=일, 1=월, ..., 6=토
+  delivery_hour INTEGER DEFAULT 6 CHECK (delivery_hour IN (6, 12, 18)),  -- 6, 12, 18시만 허용
   last_sent_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE,
   updated_at TIMESTAMP WITH TIME ZONE
@@ -144,18 +149,35 @@ Cron Job은 `vercel.json`에 정의되어 있으며, 배포 시 자동으로 설
 
 ### 이메일 발송 로직
 
-1. **자동 발송 (Cron Job)**
-   - 매일 오전 7시(KST)에 실행
+1. **예약 발송 (Cron Job)**
+   - **실행 시간**: KST 5시, 11시, 17시 (실제 발송 1시간 전)
+   - **발송 시간**: KST 6시, 12시, 18시 (Resend 예약 발송 기능 사용)
    - 활성화된 모든 구독자 조회
-   - 오늘이 발송 요일인 사용자에게만 발송
+   - 오늘이 발송 요일이고, 1시간 후 발송 시간에 해당하는 사용자만 필터링
+   - 각 사용자별로 뉴스 수집 → 이메일 생성 → 예약 발송
 
-2. **뉴스 선별**
+2. **처리 흐름**
+   ```
+   KST 05:00 (UTC 20:00) - Cron Job 실행
+       ↓
+   delivery_hour = 6인 구독자 필터링
+       ↓
+   각 구독자의 키워드로 뉴스 검색 & 크롤링
+       ↓
+   이메일 HTML 생성
+       ↓
+   Resend scheduledAt="06:00 KST"로 예약 발송
+       ↓
+   KST 06:00 - Resend가 자동으로 이메일 발송
+   ```
+
+3. **뉴스 선별**
    - 각 키워드별로 최근 24시간 이내 뉴스 검색
    - 제목 또는 본문에 키워드 포함된 뉴스만 선택
    - 중복 제거 후 최신순 정렬
    - 상위 10개 선택
 
-3. **이메일 템플릿**
+4. **이메일 템플릿**
    - 깔끔한 HTML 디자인
    - 뉴스 제목, 설명, 출처, 날짜 포함
    - 원문 링크 제공
@@ -179,22 +201,35 @@ DELETE /api/subscriptions/email-settings?userId={userId}
 
 ### 이메일 발송
 ```
-POST   /api/email/send-digest           # 특정 사용자에게 발송
-GET    /api/cron/send-daily-digest      # 모든 구독자에게 발송 (Cron용)
+POST   /api/email/send-digest           # 특정 사용자에게 발송 (즉시 또는 예약)
+       Body: { userId: string, scheduledDeliveryHour?: number }
+       Response: { success: boolean, newsCount: number, scheduledAt?: string }
+
+GET    /api/cron/send-daily-digest      # 모든 구독자에게 예약 발송 (Cron용)
+       - KST 5시, 11시, 17시에 실행
+       - 1시간 후 발송 시간 구독자 필터링
+       - Resend 예약 발송 API 사용
 ```
 
 ## 🔍 테스트 방법
 
 ### 로컬 테스트
 
-1. **수동 이메일 발송 테스트**
+1. **즉시 이메일 발송 테스트**
    ```bash
    curl -X POST http://localhost:3000/api/email/send-digest \
      -H "Content-Type: application/json" \
      -d '{"userId": "your-user-id"}'
    ```
 
-2. **Cron Job 테스트**
+2. **예약 이메일 발송 테스트** (1시간 후 발송)
+   ```bash
+   curl -X POST http://localhost:3000/api/email/send-digest \
+     -H "Content-Type: application/json" \
+     -d '{"userId": "your-user-id", "scheduledDeliveryHour": 12}'
+   ```
+
+3. **Cron Job 테스트**
    ```bash
    curl http://localhost:3000/api/cron/send-daily-digest
    ```
@@ -248,9 +283,13 @@ GROUP BY user_id;
      ON news_summaries(pub_date DESC);
      ```
 
-4. **타임존**
+4. **타임존 및 스케줄**
    - 모든 시간은 KST(UTC+9) 기준
-   - 서버가 다른 타임존에 있어도 올바르게 작동
+   - Vercel Cron은 UTC로 설정 (vercel.json):
+     - `0 20 * * *` (20:00 UTC = 05:00 KST 다음날)
+     - `0 2 * * *` (02:00 UTC = 11:00 KST)
+     - `0 8 * * *` (08:00 UTC = 17:00 KST)
+   - Resend 예약 발송은 KST로 변환하여 ISO 8601 형식으로 전달
 
 ## 🔒 보안
 
@@ -304,6 +343,14 @@ GROUP BY user_id;
    - 최신 코드가 배포되었는지 확인
    - Functions 탭에서 Cron 설정 확인
 
+## 🎯 구현 완료 기능
+
+- [x] **예약 발송 시스템**: Resend scheduledAt API 사용
+- [x] **1시간 전 뉴스 수집**: 발송 시간 1시간 전에 Cron 실행
+- [x] **발송 시간 제한**: 6시, 12시, 18시만 선택 가능 (라디오 버튼)
+- [x] **서버 부하 분산**: 여러 구독자의 뉴스를 충분한 시간동안 수집
+- [x] **정확한 발송 시간**: Resend의 예약 발송으로 정확한 시간에 배달
+
 ## 📈 향후 개선 사항
 
 - [ ] 이메일 템플릿 커스터마이징
@@ -313,3 +360,4 @@ GROUP BY user_id;
 - [ ] 구독 통계 대시보드
 - [ ] 다국어 지원
 - [ ] 푸시 알림 통합
+- [ ] 뉴스 수집 실패 시 재시도 로직

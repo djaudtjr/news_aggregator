@@ -49,6 +49,22 @@
 - **자동 새로고침**: 수동 새로고침 및 상태 초기화
 - **로딩 상태**: 스켈레톤 화면 및 로딩 인디케이터
 
+### 📧 이메일 구독 기능
+
+- **키워드 구독**: 최대 3개 키워드 구독 (뉴스 제목/본문 검색)
+- **예약 발송 시스템**:
+  - Cron Job 실행: KST 5시, 11시, 17시 (발송 1시간 전)
+  - 실제 발송: KST 6시, 12시, 18시 (Resend 예약 발송)
+  - 여러 구독자의 뉴스를 충분한 시간 동안 수집
+- **발송 설정**:
+  - 발송 요일 선택 (일~토)
+  - 발송 시간 선택 (6시, 12시, 18시 라디오 버튼)
+  - 활성화/비활성화 토글
+- **이메일 템플릿**:
+  - 깔끔한 HTML 디자인
+  - 최근 24시간 이내 뉴스 최대 10개
+  - 뉴스 제목, 설명, 출처, 날짜, 원문 링크
+
 ## 기술 스택
 
 ### 프론트엔드
@@ -68,6 +84,8 @@
 - **AI**: OpenAI API (GPT-4o-mini)
 - **데이터베이스**: Supabase (PostgreSQL)
 - **번역**: Naver Cloud Papago API
+- **이메일**: Resend (예약 발송 지원)
+- **Cron**: Vercel Cron Jobs
 
 ### 개발 도구
 
@@ -168,8 +186,14 @@ news-aggregator/
    NAVER_CLIENT_ID=your_naver_client_id
    NAVER_CLIENT_SECRET=your_naver_client_secret
 
+   # Resend (이메일 발송)
+   RESEND_API_KEY=your_resend_api_key
+
    # Base URL
    NEXT_PUBLIC_BASE_URL=http://localhost:3000
+
+   # (선택) Cron Job 보안
+   CRON_SECRET=your_random_secret
    ```
 
 4. **Supabase 데이터베이스 설정**

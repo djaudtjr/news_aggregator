@@ -154,13 +154,25 @@ news-aggregator/
   - 의미 없는 키워드 필터링
   - Supabase에 키워드 통계 저장
 
+#### app/api/cron/send-daily-digest/route.ts
+- **역할**: Cron Job 오케스트레이터 - 예약 발송 일괄 처리
+- **실행 시간**: KST 5시, 11시, 17시 (UTC 20시, 2시, 8시)
+- **주요 기능**:
+  - 현재 시간 기준 1시간 후 발송 시간 계산 (targetDeliveryHour)
+  - 해당 시간에 발송 받을 구독자 필터링
+  - 각 구독자별로 /api/email/send-digest 호출
+  - scheduledDeliveryHour 파라미터 전달
+
 #### app/api/email/send-digest/route.ts
-- **역할**: 이메일 다이제스트 발송
+- **역할**: 이메일 다이제스트 발송 (즉시 또는 예약)
 - **이메일 서비스**: Resend
 - **주요 기능**:
-  - 구독 키워드 기반 뉴스 조회
-  - HTML 이메일 생성
-  - 발송 로그 기록
+  - 구독 키워드 기반 뉴스 조회 (최근 24시간)
+  - HTML 이메일 템플릿 생성
+  - **즉시 발송**: scheduledDeliveryHour 없이 호출 시
+  - **예약 발송**: scheduledDeliveryHour 제공 시 Resend scheduledAt API 사용
+  - KST → UTC 시간 변환
+  - 발송 로그 기록 (email_delivery_logs)
 
 ### Components
 
@@ -292,7 +304,14 @@ news-aggregator/
 
 ### email_subscription_settings
 - **용도**: 이메일 구독 설정
-- **컬럼**: user_id, email, enabled, delivery_days, delivery_time, last_sent_at
+- **컬럼**:
+  - user_id (PK)
+  - email
+  - enabled (boolean)
+  - delivery_days (integer[], 0=일, 1=월, ..., 6=토)
+  - delivery_hour (integer, 6/12/18만 허용)
+  - last_sent_at
+  - created_at, updated_at
 
 ### subscribed_keywords
 - **용도**: 사용자별 구독 키워드
@@ -360,6 +379,41 @@ User Action (링크 클릭 / 검색 / 요약)
    Supabase (통계 저장)
             ↓
  MyPage (통계 조회 및 표시)
+```
+
+### 5. 이메일 예약 발송
+```
+Vercel Cron (KST 5/11/17시, UTC 20/2/8시)
+            ↓
+app/api/cron/send-daily-digest (GET)
+            ↓
+  현재 시간 KST 변환 + targetDeliveryHour = currentHour + 1
+            ↓
+  Supabase에서 enabled=true 구독자 조회
+            ↓
+  delivery_days에 currentDay 포함 & delivery_hour = targetDeliveryHour 필터링
+            ↓
+  각 구독자별 루프:
+    app/api/email/send-digest (POST)
+      Body: { userId, scheduledDeliveryHour: targetDeliveryHour }
+            ↓
+    subscribed_keywords 조회
+            ↓
+    news_summaries에서 키워드별 뉴스 검색 (최근 24시간)
+            ↓
+    중복 제거 & 최신순 정렬 & 상위 10개
+            ↓
+    HTML 이메일 생성
+            ↓
+    scheduledAt = KST targetDeliveryHour → UTC 변환
+            ↓
+    Resend.emails.send({ ..., scheduledAt })
+            ↓
+    email_delivery_logs 기록
+            ↓
+  결과 집계 및 반환
+            ↓
+Resend가 scheduledAt 시간에 자동 발송 (KST 6/12/18시)
 ```
 
 ## 📊 코드 품질 메트릭

@@ -42,6 +42,21 @@ A modern, AI-powered news aggregation platform that collects, categorizes, and s
 - **Auto-refresh**: Manual refresh with state reset
 - **Loading States**: Skeleton screens and loading indicators
 
+### 📧 Email Subscription
+- **Keyword Subscription**: Subscribe to up to 3 keywords (searches in news titles/content)
+- **Scheduled Delivery System**:
+  - Cron execution: KST 5AM, 11AM, 5PM (1 hour before delivery)
+  - Actual delivery: KST 6AM, 12PM, 6PM (via Resend scheduled sending)
+  - Sufficient time for collecting news for multiple subscribers
+- **Delivery Settings**:
+  - Select delivery days (Sun-Sat)
+  - Choose delivery time (6AM, 12PM, or 6PM via radio buttons)
+  - Enable/disable toggle
+- **Email Template**:
+  - Clean HTML design
+  - Up to 10 news articles from the last 24 hours
+  - Includes news title, description, source, date, and original link
+
 ## Tech Stack
 
 ### Frontend
@@ -59,6 +74,8 @@ A modern, AI-powered news aggregation platform that collects, categorizes, and s
 - **AI**: OpenAI API (GPT-4o-mini)
 - **Database**: Supabase (PostgreSQL)
 - **Translation**: Naver Cloud Papago API
+- **Email**: Resend (with scheduled sending support)
+- **Cron**: Vercel Cron Jobs
 
 ### Development
 - **Package Manager**: pnpm
@@ -121,6 +138,7 @@ news-aggregator/
 - OpenAI API key
 - Naver Cloud Platform account (for Papago API)
 - Naver Developers account (for News API)
+- Resend account (for email delivery)
 
 ### Setup
 
@@ -153,8 +171,14 @@ news-aggregator/
    NAVER_CLIENT_ID=your_naver_client_id
    NAVER_CLIENT_SECRET=your_naver_client_secret
 
+   # Resend (Email Delivery)
+   RESEND_API_KEY=your_resend_api_key
+
    # Base URL
    NEXT_PUBLIC_BASE_URL=http://localhost:3000
+
+   # (Optional) Cron Job Security
+   CRON_SECRET=your_random_secret
    ```
 
 4. **Set up Supabase database**
@@ -255,6 +279,49 @@ Generates AI summary with database caching.
 }
 ```
 
+### POST /api/email/send-digest
+Sends email digest (immediate or scheduled).
+
+**Request Body:**
+```json
+{
+  "userId": "user-uuid",
+  "scheduledDeliveryHour": 12  // Optional: 6, 12, or 18 for scheduled delivery
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "newsCount": 8,
+  "emailId": "email-id",
+  "scheduledAt": "2025-10-26T12:00:00Z"  // Only present if scheduled
+}
+```
+
+### GET /api/cron/send-daily-digest
+Processes scheduled email delivery for all subscribers (Cron only).
+
+**Execution Schedule:**
+- KST 5AM, 11AM, 5PM (UTC 8PM, 2AM, 8AM)
+- Filters subscribers by delivery hour (1 hour ahead)
+- Uses Resend scheduled sending API
+
+**Response:**
+```json
+{
+  "message": "Daily digest scheduled email job completed",
+  "currentDay": 1,
+  "currentHour": 5,
+  "targetDeliveryHour": 6,
+  "processedCount": 25,
+  "successCount": 24,
+  "failedCount": 1,
+  "results": [...]
+}
+```
+
 ## Database Schema
 
 ### news_summaries Table
@@ -268,6 +335,44 @@ CREATE TABLE news_summaries (
   created_at TIMESTAMP WITH TIME ZONE,
   updated_at TIMESTAMP WITH TIME ZONE,
   view_count INTEGER DEFAULT 0        -- Number of views
+);
+```
+
+### email_subscription_settings Table
+```sql
+CREATE TABLE email_subscription_settings (
+  user_id UUID PRIMARY KEY,
+  enabled BOOLEAN DEFAULT false,
+  email TEXT NOT NULL,
+  delivery_days INTEGER[] DEFAULT '{1,2,3,4,5}',  -- 0=Sun, 1=Mon, ..., 6=Sat
+  delivery_hour INTEGER DEFAULT 6 CHECK (delivery_hour IN (6, 12, 18)),
+  last_sent_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE,
+  updated_at TIMESTAMP WITH TIME ZONE
+);
+```
+
+### subscribed_keywords Table
+```sql
+CREATE TABLE subscribed_keywords (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id),
+  keyword TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE,
+  UNIQUE(user_id, keyword)
+);
+```
+
+### email_delivery_logs Table
+```sql
+CREATE TABLE email_delivery_logs (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id),
+  email TEXT NOT NULL,
+  status TEXT CHECK (status IN ('success', 'failed', 'pending')),
+  news_count INTEGER DEFAULT 0,
+  error_message TEXT,
+  sent_at TIMESTAMP WITH TIME ZONE
 );
 ```
 
@@ -302,6 +407,28 @@ CREATE TABLE news_summaries (
 3. Attempt translation to English via Papago API
 4. Search international sources with translated query
 5. Combine results from both searches
+
+### Scheduled Email Delivery System
+1. **Cron Job Execution** (KST 5AM, 11AM, 5PM):
+   - Calculate target delivery hour: `currentHour + 1`
+   - Query enabled subscribers from database
+   - Filter by matching `delivery_days` and `delivery_hour`
+
+2. **News Collection** (for each subscriber):
+   - Fetch subscribed keywords
+   - Search news from last 24 hours matching keywords
+   - Deduplicate and sort by recency
+   - Select top 10 articles
+
+3. **Scheduled Sending**:
+   - Generate HTML email template
+   - Convert KST delivery time to UTC ISO 8601 format
+   - Call Resend API with `scheduledAt` parameter
+   - Log delivery attempt to database
+
+4. **Automatic Delivery**:
+   - Resend automatically sends emails at scheduled time
+   - Actual delivery: KST 6AM, 12PM, 6PM
 
 ## Development
 
@@ -347,6 +474,12 @@ pnpm lint
 1. Register at [developers.naver.com](https://developers.naver.com)
 2. Create a News Search API application
 3. Get Client ID and Client Secret
+
+### Resend
+1. Sign up at [resend.com](https://resend.com)
+2. Create an API key
+3. (Optional) Add and verify custom domain for sending
+4. For testing, use `onboarding@resend.dev` as sender
 
 ## Contributing
 
