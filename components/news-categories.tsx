@@ -27,16 +27,21 @@ export function NewsCategories({ activeCategory, onCategoryChange, availableCate
       <span className="text-sm font-medium text-muted-foreground whitespace-nowrap pt-2">카테고리:</span>
       <ScrollArea className="w-full whitespace-nowrap">
         <div className="flex gap-2 pb-4">
-          {categories.map((category) => (
-            <Button
-              key={category.id}
-              variant={activeCategory === category.id ? "default" : "outline"}
-              onClick={() => onCategoryChange(category.id)}
-              className="shrink-0"
-            >
-              {category.label}
-            </Button>
-          ))}
+          {categories.map((category) => {
+            const isAvailable = !availableCategories || availableCategories.has(category.id)
+
+            return (
+              <Button
+                key={category.id}
+                variant={activeCategory === category.id ? "default" : "outline"}
+                onClick={() => onCategoryChange(category.id)}
+                disabled={!isAvailable}
+                className="shrink-0"
+              >
+                {category.label}
+              </Button>
+            )
+          })}
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>

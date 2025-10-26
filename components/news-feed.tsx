@@ -17,6 +17,7 @@ interface NewsFeedProps {
   refreshTrigger: number
   activeRegion: string
   layoutMode: LayoutMode
+  onAvailableCategoriesChange?: (categories: Set<string>) => void
 }
 
 export function NewsFeed({
@@ -26,6 +27,7 @@ export function NewsFeed({
   refreshTrigger,
   activeRegion,
   layoutMode,
+  onAvailableCategoriesChange,
 }: NewsFeedProps) {
   const [articles, setArticles] = useState<NewsArticle[]>([])
   const [loading, setLoading] = useState(true)
@@ -80,6 +82,9 @@ export function NewsFeed({
     const matchesCategory =
       activeCategory === "all" || (article.category && article.category === activeCategory && article.category !== "all")
 
+    // 지역 필터링
+    const matchesRegion = activeRegion === "all" || article.region === activeRegion
+
     return matchesCategory && matchesTimeRange && matchesRegion
   })
 
@@ -95,7 +100,7 @@ export function NewsFeed({
       onAvailableCategoriesChange(availableCategories)
     } else if (onAvailableCategoriesChange) {
       // 일반 모드에서는 모든 카테고리 활성화
-      onAvailableCategoriesChange(new Set(["all", "world", "business", "technology", "science", "health", "sports", "entertainment"]))
+      onAvailableCategoriesChange(new Set(["all", "world", "politics", "business", "technology", "science", "health", "sports", "entertainment"]))
     }
   }, [articles, searchQuery, onAvailableCategoriesChange])
 

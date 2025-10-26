@@ -11,6 +11,7 @@ import { RecentArticles } from "@/components/recent-articles"
 import { LayoutSwitcher } from "@/components/layout-switcher"
 import { useNewsFilters } from "@/hooks/useNewsFilters"
 import { useLayoutMode } from "@/hooks/useLayoutMode"
+import type { NewsCategory, NewsRegion } from "@/types/article"
 
 export default function HomePage() {
   const {
@@ -28,8 +29,18 @@ export default function HomePage() {
 
   const { layoutMode, setLayoutMode } = useLayoutMode()
 
+  const [availableCategories, setAvailableCategories] = useState<Set<string> | undefined>(undefined)
+
   const handleTrendingKeywordClick = (keyword: string) => {
     setSearchQuery(keyword)
+  }
+
+  const handleCategoryChange = (category: string) => {
+    setActiveCategory(category as NewsCategory)
+  }
+
+  const handleRegionChange = (region: string) => {
+    setActiveRegion(region as NewsRegion)
   }
 
   const handleTimeRangeChange = (days: number) => {
@@ -44,8 +55,12 @@ export default function HomePage() {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* 메인 콘텐츠 */}
           <div className="flex-1 flex flex-col gap-6">
-            <RegionFilter activeRegion={activeRegion} onRegionChange={setActiveRegion} />
-            <NewsCategories activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
+            <RegionFilter activeRegion={activeRegion} onRegionChange={handleRegionChange} />
+            <NewsCategories
+              activeCategory={activeCategory}
+              onCategoryChange={handleCategoryChange}
+              availableCategories={availableCategories}
+            />
             <div className="flex items-center justify-between gap-4">
               <TimeRangeFilter timeRange={timeRange} onTimeRangeChange={handleTimeRangeChange} />
               <LayoutSwitcher layoutMode={layoutMode} onLayoutChange={setLayoutMode} />
@@ -57,6 +72,7 @@ export default function HomePage() {
               refreshTrigger={refreshTrigger}
               activeRegion={activeRegion}
               layoutMode={layoutMode}
+              onAvailableCategoriesChange={setAvailableCategories}
             />
           </div>
 

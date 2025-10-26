@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     // 6. 이메일 발송
     try {
       const { data: emailData, error: emailError } = await resend.emails.send({
-        from: "News Aggregator <noreply@yourdomain.com>", // TODO: 실제 도메인으로 변경
+        from: "News Aggregator <onboarding@resend.dev>", // TODO: 실제 도메인으로 변경
         to: [settings.email],
         subject: `📰 오늘의 뉴스 다이제스트 - ${keywords.map(k => k.keyword).join(", ")}`,
         html: emailHtml,
