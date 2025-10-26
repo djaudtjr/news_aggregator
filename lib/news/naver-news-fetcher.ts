@@ -58,45 +58,47 @@ export async function fetchNaverNews(query: string = "최신뉴스", display: nu
     const data: NaverNewsResponse = await response.json()
     console.log(`[v0] Successfully fetched ${data.items.length} articles from Naver News`)
 
-    // 네이버 뉴스 아이템을 NewsArticle로 변환 (이미지 추출 포함)
-    const articles: NewsArticle[] = await Promise.all(
-      data.items.map(async (item, index) => {
-        // HTML 태그 제거
-        const cleanTitle = item.title.replace(/<\/?b>/g, "").replace(/&quot;/g, '"').replace(/&apos;/g, "'")
-        const cleanDescription = item.description.replace(/<\/?b>/g, "").replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    // 네이버 뉴스 아이템을 NewsArticle로 변환
+    const articles: NewsArticle[] = data.items.map((item) => {
+      // HTML 태그 제거
+      const cleanTitle = item.title.replace(/<\/?b>/g, "").replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+      const cleanDescription = item.description.replace(/<\/?b>/g, "").replace(/&quot;/g, '"').replace(/&apos;/g, "'")
 
-        // 카테고리 자동 분류
-        const category = categorizeArticle(cleanTitle, cleanDescription)
+      // 카테고리 자동 분류
+      const category = categorizeArticle(cleanTitle, cleanDescription)
 
-        // 원본 링크에서 OG 이미지 추출 시도 (skipImageExtraction이 false일 때만)
-        const articleLink = item.originallink || item.link
-        let imageUrl: string | undefined
+      // 원본 링크
+      const articleLink = item.originallink || item.link
 
-        if (!skipImageExtraction) {
-          try {
-            imageUrl = await fetchOGImage(articleLink)
-          } catch (error) {
-            // 이미지 추출 실패 시 무시
-            imageUrl = undefined
-          }
-        }
+      // 링크 URL을 기반으로 고유한 ID 생성
+      const articleId = generateNewsId(articleLink, "naver")
 
-        // 링크 URL을 기반으로 고유한 ID 생성
-        const articleId = generateNewsId(articleLink, "naver")
+      return {
+        id: articleId,
+        title: cleanTitle,
+        description: cleanDescription,
+        link: articleLink,
+        pubDate: item.pubDate,
+        source: "네이버 뉴스",
+        imageUrl: undefined, // 이미지는 나중에 병렬로 추출
+        category,
+        region: "domestic",
+      }
+    })
 
-        return {
-          id: articleId,
-          title: cleanTitle,
-          description: cleanDescription,
-          link: articleLink,
-          pubDate: item.pubDate,
-          source: "네이버 뉴스",
-          imageUrl,
-          category,
-          region: "domestic",
+    // 이미지 추출을 병렬로 처리 (skipImageExtraction이 false일 때만)
+    if (!skipImageExtraction) {
+      const imageResults = await Promise.allSettled(
+        articles.map((article) => fetchOGImage(article.link))
+      )
+
+      // 이미지 URL을 기사에 할당
+      imageResults.forEach((result, index) => {
+        if (result.status === "fulfilled" && result.value) {
+          articles[index].imageUrl = result.value
         }
       })
-    )
+    }
 
     return articles
   } catch (error) {

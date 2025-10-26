@@ -30,10 +30,45 @@ export async function fetchRSSFeed(feed: RSSFeed): Promise<NewsArticle[]> {
 
     console.log(`[v0] Successfully fetched ${items.length} articles from ${feed.source}`)
 
-    // RSS 아이템을 NewsArticle로 변환
-    const articles = await Promise.all(
-      items.slice(0, 10).map((item, index) => convertRSSItemToArticle(item, feed, index))
-    )
+    // RSS 아이템을 NewsArticle로 변환 (이미지 제외)
+    const articles: NewsArticle[] = items.slice(0, 10).map((item) => {
+      const imageUrl = extractImageFromRSSItem(item)
+      const category = categorizeArticle(item.title || "", item.description || "", item.category)
+      const articleLink = item.link || "#"
+      const articleId = generateNewsId(articleLink, "rss")
+
+      return {
+        id: articleId,
+        title: item.title || "No title",
+        description: item.description || item.summary || "No description available",
+        link: articleLink,
+        pubDate: item.pubDate || item.published || new Date().toISOString(),
+        source: feed.source,
+        imageUrl, // RSS에서 추출한 이미지
+        category,
+        region: feed.region,
+      }
+    })
+
+    // RSS에 이미지가 없는 기사들의 인덱스 찾기
+    const indicesNeedingImages = articles
+      .map((article, index) => (!article.imageUrl ? index : -1))
+      .filter((index) => index !== -1)
+
+    // OG 이미지 추출 (병렬 처리)
+    if (indicesNeedingImages.length > 0) {
+      const imageResults = await Promise.allSettled(
+        indicesNeedingImages.map((index) => fetchOGImage(articles[index].link))
+      )
+
+      // 이미지 URL을 기사에 할당
+      imageResults.forEach((result, i) => {
+        const articleIndex = indicesNeedingImages[i]
+        if (result.status === "fulfilled" && result.value) {
+          articles[articleIndex].imageUrl = result.value
+        }
+      })
+    }
 
     return articles
   } catch (error) {
@@ -58,42 +93,6 @@ function parseRSSXML(xmlData: string): RSSItem[] {
   const items = result.rss?.channel?.item || result.feed?.entry || []
 
   return Array.isArray(items) ? items : [items]
-}
-
-/**
- * RSS 아이템을 NewsArticle로 변환
- */
-async function convertRSSItemToArticle(
-  item: RSSItem,
-  feed: RSSFeed,
-  index: number
-): Promise<NewsArticle> {
-  // 이미지 URL 추출
-  let imageUrl = extractImageFromRSSItem(item)
-
-  // RSS에 이미지가 없으면 OG 이미지 추출 시도
-  if (!imageUrl && item.link) {
-    imageUrl = await fetchOGImage(item.link)
-  }
-
-  // 카테고리 분류
-  const category = categorizeArticle(item.title || "", item.description || "", item.category)
-
-  // 링크 URL을 기반으로 고유한 ID 생성
-  const articleLink = item.link || "#"
-  const articleId = generateNewsId(articleLink, "rss")
-
-  return {
-    id: articleId,
-    title: item.title || "No title",
-    description: item.description || item.summary || "No description available",
-    link: articleLink,
-    pubDate: item.pubDate || item.published || new Date().toISOString(),
-    source: feed.source,
-    imageUrl,
-    category,
-    region: feed.region,
-  }
 }
 
 /**

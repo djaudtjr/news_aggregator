@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { fetchNaverNews } from "@/lib/news/naver-news-fetcher"
 import { processSearchQuery } from "@/lib/utils/language-utils"
 import { deduplicateArticles } from "@/lib/utils"
+import { RSS_FEEDS } from "@/lib/news/feeds"
+import { fetchRSSFeed } from "@/lib/news/rss-fetcher"
 import type { NewsArticle } from "@/types/article"
 
 // 국제 뉴스 캐시 (메모리 캐시, 5분 유효)
@@ -9,7 +11,7 @@ let internationalNewsCache: { articles: NewsArticle[]; timestamp: number } | nul
 const CACHE_DURATION = 5 * 60 * 1000 // 5분
 
 /**
- * 국제 뉴스 검색 (캐시 사용하여 성능 개선)
+ * 국제 뉴스 검색 (캐시 사용하여 성능 개선, RSS 직접 검색)
  */
 async function searchInternationalNews(query: string): Promise<NewsArticle[]> {
   try {
@@ -26,25 +28,15 @@ async function searchInternationalNews(query: string): Promise<NewsArticle[]> {
       return filtered.slice(0, 10)
     }
 
-    // 캐시가 없거나 만료되었으면 새로 가져오기 (타임아웃 5초)
-    console.log("[v0] Fetching fresh international news for cache")
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 5000)
+    // 캐시가 없거나 만료되었으면 RSS 피드에서 직접 가져오기
+    console.log("[v0] Fetching fresh international news from RSS feeds")
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3004'}/api/news`, {
-      signal: controller.signal
-    })
-    clearTimeout(timeoutId)
+    // 국제 뉴스 RSS 피드만 병렬로 가져오기
+    const internationalFeeds = RSS_FEEDS.filter((feed) => feed.region === "international")
+    const results = await Promise.all(internationalFeeds.map((feed) => fetchRSSFeed(feed)))
+    const internationalArticles = results.flat()
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch international news")
-    }
-
-    const data = await response.json()
-    const allArticles: NewsArticle[] = data.articles || []
-
-    // 국제 뉴스만 필터링하여 캐시에 저장
-    const internationalArticles = allArticles.filter(article => article.region === "international")
+    // 캐시에 저장
     internationalNewsCache = {
       articles: internationalArticles,
       timestamp: now
@@ -60,11 +52,7 @@ async function searchInternationalNews(query: string): Promise<NewsArticle[]> {
 
     return filtered.slice(0, 10)
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.log("[v0] International search timeout - using empty result")
-    } else {
-      console.log("[v0] International search error:", error)
-    }
+    console.log("[v0] International search error:", error)
     return []
   }
 }

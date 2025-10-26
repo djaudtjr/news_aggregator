@@ -56,7 +56,7 @@ function levenshteinDistance(str1: string, str2: string): number {
 }
 
 /**
- * 뉴스 기사 배열에서 중복 제거
+ * 뉴스 기사 배열에서 중복 제거 (최적화된 버전)
  * - ID가 같은 경우 중복으로 간주
  * - 제목 유사도가 80% 이상인 경우 중복으로 간주
  * @param articles 뉴스 기사 배열
@@ -69,24 +69,45 @@ export function deduplicateArticles(
 ): NewsArticle[] {
   const uniqueArticles: NewsArticle[] = []
   const seenIds = new Set<string>()
-  const seenTitles: string[] = []
+  const titleMap = new Map<string, string>() // 정규화된 제목 -> 원본 제목 매핑
 
   for (const article of articles) {
-    // 1. ID 기반 중복 체크
+    // 1. ID 기반 중복 체크 (빠른 경로)
     if (seenIds.has(article.id)) {
       continue
     }
 
-    // 2. 제목 유사도 기반 중복 체크
+    // 제목 정규화 (소문자 + 공백/특수문자 제거)
+    const normalizedTitle = article.title
+      .toLowerCase()
+      .replace(/[^\w\s가-힣]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+    // 2. 정규화된 제목으로 빠른 중복 체크
+    if (titleMap.has(normalizedTitle)) {
+      continue
+    }
+
+    // 3. 제목 유사도 기반 중복 체크 (Levenshtein distance)
+    // 최적화: 길이 차이가 20% 이상이면 스킵 (유사도 80% 이상 불가능)
     let isDuplicate = false
-    for (const seenTitle of seenTitles) {
-      const similarity = calculateSimilarity(
-        article.title.toLowerCase(),
-        seenTitle.toLowerCase()
-      )
+    const titleLower = article.title.toLowerCase()
+
+    for (const [seenNormalized, seenOriginal] of titleMap) {
+      const seenLower = seenOriginal.toLowerCase()
+      const lengthDiff = Math.abs(titleLower.length - seenLower.length)
+      const maxLength = Math.max(titleLower.length, seenLower.length)
+
+      // 길이 차이가 크면 유사도 계산 스킵
+      if (lengthDiff / maxLength > (1 - similarityThreshold)) {
+        continue
+      }
+
+      const similarity = calculateSimilarity(titleLower, seenLower)
       if (similarity >= similarityThreshold) {
         isDuplicate = true
-        console.log(`[v0] Duplicate detected (${(similarity * 100).toFixed(0)}% similar): "${article.title}" ≈ "${seenTitle}"`)
+        console.log(`[v0] Duplicate detected (${(similarity * 100).toFixed(0)}% similar): "${article.title}" ≈ "${seenOriginal}"`)
         break
       }
     }
@@ -94,7 +115,7 @@ export function deduplicateArticles(
     if (!isDuplicate) {
       uniqueArticles.push(article)
       seenIds.add(article.id)
-      seenTitles.push(article.title)
+      titleMap.set(normalizedTitle, article.title)
     }
   }
 
