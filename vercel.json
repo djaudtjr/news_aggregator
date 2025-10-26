@@ -1,9 +1,0 @@
-{
-  "crons": [
-    {
-      "_comment": "매일 아침 5시, 오전 11시, 오후 5시에 구독자 에게 메일 발송을 실행하는 JOB",
-      "path": "/api/cron/send-daily-digest",
-      "schedule": "0 5,11,17 * * *"
-    }
-  ]
-}
