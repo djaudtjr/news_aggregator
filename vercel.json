@@ -2,18 +2,15 @@
   "crons": [
     {
       "path": "/api/cron/send-daily-digest",
-      "schedule": "0 20 * * *",
-      "_comment": "20:00 UTC = 05:00 KST (다음날) | KST는 UTC+9 | 오전 6시 발송 구독자를 위한 뉴스 수집 및 예약 발송"
+      "schedule": "0 20 * * *"
     },
     {
       "path": "/api/cron/send-daily-digest",
-      "schedule": "0 2 * * *",
-      "_comment": "02:00 UTC = 11:00 KST | KST는 UTC+9 | 낮 12시 발송 구독자를 위한 뉴스 수집 및 예약 발송"
+      "schedule": "0 2 * * *"
     },
     {
       "path": "/api/cron/send-daily-digest",
-      "schedule": "0 8 * * *",
-      "_comment": "08:00 UTC = 17:00 KST | KST는 UTC+9 | 저녁 6시 발송 구독자를 위한 뉴스 수집 및 예약 발송"
+      "schedule": "0 8 * * *"
     }
   ]
 }
