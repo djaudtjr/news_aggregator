@@ -142,6 +142,11 @@ export function useBookmarks() {
     region?: string
     pubDate?: string
   }) => {
+    if (!user) {
+      alert("먼저 로그인 해주세요")
+      return false
+    }
+
     if (bookmarkedIds.has(article.id)) {
       return await removeBookmark(article.id)
     } else {

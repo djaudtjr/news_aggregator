@@ -38,8 +38,6 @@ export async function translateToEnglish(text: string): Promise<string> {
   }
 
   console.log(`[v0] Starting translation for: "${text}"`)
-  console.log(`[v0] API Key ID: ${clientIdCloud?.substring(0, 10)}...`)
-  console.log(`[v0] API Key: ${clientSecretCloud?.substring(0, 10)}...`)
 
   try {
     // NCP Papago API - curl 예제와 동일한 형식
@@ -48,8 +46,9 @@ export async function translateToEnglish(text: string): Promise<string> {
     params.append("target", "en")
     params.append("text", text)
 
-    console.log(`[v0] Request URL: https://papago.apigw.ntruss.com/nmt/v1/translation`)
-    console.log(`[v0] Request body: ${params.toString()}`)
+    // 5초 타임아웃 설정
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
 
     const response = await fetch("https://papago.apigw.ntruss.com/nmt/v1/translation", {
       method: "POST",
@@ -59,8 +58,10 @@ export async function translateToEnglish(text: string): Promise<string> {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: params.toString(),
+      signal: controller.signal,
     })
 
+    clearTimeout(timeoutId)
     console.log(`[v0] Response status: ${response.status}`)
 
     if (!response.ok) {
@@ -80,7 +81,11 @@ export async function translateToEnglish(text: string): Promise<string> {
     console.log("[v0] Translation response did not contain translatedText:", JSON.stringify(data))
     return text
   } catch (error) {
-    console.log("[v0] Translation error:", error instanceof Error ? error.message : "Unknown error")
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.log("[v0] Translation timeout - proceeding with original text")
+    } else {
+      console.log("[v0] Translation error:", error instanceof Error ? error.message : "Unknown error")
+    }
     return text
   }
 }

@@ -1,33 +1,70 @@
 import { NextRequest, NextResponse } from "next/server"
 import { fetchNaverNews } from "@/lib/news/naver-news-fetcher"
 import { processSearchQuery } from "@/lib/utils/language-utils"
+import { deduplicateArticles } from "@/lib/utils"
 import type { NewsArticle } from "@/types/article"
 
+// 국제 뉴스 캐시 (메모리 캐시, 5분 유효)
+let internationalNewsCache: { articles: NewsArticle[]; timestamp: number } | null = null
+const CACHE_DURATION = 5 * 60 * 1000 // 5분
+
 /**
- * 국제 뉴스 검색 (RSS 피드 대신 검색 API 사용)
+ * 국제 뉴스 검색 (캐시 사용하여 성능 개선)
  */
 async function searchInternationalNews(query: string): Promise<NewsArticle[]> {
-  // 간단한 구현: Guardian API 또는 News API 사용 가능
-  // 여기서는 제목/설명에서 키워드 매칭하는 방식으로 구현
-  // 실제로는 News API (newsapi.org) 같은 서비스 사용 권장
-
   try {
-    // 기존 RSS 피드에서 검색어로 필터링
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/news`)
+    // 캐시가 유효하면 캐시에서 검색
+    const now = Date.now()
+    if (internationalNewsCache && (now - internationalNewsCache.timestamp < CACHE_DURATION)) {
+      console.log("[v0] Using cached international news for search")
+      const queryLower = query.toLowerCase()
+      const filtered = internationalNewsCache.articles.filter(
+        (article) =>
+          article.title.toLowerCase().includes(queryLower) ||
+          article.description.toLowerCase().includes(queryLower)
+      )
+      return filtered.slice(0, 10)
+    }
+
+    // 캐시가 없거나 만료되었으면 새로 가져오기 (타임아웃 5초)
+    console.log("[v0] Fetching fresh international news for cache")
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3004'}/api/news`, {
+      signal: controller.signal
+    })
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch international news")
+    }
+
     const data = await response.json()
     const allArticles: NewsArticle[] = data.articles || []
 
+    // 국제 뉴스만 필터링하여 캐시에 저장
+    const internationalArticles = allArticles.filter(article => article.region === "international")
+    internationalNewsCache = {
+      articles: internationalArticles,
+      timestamp: now
+    }
+
+    // 검색 수행
     const queryLower = query.toLowerCase()
-    const filtered = allArticles.filter(
+    const filtered = internationalArticles.filter(
       (article) =>
-        article.region === "international" &&
-        (article.title.toLowerCase().includes(queryLower) ||
-          article.description.toLowerCase().includes(queryLower))
+        article.title.toLowerCase().includes(queryLower) ||
+        article.description.toLowerCase().includes(queryLower)
     )
 
-    return filtered.slice(0, 10) // 최대 10개
+    return filtered.slice(0, 10)
   } catch (error) {
-    console.log("[v0] International search error:", error)
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.log("[v0] International search timeout - using empty result")
+    } else {
+      console.log("[v0] International search error:", error)
+    }
     return []
   }
 }
@@ -48,8 +85,10 @@ export async function GET(request: NextRequest) {
 
     console.log(`[v0] Search query: "${query}", region: "${region}"`)
 
-    // 언어 감지 및 번역
-    const { original, translated, isKorean } = await processSearchQuery(query)
+    // 언어 감지 (번역은 건너뛰기 - 성능 향상)
+    const isKorean = /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(query)
+    const original = query
+    const translated = undefined // 번역 비활성화
 
     const results: NewsArticle[] = []
 
@@ -61,7 +100,7 @@ export async function GET(request: NextRequest) {
       // 한글 검색어
       if (shouldSearchDomestic) {
         console.log(`[v0] Searching Korean news with: "${original}"`)
-        const koreanNews = await fetchNaverNews(original, 15)
+        const koreanNews = await fetchNaverNews(original, 15, true) // 검색 시 이미지 추출 건너뛰기
         results.push(...koreanNews)
       }
 
@@ -89,7 +128,7 @@ export async function GET(request: NextRequest) {
 
       // 영문으로도 네이버 뉴스 검색 (영문 키워드가 있는 한국 뉴스)
       if (shouldSearchDomestic) {
-        const koreanNews = await fetchNaverNews(original, 10)
+        const koreanNews = await fetchNaverNews(original, 10, true) // 검색 시 이미지 추출 건너뛰기
         results.push(...koreanNews)
       }
     }
@@ -99,12 +138,15 @@ export async function GET(request: NextRequest) {
       (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
     )
 
+    // 중복 제거 (ID 기반 + 제목 유사도 80% 이상)
+    const uniqueResults = deduplicateArticles(sortedResults, 0.8)
+
     console.log(
-      `[v0] Search completed: ${sortedResults.length} articles found (Region: ${region}, Korean: ${isKorean ? "yes" : "no"}, Translated: ${translated || "no"})`
+      `[v0] Search completed: ${sortedResults.length} articles found, ${uniqueResults.length} unique (Region: ${region}, Korean: ${isKorean ? "yes" : "no"}, Translated: ${translated || "no"})`
     )
 
     return NextResponse.json({
-      articles: sortedResults,
+      articles: uniqueResults,
       query: {
         original,
         translated,

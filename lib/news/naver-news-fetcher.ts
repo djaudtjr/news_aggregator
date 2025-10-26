@@ -22,9 +22,10 @@ interface NaverNewsResponse {
  * 네이버 뉴스 API에서 뉴스 검색
  * @param query 검색 키워드
  * @param display 검색 결과 개수 (기본 10, 최대 100)
+ * @param skipImageExtraction 이미지 추출 건너뛰기 (검색 시 빠른 응답을 위해)
  * @returns 뉴스 기사 배열
  */
-export async function fetchNaverNews(query: string = "최신뉴스", display: number = 10): Promise<NewsArticle[]> {
+export async function fetchNaverNews(query: string = "최신뉴스", display: number = 10, skipImageExtraction: boolean = false): Promise<NewsArticle[]> {
   const clientId = process.env.NAVER_CLIENT_ID
   const clientSecret = process.env.NAVER_CLIENT_SECRET
 
@@ -67,15 +68,17 @@ export async function fetchNaverNews(query: string = "최신뉴스", display: nu
         // 카테고리 자동 분류
         const category = categorizeArticle(cleanTitle, cleanDescription)
 
-        // 원본 링크에서 OG 이미지 추출 시도
+        // 원본 링크에서 OG 이미지 추출 시도 (skipImageExtraction이 false일 때만)
         const articleLink = item.originallink || item.link
         let imageUrl: string | undefined
 
-        try {
-          imageUrl = await fetchOGImage(articleLink)
-        } catch (error) {
-          // 이미지 추출 실패 시 무시
-          imageUrl = undefined
+        if (!skipImageExtraction) {
+          try {
+            imageUrl = await fetchOGImage(articleLink)
+          } catch (error) {
+            // 이미지 추출 실패 시 무시
+            imageUrl = undefined
+          }
         }
 
         // 링크 URL을 기반으로 고유한 ID 생성

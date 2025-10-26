@@ -37,20 +37,39 @@ export function NewsFeed({
     async function fetchNews() {
       try {
         setLoading(true)
+        setError(null) // 새로운 요청 시 이전 에러 초기화
 
         // 검색어가 있으면 검색 API 사용, 없으면 전체 뉴스 API 사용
         const url = searchQuery.trim()
           ? `/api/search?q=${encodeURIComponent(searchQuery)}&region=${activeRegion}&t=${Date.now()}`
           : `/api/news?t=${Date.now()}`
 
-        const response = await fetch(url)
-        if (!response.ok) {
-          throw new Error("Failed to fetch news")
+        console.log("[NewsFeed] Fetching news from:", url)
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 10000) // 10초 타임아웃
+
+        try {
+          const response = await fetch(url, { signal: controller.signal })
+          clearTimeout(timeoutId)
+
+          if (!response.ok) {
+            throw new Error(`서버 응답 오류: ${response.status}`)
+          }
+          const data = await response.json()
+          console.log("[NewsFeed] Fetched articles:", data.articles?.length || 0)
+          setArticles(data.articles || [])
+        } catch (fetchError) {
+          clearTimeout(timeoutId)
+          if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+            throw new Error("요청 시간이 초과되었습니다. 다시 시도해주세요.")
+          }
+          throw fetchError
         }
-        const data = await response.json()
-        setArticles(data.articles || [])
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred")
+        console.error("[NewsFeed] Error:", err)
+        setError(err instanceof Error ? err.message : "뉴스를 불러오는 중 오류가 발생했습니다")
+        setArticles([]) // 에러 시 빈 배열로 설정
       } finally {
         setLoading(false)
       }
@@ -128,10 +147,10 @@ export function NewsFeed({
     return (
       <Alert>
         <AlertCircle className="h-4 w-4" />
-        <AlertTitle>No articles found</AlertTitle>
+        <AlertTitle>{isSearchMode ? "검색 결과 없음" : "뉴스 없음"}</AlertTitle>
         <AlertDescription>
           {isSearchMode
-            ? `"${searchQuery}" 검색 결과가 없습니다. 국내/해외 뉴스를 모두 검색했습니다.`
+            ? `"${searchQuery}"에 대한 관련 뉴스를 찾을 수 없습니다.`
             : activeCategory === "all"
               ? "최신 뉴스를 불러오는 중입니다. 잠시 후 다시 확인해주세요."
               : `${activeCategory} 카테고리에 뉴스가 없습니다.`}
