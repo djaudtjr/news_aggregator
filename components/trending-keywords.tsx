@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { TrendingUp, Search, Clock } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -26,29 +27,23 @@ interface TrendingKeywordsProps {
   onKeywordClick?: (keyword: string) => void
 }
 
+async function fetchTrendingKeywords(timeRange: string): Promise<TrendingResponse> {
+  const response = await fetch(`/api/trending?limit=7&timeRange=${timeRange}`)
+  if (!response.ok) {
+    throw new Error("Failed to fetch trending keywords")
+  }
+  return response.json()
+}
+
 export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
-  const [data, setData] = useState<TrendingResponse | null>(null)
-  const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState<"1h" | "24h" | "7d">("24h")
 
-  useEffect(() => {
-    fetchTrendingKeywords()
-  }, [timeRange])
-
-  const fetchTrendingKeywords = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/trending?limit=7&timeRange=${timeRange}`)
-      if (response.ok) {
-        const data = await response.json()
-        setData(data)
-      }
-    } catch (error) {
-      console.error("Failed to fetch trending keywords:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { data, isLoading: loading, refetch } = useQuery({
+    queryKey: ['trending', timeRange],
+    queryFn: () => fetchTrendingKeywords(timeRange),
+    staleTime: 2 * 60 * 1000, // 2분간 fresh 상태 유지
+    gcTime: 5 * 60 * 1000, // 5분간 캐시 유지
+  })
 
   const handleKeywordClick = (keyword: string) => {
     if (onKeywordClick) {
@@ -113,7 +108,7 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
             <TrendingUp className="h-5 w-5 text-primary" />
             <CardTitle>인기 검색어</CardTitle>
           </div>
-          <Button variant="ghost" size="icon" onClick={fetchTrendingKeywords} title="새로고침">
+          <Button variant="ghost" size="icon" onClick={() => refetch()} title="새로고침">
             <Clock className="h-4 w-4" />
           </Button>
         </div>

@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useRef } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { NewsCard } from "@/components/news-card"
 import { NewsCardCompact } from "@/components/news-card-compact"
 import { NewsCardList } from "@/components/news-card-list"
@@ -20,6 +21,36 @@ interface NewsFeedProps {
   onAvailableCategoriesChange?: (categories: Set<string>) => void
 }
 
+async function fetchNews(searchQuery: string, activeRegion: string): Promise<NewsArticle[]> {
+  // 검색어가 있으면 검색 API 사용, 없으면 전체 뉴스 API 사용
+  const url = searchQuery.trim()
+    ? `/api/search?q=${encodeURIComponent(searchQuery)}&region=${activeRegion}`
+    : `/api/news`
+
+  console.log("[NewsFeed] Fetching news from:", url)
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10000) // 10초 타임아웃
+
+  try {
+    const response = await fetch(url, { signal: controller.signal })
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      throw new Error(`서버 응답 오류: ${response.status}`)
+    }
+    const data = await response.json()
+    console.log("[NewsFeed] Fetched articles:", data.articles?.length || 0)
+    return data.articles || []
+  } catch (fetchError) {
+    clearTimeout(timeoutId)
+    if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+      throw new Error("요청 시간이 초과되었습니다. 다시 시도해주세요.")
+    }
+    throw fetchError
+  }
+}
+
 export function NewsFeed({
   activeCategory,
   searchQuery,
@@ -29,54 +60,13 @@ export function NewsFeed({
   layoutMode,
   onAvailableCategoriesChange,
 }: NewsFeedProps) {
-  const [articles, setArticles] = useState<NewsArticle[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    async function fetchNews() {
-      try {
-        setLoading(true)
-        setError(null) // 새로운 요청 시 이전 에러 초기화
-
-        // 검색어가 있으면 검색 API 사용, 없으면 전체 뉴스 API 사용
-        const url = searchQuery.trim()
-          ? `/api/search?q=${encodeURIComponent(searchQuery)}&region=${activeRegion}&t=${Date.now()}`
-          : `/api/news?t=${Date.now()}`
-
-        console.log("[NewsFeed] Fetching news from:", url)
-
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 10000) // 10초 타임아웃
-
-        try {
-          const response = await fetch(url, { signal: controller.signal })
-          clearTimeout(timeoutId)
-
-          if (!response.ok) {
-            throw new Error(`서버 응답 오류: ${response.status}`)
-          }
-          const data = await response.json()
-          console.log("[NewsFeed] Fetched articles:", data.articles?.length || 0)
-          setArticles(data.articles || [])
-        } catch (fetchError) {
-          clearTimeout(timeoutId)
-          if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-            throw new Error("요청 시간이 초과되었습니다. 다시 시도해주세요.")
-          }
-          throw fetchError
-        }
-      } catch (err) {
-        console.error("[NewsFeed] Error:", err)
-        setError(err instanceof Error ? err.message : "뉴스를 불러오는 중 오류가 발생했습니다")
-        setArticles([]) // 에러 시 빈 배열로 설정
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchNews()
-  }, [refreshTrigger, searchQuery, activeRegion])
+  // React Query로 데이터 fetching
+  const { data: articles = [], isLoading: loading, error } = useQuery({
+    queryKey: ['news', searchQuery, activeRegion, refreshTrigger],
+    queryFn: () => fetchNews(searchQuery, activeRegion),
+    staleTime: 5 * 60 * 1000, // 5분간 fresh 상태 유지
+    gcTime: 10 * 60 * 1000, // 10분간 캐시 유지
+  })
 
   const filteredArticles = articles.filter((article) => {
     const isSearchMode = searchQuery.trim().length > 0
@@ -100,21 +90,38 @@ export function NewsFeed({
     return matchesCategory && matchesTimeRange && matchesRegion
   })
 
-  // 검색 모드일 때: 사용 가능한 카테고리 목록을 상위 컴포넌트로 전달
-  useEffect(() => {
-    if (searchQuery.trim().length > 0 && onAvailableCategoriesChange) {
-      const availableCategories = new Set<string>(["all"]) // "all"은 항상 활성화
+  // 검색 모드일 때: 사용 가능한 카테고리 목록 계산
+  const availableCategories = useMemo(() => {
+    if (searchQuery.trim().length > 0) {
+      const categories = new Set<string>(["all"]) // "all"은 항상 활성화
       articles.forEach((article) => {
         if (article.category && article.category !== "all") {
-          availableCategories.add(article.category)
+          categories.add(article.category)
         }
       })
-      onAvailableCategoriesChange(availableCategories)
-    } else if (onAvailableCategoriesChange) {
+      return categories
+    } else {
       // 일반 모드에서는 모든 카테고리 활성화
-      onAvailableCategoriesChange(new Set(["all", "world", "politics", "business", "technology", "science", "health", "sports", "entertainment"]))
+      return new Set(["all", "world", "politics", "business", "technology", "science", "health", "sports", "entertainment"])
     }
-  }, [articles, searchQuery, onAvailableCategoriesChange])
+  }, [articles, searchQuery])
+
+  // 카테고리 변경을 상위 컴포넌트에 전달 (무한 루프 방지)
+  const prevCategoriesRef = useRef<Set<string>>()
+  useEffect(() => {
+    if (!onAvailableCategoriesChange) return
+
+    // 이전과 동일한 카테고리면 호출하지 않음
+    const prevCategories = prevCategoriesRef.current
+    const categoriesChanged = !prevCategories ||
+      prevCategories.size !== availableCategories.size ||
+      ![...availableCategories].every(cat => prevCategories.has(cat))
+
+    if (categoriesChanged) {
+      prevCategoriesRef.current = availableCategories
+      onAvailableCategoriesChange(availableCategories)
+    }
+  }, [availableCategories, onAvailableCategoriesChange])
 
   if (loading) {
     return (
@@ -136,7 +143,7 @@ export function NewsFeed({
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
+        <AlertDescription>{error instanceof Error ? error.message : "뉴스를 불러오는 중 오류가 발생했습니다"}</AlertDescription>
       </Alert>
     )
   }
