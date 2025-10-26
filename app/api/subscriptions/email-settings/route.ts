@@ -64,9 +64,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid delivery day (must be 0-6)" }, { status: 400 })
     }
 
-    // 발송 시간 유효성 검사 (0-23)
-    if (deliveryHour !== undefined && (deliveryHour < 0 || deliveryHour > 23)) {
-      return NextResponse.json({ error: "Invalid delivery hour (must be 0-23)" }, { status: 400 })
+    // 발송 시간 유효성 검사 (6, 12, 18만 허용)
+    if (deliveryHour !== undefined && ![6, 12, 18].includes(deliveryHour)) {
+      return NextResponse.json({ error: "Invalid delivery hour (must be 6, 12, or 18)" }, { status: 400 })
     }
 
     const settingsData = {
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       email,
       enabled: enabled ?? false,
       delivery_days: deliveryDays ?? [1, 2, 3, 4, 5], // 기본값: 월~금
-      delivery_hour: deliveryHour ?? 7, // 기본값: 오전 7시
+      delivery_hour: deliveryHour ?? 6, // 기본값: 오전 6시
     }
 
     // UPSERT: 존재하면 업데이트, 없으면 생성

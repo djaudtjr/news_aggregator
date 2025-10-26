@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS email_subscription_settings (
   -- 발송 요일 (0=일요일, 1=월요일, ..., 6=토요일)
   delivery_days INTEGER[] DEFAULT '{1,2,3,4,5}' NOT NULL, -- 기본값: 월~금
 
-  -- 발송 시간 (KST 기준, 0-23)
-  delivery_hour INTEGER DEFAULT 7 NOT NULL CHECK (delivery_hour >= 0 AND delivery_hour <= 23),
+  -- 발송 시간 (KST 기준, 6, 12, 18 중 선택)
+  delivery_hour INTEGER DEFAULT 6 NOT NULL CHECK (delivery_hour IN (6, 12, 18)),
 
   -- 마지막 발송 일시
   last_sent_at TIMESTAMP WITH TIME ZONE,
@@ -99,7 +99,7 @@ COMMENT ON TABLE email_subscription_settings IS '사용자별 이메일 구독 �
 COMMENT ON COLUMN email_subscription_settings.enabled IS '이메일 발송 활성화 여부';
 COMMENT ON COLUMN email_subscription_settings.email IS '수신 이메일 주소';
 COMMENT ON COLUMN email_subscription_settings.delivery_days IS '발송 요일 배열 (0=일, 1=월, ..., 6=토)';
-COMMENT ON COLUMN email_subscription_settings.delivery_hour IS '발송 시간 (KST 기준 0-23)';
+COMMENT ON COLUMN email_subscription_settings.delivery_hour IS '발송 시간 (KST 기준 6, 12, 18 중 선택)';
 COMMENT ON COLUMN email_subscription_settings.last_sent_at IS '마지막 이메일 발송 일시';
 
 

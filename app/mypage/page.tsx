@@ -59,7 +59,7 @@ export default function MyPage() {
     email: user?.email || "",
     enabled: false,
     deliveryDays: [1, 2, 3, 4, 5], // 월~금
-    deliveryHour: 7,
+    deliveryHour: 6, // 기본값: 6시
   })
 
   // 이메일 설정 초기화
@@ -526,19 +526,35 @@ export default function MyPage() {
 
               {/* 발송 시간 */}
               <div className="space-y-2">
-                <Label htmlFor="delivery-hour">발송 시간 (KST)</Label>
-                <Input
-                  id="delivery-hour"
-                  type="number"
-                  min="0"
-                  max="23"
-                  value={emailForm.deliveryHour}
-                  onChange={(e) =>
-                    setEmailForm((prev) => ({ ...prev, deliveryHour: parseInt(e.target.value) || 0 }))
-                  }
-                  disabled={!emailForm.enabled}
-                />
-                <p className="text-xs text-muted-foreground">0-23시 사이 (기본: 7시)</p>
+                <Label>발송 시간 (KST)</Label>
+                <div className="flex gap-4">
+                  {[
+                    { value: 6, label: "오전 6시" },
+                    { value: 12, label: "오후 12시" },
+                    { value: 18, label: "오후 6시" },
+                  ].map((option) => (
+                    <div key={option.value} className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id={`hour-${option.value}`}
+                        name="delivery-hour"
+                        value={option.value}
+                        checked={emailForm.deliveryHour === option.value}
+                        onChange={(e) =>
+                          setEmailForm((prev) => ({ ...prev, deliveryHour: parseInt(e.target.value) }))
+                        }
+                        disabled={!emailForm.enabled}
+                        className="h-4 w-4 text-primary focus:ring-primary"
+                      />
+                      <Label
+                        htmlFor={`hour-${option.value}`}
+                        className={!emailForm.enabled ? "text-muted-foreground" : "cursor-pointer"}
+                      >
+                        {option.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* 저장 버튼 */}
@@ -551,8 +567,13 @@ export default function MyPage() {
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-xs">
-                    선택한 요일 오전 {emailForm.deliveryHour}시에 최근 24시간 이내 구독 키워드 관련 뉴스 10개를
-                    이메일로 받습니다.
+                    선택한 요일{" "}
+                    {emailForm.deliveryHour === 6
+                      ? "오전 6시"
+                      : emailForm.deliveryHour === 12
+                        ? "오후 12시"
+                        : "오후 6시"}
+                    에 최근 24시간 이내 구독 키워드 관련 뉴스 10개를 이메일로 받습니다.
                   </AlertDescription>
                 </Alert>
               )}

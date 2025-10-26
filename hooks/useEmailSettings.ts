@@ -8,7 +8,7 @@ export interface EmailSettings {
   enabled: boolean
   email: string
   delivery_days: number[] // 0=일, 1=월, ..., 6=토
-  delivery_hour: number // 0-23
+  delivery_hour: number // 6, 12, 18 중 선택
   last_sent_at: string | null
   created_at: string
   updated_at: string
