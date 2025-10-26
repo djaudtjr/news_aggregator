@@ -23,9 +23,15 @@ interface NaverNewsResponse {
  * @param query 검색 키워드
  * @param display 검색 결과 개수 (기본 10, 최대 100)
  * @param skipImageExtraction 이미지 추출 건너뛰기 (검색 시 빠른 응답을 위해)
+ * @param imageLimit 이미지 추출 개수 제한 (0 = 모두, undefined = skipImageExtraction에 따름)
  * @returns 뉴스 기사 배열
  */
-export async function fetchNaverNews(query: string = "최신뉴스", display: number = 10, skipImageExtraction: boolean = false): Promise<NewsArticle[]> {
+export async function fetchNaverNews(
+  query: string = "최신뉴스",
+  display: number = 10,
+  skipImageExtraction: boolean = false,
+  imageLimit?: number
+): Promise<NewsArticle[]> {
   const clientId = process.env.NAVER_CLIENT_ID
   const clientSecret = process.env.NAVER_CLIENT_SECRET
 
@@ -86,18 +92,25 @@ export async function fetchNaverNews(query: string = "최신뉴스", display: nu
       }
     })
 
-    // 이미지 추출을 병렬로 처리 (skipImageExtraction이 false일 때만)
+    // 이미지 추출을 병렬로 처리
+    // imageLimit이 설정되어 있으면 해당 개수만큼만 추출
+    // skipImageExtraction이 false일 때만 추출
     if (!skipImageExtraction) {
-      const imageResults = await Promise.allSettled(
-        articles.map((article) => fetchOGImage(article.link))
-      )
+      const limitCount = imageLimit !== undefined ? imageLimit : articles.length
+      const articlesToFetchImages = articles.slice(0, limitCount)
 
-      // 이미지 URL을 기사에 할당
-      imageResults.forEach((result, index) => {
-        if (result.status === "fulfilled" && result.value) {
-          articles[index].imageUrl = result.value
-        }
-      })
+      if (articlesToFetchImages.length > 0) {
+        const imageResults = await Promise.allSettled(
+          articlesToFetchImages.map((article) => fetchOGImage(article.link))
+        )
+
+        // 이미지 URL을 기사에 할당
+        imageResults.forEach((result, index) => {
+          if (result.status === "fulfilled" && result.value) {
+            articles[index].imageUrl = result.value
+          }
+        })
+      }
     }
 
     return articles

@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
       // 한글 검색어
       if (shouldSearchDomestic) {
         console.log(`[v0] Searching Korean news with: "${original}"`)
-        const koreanNews = await fetchNaverNews(original, 15, true) // 검색 시 이미지 추출 건너뛰기
+        const koreanNews = await fetchNaverNews(original, 15, false, 6) // 상위 6개만 이미지 추출
         results.push(...koreanNews)
       }
 
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
 
       // 영문으로도 네이버 뉴스 검색 (영문 키워드가 있는 한국 뉴스)
       if (shouldSearchDomestic) {
-        const koreanNews = await fetchNaverNews(original, 10, true) // 검색 시 이미지 추출 건너뛰기
+        const koreanNews = await fetchNaverNews(original, 10, false, 6) // 상위 6개만 이미지 추출
         results.push(...koreanNews)
       }
     }
