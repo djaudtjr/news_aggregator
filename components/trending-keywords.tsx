@@ -129,9 +129,9 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
         </Tabs>
 
         <div className="space-y-2">
-          {data.keywords.map((item) => (
+          {data.keywords.map((item, index) => (
             <Button
-              key={item.keyword}
+              key={`${item.keyword}-${index}`}
               variant="ghost"
               className="w-full justify-start h-auto py-2 px-3 hover:bg-accent"
               onClick={() => handleKeywordClick(item.keyword)}
