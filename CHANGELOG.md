@@ -1,5 +1,193 @@
 # 개발 변경 이력
 
+## 📌 [체크포인트 3] 2025-10-26 기능 확장 및 통합
+
+### ✅ 신규 기능
+
+#### 1. 사용자 인증 시스템
+- **Google OAuth 로그인**: Supabase Auth 통합
+- **로그인 모달**: LoginModal 컴포넌트 추가
+- **세션 관리**: useAuth 커스텀 훅
+- **마이페이지**: 사용자별 통계 및 설정 페이지
+
+#### 2. 검색 기능
+- **키워드 검색**: 네이버 뉴스 API 통합
+- **검색 키워드 분석**: OpenAI로 키워드 분리 및 정제
+- **검색 통계**: Supabase에 키워드 분석 저장
+- **인기 검색어**: 시간 범위별 트렌딩 키워드 표시
+
+#### 3. 분석 및 통계
+- **AI 요약 통계**: 사용자별 요약 요청 횟수 추적
+- **링크 클릭 통계**: 사용자별 기사 클릭 추적
+- **검색 키워드 통계**: 검색 패턴 분석
+- **마이페이지 대시보드**: 통합 통계 시각화
+
+#### 4. 이메일 구독 시스템
+- **이메일 다이제스트**: Resend API 통합
+- **구독 키워드 관리**: 사용자별 관심 키워드 설정
+- **발송 스케줄**: 요일 및 시간 설정
+- **발송 로그**: 이메일 전송 기록 추적
+
+#### 5. 카테고리 시스템 개선
+- **정치 카테고리 추가**: 9개 카테고리로 확장
+- **동적 카테고리 필터**: 검색 모드에서 사용 가능한 카테고리만 활성화
+- **카테고리 자동 분류 향상**:
+  - 정치 키워드 확장 (정치, 국회, 선거, 대통령 등)
+  - 스포츠 리그명 추가 (KBO, MLB, NBA, 프리미어리그 등)
+  - 엔터 회사명 추가 (SM, JYP, HYBE, 디즈니, 넷플릭스 등)
+
+#### 6. UI/UX 개선
+- **레이아웃 모드**: Grid/List/Compact 3가지 뷰 전환
+- **인기 검색어 사이드바**: 실시간 트렌딩 키워드
+- **최근 본 기사**: 세션 스토리지 기반 히스토리
+- **검색 모드 최적화**: 검색 먼저, 분석은 백그라운드
+
+### 📝 주요 변경사항
+
+#### 추가된 파일
+- `app/mypage/page.tsx` - 사용자 마이페이지
+- `app/api/search/route.ts` - 검색 API
+- `app/api/trending/route.ts` - 인기 검색어 API
+- `app/api/analytics/link-click/route.ts` - 링크 클릭 추적
+- `app/api/analytics/search-keyword/route.ts` - 검색 키워드 분석
+- `app/api/email/send-digest/route.ts` - 이메일 다이제스트
+- `app/api/cron/send-daily-digest/route.ts` - 일일 다이제스트 크론
+- `app/api/bookmarks/route.ts` - 북마크 관리
+- `app/api/subscriptions/email-settings/route.ts` - 이메일 설정
+- `app/api/subscriptions/keywords/route.ts` - 구독 키워드
+- `components/auth/login-modal.tsx` - 로그인 모달
+- `components/trending-keywords.tsx` - 인기 검색어 컴포넌트
+- `components/recent-articles.tsx` - 최근 본 기사 컴포넌트
+- `components/layout-switcher.tsx` - 레이아웃 전환
+- `components/news-card-list.tsx` - 리스트 뷰 카드
+- `components/news-card-compact.tsx` - 컴팩트 뷰 카드
+- `hooks/useAuth.ts` - 인증 훅
+- `hooks/useLayoutMode.ts` - 레이아웃 모드 훅
+- `hooks/useRecentArticles.ts` - 최근 기사 훅
+- `lib/supabase/client.ts` - Supabase 클라이언트
+- `lib/news/naver-news-fetcher.ts` - 네이버 뉴스 수집
+- `supabase/schema.sql` - 데이터베이스 스키마
+
+#### 수정된 파일
+- `types/article.ts` - politics 카테고리 추가
+- `lib/news/categorizer.ts` - 정치/스포츠/엔터 키워드 대폭 확장
+- `components/news-categories.tsx` - 정치 카테고리 추가, disabled 로직
+- `components/news-feed.tsx` - 검색 모드 지원, availableCategories 계산
+- `components/news-header.tsx` - 검색 키워드 분석, 로그인/로그아웃
+- `components/news-card.tsx` - 링크 클릭 추적, useAuth 통합
+- `app/page.tsx` - 사이드바 추가, availableCategories 상태 관리
+- `middleware.ts` - Supabase Auth 미들웨어
+
+#### 데이터베이스 스키마
+- `news_summaries` - category 컬럼 추가
+- `news_summary_analytics` - AI 요약 및 링크 클릭 통계
+- `search_keyword_analytics` - 검색 키워드 통계
+- `email_subscription_settings` - 이메일 구독 설정
+- `subscribed_keywords` - 구독 키워드
+- `email_delivery_logs` - 이메일 발송 로그
+- `bookmarks` - 사용자 북마크
+
+### 🔧 기술적 개선
+
+#### 1. Supabase 통합
+- PostgreSQL 데이터베이스 연결
+- Supabase Auth (Google OAuth)
+- 환경변수 통합 (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY)
+
+#### 2. 외부 API 추가
+- **Resend**: 이메일 발송 서비스
+- **Naver News API**: 국내 뉴스 검색
+- **Naver Cloud Translation**: 번역 기능 (준비)
+
+#### 3. 성능 최적화
+- 검색 키워드 분석을 백그라운드로 처리 (UX 개선)
+- Supabase 캐싱으로 중복 요약 방지
+- 세션 스토리지로 최근 기사 관리 (서버 부하 감소)
+
+#### 4. 타입 안정성 개선
+- page.tsx에서 NewsCategory/NewsRegion 타입 wrapper 함수 추가
+- news-feed.tsx에서 matchesRegion 변수 누락 수정
+
+### 🐛 버그 수정
+
+1. **검색 모드 카테고리 필터 오류**
+   - 문제: 검색 결과에서 카테고리 변경 시 필터링 안 됨
+   - 해결: availableCategories 동적 계산 및 disabled 상태 적용
+
+2. **타입 호환성 오류**
+   - 문제: Dispatch<SetStateAction<T>>와 (value: string) => void 불일치
+   - 해결: wrapper 함수로 타입 변환
+
+3. **matchesRegion 변수 누락**
+   - 문제: news-feed.tsx에서 matchesRegion 정의 없음
+   - 해결: 지역 필터링 로직 추가
+
+4. **Supabase 환경변수 이슈**
+   - 문제: 빌드 시 NEXT_SUPABASE_URL 인식 안 됨
+   - 해결: NEXT_PUBLIC_SUPABASE_URL fallback 추가
+
+5. **검색어 삭제 시 즉시 검색 문제**
+   - 문제: 검색어를 지우면 즉시 전체 뉴스 조회
+   - 해결: 엔터/검색버튼/refresh 시에만 초기화
+
+### 📊 프로젝트 현황
+
+#### 파일 분포 (After → Current)
+- **총 파일 수**: 36개 → 50개 (+14개)
+- **도메인별 분포**:
+  - API Routes: 2개 → 15개 (+13개)
+  - Pages: 1개 → 2개 (+1개)
+  - 기능 컴포넌트: 9개 → 14개 (+5개)
+  - 커스텀 훅: 2개 → 5개 (+3개)
+  - 라이브러리: 6개 → 7개 (+1개)
+  - 타입 정의: 1개 (변동 없음)
+  - 데이터베이스: 0개 → 1개 (+1개)
+
+#### 기능 확장
+- **카테고리**: 8개 → 9개 (정치 추가)
+- **API 엔드포인트**: 2개 → 15개
+- **외부 서비스**: 2개 (Naver, OpenAI) → 4개 (Naver, OpenAI, Supabase, Resend)
+- **데이터베이스 테이블**: 0개 → 7개
+
+### 💡 구조 개선
+
+#### ✅ 개선된 부분
+
+1. **검색 UX**
+   - 검색 먼저 실행, 키워드 분석은 백그라운드
+   - 사용자 체감 속도 향상
+
+2. **카테고리 필터**
+   - 검색 모드에서 동적 활성화/비활성화
+   - 사용 가능한 카테고리만 표시
+
+3. **세션 관리**
+   - 로컬/세션 스토리지 활용
+   - 서버 부하 감소
+
+4. **분석 시스템**
+   - 사용자별 통계 추적
+   - 마이페이지에서 시각화
+
+### 🔄 남은 개선 작업
+
+#### 우선순위 높음
+- [ ] React Query 도입 (서버 상태 관리 개선)
+- [ ] 에러 바운더리 추가
+- [ ] API 클라이언트 레이어 추가
+
+#### 우선순위 중간
+- [ ] 북마크 기능 UI 구현
+- [ ] 이메일 구독 관리 UI 개선
+- [ ] 성능 모니터링 추가
+
+#### 우선순위 낮음
+- [ ] E2E 테스트 추가
+- [ ] 이미지 lazy loading
+- [ ] 코드 스플리팅 최적화
+
+---
+
 ## 📌 [체크포인트 2] 2025-10-21 주요 리팩토링 완료
 
 ### ✅ 완료된 기능

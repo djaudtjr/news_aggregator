@@ -4,254 +4,397 @@
 
 ```
 news-aggregator/
-├── app/                    # Next.js App Router
-│   ├── api/               # API Routes
-│   │   ├── news/         # 뉴스 RSS 피드 수집 API
-│   │   └── summarize/    # AI 요약 API
-│   ├── layout.tsx        # 루트 레이아웃
-│   └── page.tsx          # 메인 페이지
-├── components/            # React 컴포넌트
-│   ├── ui/              # shadcn/ui 기본 컴포넌트
-│   └── [feature components] # 기능별 컴포넌트
-├── lib/                  # 유틸리티 함수
-├── public/              # 정적 파일
-└── styles/              # 전역 스타일
+├── app/                          # Next.js App Router
+│   ├── api/                     # API Routes
+│   │   ├── analytics/           # 분석 API
+│   │   │   ├── link-click/     # 링크 클릭 추적
+│   │   │   └── search-keyword/  # 검색 키워드 분석
+│   │   ├── auth/               # 인증 API
+│   │   │   └── callback/       # OAuth callback
+│   │   ├── bookmarks/          # 북마크 관리
+│   │   ├── cron/               # Cron 작업
+│   │   │   └── send-daily-digest/ # 일일 다이제스트 발송
+│   │   ├── email/              # 이메일 관련
+│   │   │   └── send-digest/    # 이메일 다이제스트
+│   │   ├── mypage/             # 마이페이지 API
+│   │   ├── news/               # 뉴스 데이터
+│   │   ├── search/             # 검색
+│   │   ├── subscriptions/      # 구독 관리
+│   │   │   ├── email-settings/ # 이메일 설정
+│   │   │   └── keywords/       # 구독 키워드
+│   │   ├── summarize/          # AI 요약
+│   │   ├── summary/[newsId]/   # 뉴스별 요약 조회
+│   │   └── trending/           # 인기 검색어
+│   ├── mypage/                 # 마이페이지
+│   │   └── page.tsx
+│   ├── favicon.ico
+│   ├── globals.css             # 전역 스타일
+│   ├── layout.tsx              # 루트 레이아웃
+│   └── page.tsx                # 메인 페이지
+├── components/                  # React 컴포넌트
+│   ├── auth/                   # 인증 관련 컴포넌트
+│   │   └── login-modal.tsx
+│   ├── ui/                     # shadcn/ui 기본 컴포넌트
+│   ├── layout-switcher.tsx     # 레이아웃 전환
+│   ├── news-card.tsx           # 뉴스 카드 (그리드)
+│   ├── news-card-compact.tsx   # 뉴스 카드 (컴팩트)
+│   ├── news-card-list.tsx      # 뉴스 카드 (리스트)
+│   ├── news-categories.tsx     # 카테고리 필터
+│   ├── news-feed.tsx           # 뉴스 피드
+│   ├── news-header.tsx         # 헤더
+│   ├── recent-articles.tsx     # 최근 본 기사
+│   ├── region-filter.tsx       # 지역 필터
+│   ├── theme-provider.tsx      # 테마 제공자
+│   ├── theme-toggle.tsx        # 테마 토글
+│   ├── time-range-filter.tsx   # 시간 범위 필터
+│   └── trending-keywords.tsx   # 인기 검색어
+├── hooks/                      # Custom React Hooks
+│   ├── useArticleSummary.ts    # 기사 요약 훅
+│   ├── useAuth.ts              # 인증 훅
+│   ├── useLayoutMode.ts        # 레이아웃 모드 훅
+│   ├── useNewsFilters.ts       # 뉴스 필터 훅
+│   └── useRecentArticles.ts    # 최근 기사 훅
+├── lib/                        # 라이브러리 & 유틸리티
+│   ├── news/                   # 뉴스 관련 로직
+│   │   ├── categorizer.ts      # 카테고리 분류
+│   │   ├── feeds.ts            # RSS 피드 목록
+│   │   ├── naver-news-fetcher.ts # 네이버 뉴스 수집
+│   │   └── rss-fetcher.ts      # RSS 피드 수집
+│   ├── supabase/               # Supabase 관련
+│   │   └── client.ts           # Supabase 클라이언트
+│   └── utils.ts                # 공통 유틸리티
+├── supabase/                   # Supabase 스키마
+│   └── schema.sql              # 데이터베이스 스키마
+├── types/                      # TypeScript 타입 정의
+│   └── article.ts              # 뉴스 기사 타입
+├── .env.local                  # 환경변수 (로컬)
+├── .env                        # 환경변수
+├── middleware.ts               # Next.js 미들웨어
+├── next.config.ts              # Next.js 설정
+├── package.json
+├── tailwind.config.ts          # Tailwind CSS 설정
+├── tsconfig.json               # TypeScript 설정
+└── README.md
 ```
 
-## 📄 파일별 역할
+## 📄 주요 파일별 역할
 
-### app/page.tsx
-- **역할**: 메인 페이지 컴포넌트 - 전체 뉴스 애그리게이터 UI 구성
-- **주요 export**: `HomePage` (default)
-- **의존성**: NewsHeader, NewsFeed, NewsCategories, TimeRangeFilter, BulkActions, RegionFilter
+### Pages
+
+#### app/page.tsx
+- **역할**: 메인 홈페이지 - 뉴스 애그리게이터 UI
+- **주요 컴포넌트**: NewsHeader, NewsFeed, NewsCategories, RegionFilter, TimeRangeFilter, LayoutSwitcher, TrendingKeywords, RecentArticles
 - **상태 관리**:
-  - activeCategory: 선택된 카테고리
-  - searchQuery: 검색어
-  - timeRange: 시간 범위 필터
-  - selectedArticles: 선택된 기사 목록
-  - activeRegion: 선택된 지역 (국내/해외)
-- **상태**: ⚠️ 검토 필요 - 너무 많은 상태 관리 (7개 이상)
+  - useNewsFilters: 카테고리, 지역, 검색어, 시간 범위
+  - useLayoutMode: 그리드/리스트/컴팩트 레이아웃
+  - availableCategories: 검색 모드에서 사용 가능한 카테고리
+- **특징**:
+  - 사이드바에 인기 검색어 및 최근 본 기사 표시
+  - 검색 모드에서 카테고리 필터 동적 활성화/비활성화
 
-### app/api/news/route.ts
-- **역할**: RSS 피드 수집 및 뉴스 데이터 제공 API
-- **주요 export**: `GET` (API handler)
-- **의존성**: fast-xml-parser, Next.js
+#### app/mypage/page.tsx
+- **역할**: 사용자 마이페이지
 - **주요 기능**:
-  - RSS_FEEDS 배열에서 다중 소스 뉴스 수집
-  - XML 파싱 및 정규화
-  - 카테고리 자동 분류 (categorizeArticle)
-  - OG 이미지 추출 (fetchOGImage)
-  - 지역별 분류 (국내/해외)
-- **상태**: ⚠️ 검토 필요 - 여러 책임 혼재 (피드 수집, 파싱, 카테고리화, 이미지 추출)
+  - AI 요약 사용 통계
+  - 링크 클릭 통계
+  - 검색 키워드 통계
+  - 이메일 구독 설정
+  - 북마크 관리
 
-### app/api/summarize/route.ts
-- **역할**: OpenAI API를 사용한 뉴스 기사 요약 API
-- **주요 export**: `POST` (API handler)
-- **의존성**: Next.js, OpenAI API
+### API Routes
+
+#### app/api/news/route.ts
+- **역할**: 뉴스 데이터 수집 및 제공
+- **데이터 소스**:
+  - RSS 피드 (국제 뉴스)
+  - 네이버 뉴스 API (국내 뉴스)
 - **주요 기능**:
-  - OpenAI GPT-4o-mini 모델로 기사 요약
-  - API 키 검증
-  - 에러 핸들링 (401, 429, 500)
-- **상태**: ✅ 최적 구조 - 단일 책임 준수
+  - 다중 소스에서 뉴스 수집
+  - 자동 카테고리 분류
+  - 중복 제거
+  - 날짜순 정렬
 
-### components/news-feed.tsx
-- **역할**: 뉴스 기사 목록 표시 및 필터링
-- **주요 export**: `NewsFeed`
-- **의존성**: NewsCard, UI 컴포넌트
+#### app/api/search/route.ts
+- **역할**: 키워드 검색
+- **데이터 소스**: 네이버 뉴스 API
 - **주요 기능**:
-  - 뉴스 API 호출 및 데이터 로딩
-  - 카테고리, 검색어, 시간 범위, 지역별 필터링
-  - 선택된 기사 관리
-  - 로딩/에러 상태 처리
-- **상태**: ✅ 최적 구조 - 명확한 데이터 페칭 및 필터링 책임
+  - 국내/해외 뉴스 검색
+  - 카테고리 자동 분류
+  - Supabase에 검색 결과 저장
 
-### components/news-card.tsx
-- **역할**: 개별 뉴스 기사 카드 UI 및 액션
-- **주요 export**: `NewsCard`
-- **의존성**: UI 컴포넌트, pdf-utils, date-fns
+#### app/api/summarize/route.ts
+- **역할**: AI 기사 요약
+- **AI 모델**: OpenAI GPT-4o-mini
 - **주요 기능**:
-  - 기사 정보 표시 (제목, 설명, 이미지, 시간)
-  - AI 요약 요청 및 표시
-  - 이메일 공유
-  - PDF 다운로드
-  - 체크박스 선택
-- **상태**: ⚠️ 검토 필요 - 너무 많은 책임 (UI + API 호출 + PDF 생성 + 이메일)
+  - 기사 요약 생성
+  - 핵심 포인트 추출
+  - Supabase에 요약 캐싱
+  - 요약 통계 기록
 
-### components/bulk-actions.tsx
-- **역할**: 선택된 기사들의 일괄 작업 UI
-- **주요 export**: `BulkActions`
-- **의존성**: pdf-utils, UI 컴포넌트
+#### app/api/trending/route.ts
+- **역할**: 인기 검색어 조회
+- **데이터 소스**: Supabase (search_keyword_analytics)
 - **주요 기능**:
-  - 선택된 기사 수 표시
-  - 일괄 PDF 다운로드
-  - 선택 해제
-- **상태**: ⚠️ 검토 필요 - localStorage 사용 및 독립적인 API 호출
+  - 시간 범위별 인기 검색어 (1시간/24시간/7일)
+  - 검색 횟수 및 순위 반환
 
-### components/news-header.tsx
-- **역할**: 상단 헤더 - 검색 및 새로고침 기능
-- **주요 export**: `NewsHeader`
-- **의존성**: UI 컴포넌트, ApiKeySettings, ThemeToggle
+#### app/api/analytics/link-click/route.ts
+- **역할**: 링크 클릭 추적
+- **데이터 저장**: Supabase (news_summary_analytics)
 - **주요 기능**:
-  - 검색 입력
-  - 새로고침 버튼
-  - 설정 모달 (API 키)
-  - 테마 토글
-- **상태**: ✅ 최적 구조
+  - 사용자별 클릭 통계 기록
+  - news_summaries에 기사 정보 자동 생성
 
-### components/news-categories.tsx
-- **역할**: 카테고리 필터 UI
-- **주요 export**: `NewsCategories`
-- **주요 기능**: 카테고리 선택 (all, world, technology, business, etc.)
-- **상태**: ✅ 최적 구조
-
-### components/region-filter.tsx
-- **역할**: 지역 필터 UI (국내/해외)
-- **주요 export**: `RegionFilter`
-- **주요 기능**: 지역 선택 (all, domestic, international)
-- **상태**: ✅ 최적 구조
-
-### components/time-range-filter.tsx
-- **역할**: 시간 범위 필터 UI
-- **주요 export**: `TimeRangeFilter`
-- **주요 기능**: 시간 범위 선택 (1일, 3일, 7일, 30일)
-- **상태**: ✅ 최적 구조
-
-### components/api-key-settings.tsx
-- **역할**: OpenAI API 키 설정 모달
-- **주요 export**: `ApiKeySettings`
+#### app/api/analytics/search-keyword/route.ts
+- **역할**: 검색 키워드 분석
+- **AI 모델**: OpenAI GPT-4o-mini
 - **주요 기능**:
-  - API 키 입력 및 localStorage 저장
-  - 키 표시/숨김 토글
-- **상태**: ✅ 최적 구조
+  - 키워드 정제 (특수문자 제거)
+  - OpenAI로 키워드 분리
+  - 의미 없는 키워드 필터링
+  - Supabase에 키워드 통계 저장
 
-### components/theme-provider.tsx
-- **역할**: next-themes 기반 다크모드 제공자
-- **주요 export**: `ThemeProvider`
-- **의존성**: next-themes
-- **상태**: ✅ 최적 구조
+#### app/api/email/send-digest/route.ts
+- **역할**: 이메일 다이제스트 발송
+- **이메일 서비스**: Resend
+- **주요 기능**:
+  - 구독 키워드 기반 뉴스 조회
+  - HTML 이메일 생성
+  - 발송 로그 기록
 
-### components/theme-toggle.tsx
-- **역할**: 테마 전환 버튼
-- **주요 export**: `ThemeToggle`
-- **의존성**: ThemeProvider
-- **상태**: ✅ 최적 구조
+### Components
 
-### lib/pdf-utils.ts
-- **역할**: PDF 생성 유틸리티
-- **주요 export**: `generatePDF`
-- **의존성**: jspdf
-- **주요 기능**: 뉴스 기사 배열을 PDF 문서로 변환
-- **상태**: ✅ 최적 구조 - 재사용 가능한 유틸리티
+#### components/news-feed.tsx
+- **역할**: 뉴스 피드 표시 및 필터링
+- **주요 기능**:
+  - 일반 모드: 전체 뉴스 표시
+  - 검색 모드: 검색 결과 표시
+  - 카테고리/지역/시간 범위 필터링
+  - 레이아웃 모드별 렌더링 (Grid/List/Compact)
+  - 사용 가능한 카테고리 계산 및 전달
 
-### lib/utils.ts
-- **역할**: 공통 유틸리티 함수
-- **주요 export**: `cn` (className 유틸리티)
-- **의존성**: clsx, tailwind-merge
-- **상태**: ✅ 최적 구조
+#### components/news-card.tsx (Grid)
+- **역할**: 뉴스 카드 (그리드 레이아웃)
+- **주요 기능**:
+  - 기사 정보 표시
+  - AI 요약 생성
+  - Read More 링크
+  - 링크 클릭 분석
 
-### components/ui/*
-- **역할**: shadcn/ui 기반 재사용 가능한 UI 컴포넌트들
-- **파일들**: alert, badge, button, card, checkbox, dialog, input, label, scroll-area, sheet, skeleton, slider
-- **상태**: ✅ 최적 구조 - 재사용 가능한 컴포넌트
+#### components/news-card-list.tsx
+- **역할**: 뉴스 카드 (리스트 레이아웃)
+- **특징**: 가로로 긴 레이아웃, 썸네일 왼쪽 배치
 
-## 🔍 구조 품질 체크
+#### components/news-card-compact.tsx
+- **역할**: 뉴스 카드 (컴팩트 레이아웃)
+- **특징**: 최소한의 정보만 표시, 높은 정보 밀도
 
-### ✅ 잘된 점
-- **단일 책임**: 대부분의 컴포넌트가 명확한 단일 책임 준수
-- **재사용성**: lib/ 폴더의 유틸리티 함수들이 잘 추출됨
-- **응집도**: UI 컴포넌트들이 잘 그룹화됨
-- **컴포넌트 분리**: 기능별로 적절히 컴포넌트 분리
+#### components/news-categories.tsx
+- **역할**: 카테고리 필터 버튼
+- **카테고리**: 전체, 세계, 정치, 비즈니스, 기술, 과학, 건강, 스포츠, 엔터테인먼트
+- **주요 기능**:
+  - 검색 모드에서 사용 불가능한 카테고리 비활성화
+  - 활성 카테고리 강조 표시
 
-### ⚠️ 개선 필요 영역
+#### components/trending-keywords.tsx
+- **역할**: 인기 검색어 표시
+- **주요 기능**:
+  - 시간 범위별 탭 (1시간/24시간/7일)
+  - 순위 및 검색 횟수 표시
+  - 클릭 시 해당 키워드로 검색
 
-#### 1. app/page.tsx - 상태 관리 과다
-**문제점**:
-- 7개의 독립적인 상태 관리
-- 모든 필터 상태를 페이지 레벨에서 관리
+#### components/recent-articles.tsx
+- **역할**: 최근 본 기사 표시
+- **저장소**: 세션 스토리지 (최대 5개)
+- **주요 기능**:
+  - 기사 썸네일 및 제목 표시
+  - 상대적 시간 표시 (예: 5분 전)
+  - 개별 삭제 및 전체 삭제
 
-**제안**:
-- 필터 상태를 통합 관리하는 useNewsFilters 커스텀 훅 생성
-- 또는 Context API를 사용한 전역 상태 관리
+#### components/layout-switcher.tsx
+- **역할**: 레이아웃 모드 전환
+- **모드**: Grid, List, Compact
+- **저장**: 로컬 스토리지
 
-#### 2. app/api/news/route.ts - 다중 책임
-**문제점**:
-- RSS 피드 수집
-- XML 파싱
-- 카테고리 자동 분류
-- OG 이미지 추출
-- 모두 한 파일에 혼재
+### Hooks
 
-**제안**:
+#### hooks/useNewsFilters.ts
+- **역할**: 뉴스 필터 상태 관리
+- **상태**: activeCategory, activeRegion, searchQuery, timeRange, refreshTrigger
+- **함수**: refresh, resetFilters
+
+#### hooks/useLayoutMode.ts
+- **역할**: 레이아웃 모드 상태 관리
+- **상태**: layoutMode (grid/list/compact)
+- **저장**: 로컬 스토리지
+
+#### hooks/useRecentArticles.ts
+- **역할**: 최근 본 기사 관리
+- **저장**: 세션 스토리지
+- **함수**: addRecentArticle, removeRecentArticle, clearRecentArticles
+
+#### hooks/useAuth.ts
+- **역할**: 사용자 인증 상태 관리
+- **기능**: Supabase Auth 세션 관리, Google OAuth
+
+#### hooks/useArticleSummary.ts
+- **역할**: 기사 요약 생성 및 관리
+- **기능**: OpenAI API 호출, Supabase 캐싱
+
+### Libraries
+
+#### lib/news/categorizer.ts
+- **역할**: 뉴스 자동 카테고리 분류
+- **분류 방법**:
+  1. RSS 카테고리 정보 우선 사용
+  2. 키워드 기반 분류 (한글/영문)
+- **카테고리**: world, politics, business, technology, science, health, sports, entertainment
+- **특징**:
+  - 정치 키워드: 정치, 국회, 선거, 대통령 등
+  - 스포츠 키워드: 리그명 (KBO, MLB, NBA, 프리미어리그 등)
+  - 엔터 키워드: 엔터사 (SM, JYP, HYBE, 디즈니, 넷플릭스 등)
+  - 애매한 분류는 "all"로 반환
+
+#### lib/news/rss-fetcher.ts
+- **역할**: RSS 피드 수집
+- **기능**: XML 파싱, 이미지 추출, 카테고리 분류
+
+#### lib/news/naver-news-fetcher.ts
+- **역할**: 네이버 뉴스 API 호출
+- **기능**: 키워드 검색, 카테고리 분류
+
+#### lib/supabase/client.ts
+- **역할**: Supabase 클라이언트
+- **환경변수**: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+### Types
+
+#### types/article.ts
+- **NewsArticle**: 뉴스 기사 인터페이스
+- **NewsCategory**: 카테고리 타입 (all, world, politics, business, technology, science, health, sports, entertainment)
+- **NewsRegion**: 지역 타입 (all, domestic, international)
+- **RSSFeed**: RSS 피드 설정
+- **RSSItem**: RSS 아이템 (파싱용)
+
+## 🗄️ 데이터베이스 스키마
+
+### news_summaries
+- **용도**: AI 요약 캐싱 및 뉴스 메타데이터
+- **컬럼**: news_id, news_url, news_title, category, summary, key_points, view_count, created_at, updated_at
+
+### news_summary_analytics
+- **용도**: 사용자별 뉴스 이용 통계
+- **컬럼**: user_id, news_id, summary_request_count, link_click_count
+
+### search_keyword_analytics
+- **용도**: 검색 키워드 통계
+- **컬럼**: keyword, search_count, last_searched_at
+
+### email_subscription_settings
+- **용도**: 이메일 구독 설정
+- **컬럼**: user_id, email, enabled, delivery_days, delivery_time, last_sent_at
+
+### subscribed_keywords
+- **용도**: 사용자별 구독 키워드
+- **컬럼**: user_id, keyword
+
+### email_delivery_logs
+- **용도**: 이메일 발송 로그
+- **컬럼**: user_id, email, status, news_count, error_message, sent_at
+
+### bookmarks
+- **용도**: 사용자 북마크
+- **컬럼**: user_id, news_id, title, url, category, created_at
+
+## 🔄 데이터 흐름
+
+### 1. 뉴스 조회
 ```
-lib/news/
-├── rss-fetcher.ts      # RSS 피드 수집 로직
-├── categorizer.ts      # 카테고리 분류 로직
-├── image-extractor.ts  # OG 이미지 추출 로직
-└── types.ts           # 공통 타입 정의
+User → app/page.tsx → NewsFeed
+                    ↓
+            app/api/news/route.ts
+                    ↓
+        RSS Fetcher + Naver Fetcher
+                    ↓
+             Categorizer
+                    ↓
+         NewsCard (Grid/List/Compact)
 ```
 
-#### 3. components/news-card.tsx - 비즈니스 로직 혼재
-**문제점**:
-- UI 렌더링
-- API 호출 (요약)
-- PDF 생성
-- 이메일 공유
-- 모두 한 컴포넌트에 혼재
-
-**제안**:
+### 2. 검색
 ```
-hooks/
-├── useArticleSummary.ts   # 요약 API 호출 로직
-└── useArticleActions.ts   # 공유/다운로드 액션
-
-components/
-└── news-card.tsx          # 순수 UI만 담당
+User → NewsHeader (검색 입력)
+            ↓
+  SearchKeywordAPI (키워드 분석 + OpenAI 분리)
+            ↓
+      Supabase 저장
+            ↓
+    SearchAPI (네이버 검색)
+            ↓
+      NewsFeed (결과 표시)
 ```
 
-#### 4. components/bulk-actions.tsx - 데이터 동기화 이슈
-**문제점**:
-- localStorage에 의존
-- 독립적으로 API를 호출하여 기사 목록 가져옴
-- 부모 컴포넌트의 상태와 동기화되지 않음
-
-**제안**:
-- 선택된 기사 데이터를 props로 직접 전달
-- localStorage 의존성 제거
-
-## 💡 전체적인 개선 제안
-
-### 추천 구조 개선
+### 3. AI 요약
 ```
-news-aggregator/
-├── app/
-├── components/
-├── hooks/              # 🆕 커스텀 훅
-│   ├── useNewsFilters.ts
-│   ├── useArticleSummary.ts
-│   └── useArticleActions.ts
-├── lib/
-│   ├── news/          # 🆕 뉴스 관련 유틸리티
-│   │   ├── rss-fetcher.ts
-│   │   ├── categorizer.ts
-│   │   ├── image-extractor.ts
-│   │   └── types.ts
-│   ├── api/           # 🆕 API 클라이언트
-│   │   └── openai.ts
-│   └── utils.ts
-└── types/             # 🆕 전역 타입 정의
-    └── article.ts
+User → NewsCard (요약 버튼 클릭)
+            ↓
+   useArticleSummary Hook
+            ↓
+ app/api/summarize/route.ts
+            ↓
+     OpenAI API (GPT-4o-mini)
+            ↓
+  Supabase (news_summaries 캐싱)
+            ↓
+ Supabase (analytics 기록)
+            ↓
+  NewsCard (요약 표시)
 ```
 
-### 개선 우선순위
-1. **High**: app/api/news/route.ts 리팩토링 (비즈니스 로직 분리)
-2. **High**: news-card.tsx 비즈니스 로직 추출
-3. **Medium**: page.tsx 상태 관리 개선
-4. **Medium**: bulk-actions.tsx 데이터 흐름 개선
-5. **Low**: 공통 타입 정의 추출
+### 4. 분석 추적
+```
+User Action (링크 클릭 / 검색 / 요약)
+            ↓
+   Analytics API (link-click / search-keyword)
+            ↓
+   Supabase (통계 저장)
+            ↓
+ MyPage (통계 조회 및 표시)
+```
 
-## 📊 파일 통계
-- **총 파일 수**: 29개 (소스 파일)
-- **API Routes**: 2개
-- **페이지**: 1개
-- **컴포넌트**: 22개 (UI 포함)
-- **유틸리티**: 2개
+## 📊 코드 품질 메트릭
+
+### ✅ 장점
+1. **모듈화**: 기능별로 명확하게 분리된 컴포넌트
+2. **타입 안정성**: TypeScript로 모든 인터페이스 정의
+3. **재사용성**: 커스텀 훅으로 로직 추상화
+4. **확장성**: API 라우트 구조화
+5. **성능**: Supabase 캐싱으로 중복 요청 최소화
+
+### ⚠️ 개선 필요
+1. **API 클라이언트 레이어 부재**: 컴포넌트에서 직접 fetch 호출
+2. **에러 처리**: 일관되지 않은 에러 핸들링
+3. **테스트**: 테스트 코드 부재
+4. **문서화**: 일부 복잡한 로직에 주석 부족
+
+## 🎯 권장 사항
+
+1. **API 클라이언트 레이어 추가**
+   ```typescript
+   // lib/api/client.ts - 공통 fetch 래퍼
+   // lib/api/news.ts - 뉴스 API 함수들
+   ```
+
+2. **React Query 도입**
+   - 서버 상태 관리
+   - 자동 캐싱 및 리페칭
+   - 중복 요청 방지
+
+3. **에러 바운더리 추가**
+   - 컴포넌트 레벨 에러 처리
+   - 사용자 친화적인 에러 메시지
+
+4. **단위 테스트 추가**
+   - 유틸리티 함수 테스트
+   - API 라우트 테스트
+   - 컴포넌트 테스트

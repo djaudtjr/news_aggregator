@@ -6,10 +6,17 @@
 graph TD
     %% Pages
     HomePage[app/page.tsx]
+    MyPage[app/mypage/page.tsx]
 
     %% API Routes
     NewsAPI[app/api/news/route.ts]
+    SearchAPI[app/api/search/route.ts]
     SummarizeAPI[app/api/summarize/route.ts]
+    TrendingAPI[app/api/trending/route.ts]
+    LinkClickAPI[app/api/analytics/link-click/route.ts]
+    SearchKeywordAPI[app/api/analytics/search-keyword/route.ts]
+    EmailDigestAPI[app/api/email/send-digest/route.ts]
+    BookmarksAPI[app/api/bookmarks/route.ts]
 
     %% Feature Components
     NewsHeader[components/news-header.tsx]
@@ -18,13 +25,25 @@ graph TD
     NewsCategories[components/news-categories.tsx]
     RegionFilter[components/region-filter.tsx]
     TimeRangeFilter[components/time-range-filter.tsx]
-    BulkActions[components/bulk-actions.tsx]
-    ApiKeySettings[components/api-key-settings.tsx]
+    LayoutSwitcher[components/layout-switcher.tsx]
+    TrendingKeywords[components/trending-keywords.tsx]
+    RecentArticles[components/recent-articles.tsx]
     ThemeToggle[components/theme-toggle.tsx]
     ThemeProvider[components/theme-provider.tsx]
+    LoginModal[components/auth/login-modal.tsx]
 
-    %% Utils
-    PDFUtils[lib/pdf-utils.ts]
+    %% Hooks
+    UseNewsFilters[hooks/useNewsFilters.ts]
+    UseLayoutMode[hooks/useLayoutMode.ts]
+    UseRecentArticles[hooks/useRecentArticles.ts]
+    UseAuth[hooks/useAuth.ts]
+    UseArticleSummary[hooks/useArticleSummary.ts]
+
+    %% Utils & Libs
+    Categorizer[lib/news/categorizer.ts]
+    RSSFetcher[lib/news/rss-fetcher.ts]
+    NaverFetcher[lib/news/naver-news-fetcher.ts]
+    SupabaseClient[lib/supabase/client.ts]
     Utils[lib/utils.ts]
 
     %% UI Components
@@ -33,9 +52,10 @@ graph TD
     %% External Libraries
     NextJS[Next.js]
     React[React]
+    Supabase[@supabase/supabase-js]
     XMLParser[fast-xml-parser]
     OpenAI[OpenAI API]
-    jsPDF[jspdf]
+    Resend[resend]
     DateFns[date-fns]
     NextThemes[next-themes]
     ShadcnUI[shadcn/ui]
@@ -46,37 +66,75 @@ graph TD
     HomePage --> NewsCategories
     HomePage --> RegionFilter
     HomePage --> TimeRangeFilter
-    HomePage --> BulkActions
+    HomePage --> LayoutSwitcher
+    HomePage --> TrendingKeywords
+    HomePage --> RecentArticles
+    HomePage --> UseNewsFilters
+    HomePage --> UseLayoutMode
+
+    MyPage --> UseAuth
+    MyPage --> SupabaseClient
 
     %% NewsHeader Dependencies
-    NewsHeader --> ApiKeySettings
     NewsHeader --> ThemeToggle
+    NewsHeader --> LoginModal
+    NewsHeader --> UseAuth
+    NewsHeader --> SearchKeywordAPI
     NewsHeader --> UIComponents
 
     %% NewsFeed Dependencies
     NewsFeed --> NewsCard
     NewsFeed --> UIComponents
     NewsFeed --> NewsAPI
+    NewsFeed --> SearchAPI
 
     %% NewsCard Dependencies
-    NewsCard --> PDFUtils
     NewsCard --> SummarizeAPI
+    NewsCard --> LinkClickAPI
+    NewsCard --> UseAuth
+    NewsCard --> UseArticleSummary
     NewsCard --> UIComponents
     NewsCard --> DateFns
 
-    %% BulkActions Dependencies
-    BulkActions --> PDFUtils
-    BulkActions --> NewsAPI
-    BulkActions --> UIComponents
+    %% TrendingKeywords Dependencies
+    TrendingKeywords --> TrendingAPI
+    TrendingKeywords --> UIComponents
+
+    %% RecentArticles Dependencies
+    RecentArticles --> UseRecentArticles
+    RecentArticles --> UIComponents
+    RecentArticles --> DateFns
 
     %% API Dependencies
+    NewsAPI --> RSSFetcher
+    NewsAPI --> NaverFetcher
+    NewsAPI --> Categorizer
     NewsAPI --> XMLParser
     NewsAPI --> NextJS
+    SearchAPI --> NaverFetcher
+    SearchAPI --> SupabaseClient
     SummarizeAPI --> OpenAI
+    SummarizeAPI --> SupabaseClient
     SummarizeAPI --> NextJS
+    TrendingAPI --> SupabaseClient
+    LinkClickAPI --> SupabaseClient
+    SearchKeywordAPI --> OpenAI
+    SearchKeywordAPI --> SupabaseClient
+    EmailDigestAPI --> Resend
+    EmailDigestAPI --> SupabaseClient
+    BookmarksAPI --> SupabaseClient
+
+    %% Lib Dependencies
+    RSSFetcher --> XMLParser
+    RSSFetcher --> Categorizer
+    NaverFetcher --> Categorizer
+    SupabaseClient --> Supabase
+
+    %% Hook Dependencies
+    UseAuth --> SupabaseClient
+    UseArticleSummary --> SupabaseClient
 
     %% Utils Dependencies
-    PDFUtils --> jsPDF
     Utils --> ShadcnUI
 
     %% Theme Dependencies
@@ -87,19 +145,29 @@ graph TD
     NewsCategories --> UIComponents
     RegionFilter --> UIComponents
     TimeRangeFilter --> UIComponents
-    ApiKeySettings --> UIComponents
+    LayoutSwitcher --> UIComponents
+    LoginModal --> UIComponents
+    LoginModal --> SupabaseClient
 
     %% Styling
     style HomePage fill:#f9f,stroke:#333,stroke-width:3px
+    style MyPage fill:#f9f,stroke:#333,stroke-width:3px
     style NewsAPI fill:#f9f,stroke:#333,stroke-width:3px
+    style SearchAPI fill:#f9f,stroke:#333,stroke-width:3px
     style SummarizeAPI fill:#f9f,stroke:#333,stroke-width:3px
+    style TrendingAPI fill:#f9f,stroke:#333,stroke-width:3px
+    style EmailDigestAPI fill:#f9f,stroke:#333,stroke-width:3px
 
     style NewsFeed fill:#bbf,stroke:#333,stroke-width:2px
     style NewsCard fill:#bbf,stroke:#333,stroke-width:2px
     style NewsHeader fill:#bbf,stroke:#333,stroke-width:2px
-    style BulkActions fill:#bbf,stroke:#333,stroke-width:2px
+    style TrendingKeywords fill:#bbf,stroke:#333,stroke-width:2px
+    style RecentArticles fill:#bbf,stroke:#333,stroke-width:2px
 
-    style PDFUtils fill:#bfb,stroke:#333,stroke-width:2px
+    style Categorizer fill:#bfb,stroke:#333,stroke-width:2px
+    style RSSFetcher fill:#bfb,stroke:#333,stroke-width:2px
+    style NaverFetcher fill:#bfb,stroke:#333,stroke-width:2px
+    style SupabaseClient fill:#bfb,stroke:#333,stroke-width:2px
     style Utils fill:#bfb,stroke:#333,stroke-width:2px
 
     style UIComponents fill:#ffa,stroke:#333,stroke-width:2px
@@ -148,13 +216,17 @@ graph TD
 - `ai`: 5.0.76 - Vercel AI SDK
 - `openai` (환경변수): OpenAI API 통합
 
+#### 데이터베이스
+- `@supabase/supabase-js`: latest - Supabase JavaScript 클라이언트
+- `@supabase/ssr`: latest - Supabase SSR 헬퍼
+
+#### 이메일
+- `resend`: latest - 이메일 발송 서비스
+
 #### 데이터 처리
 - `fast-xml-parser`: latest - RSS XML 파싱
 - `date-fns`: latest - 날짜 포맷팅 및 조작
 - `zod`: 3.25.76 - 스키마 검증
-
-#### PDF 생성
-- `jspdf`: latest - PDF 문서 생성
 
 #### 테마
 - `next-themes`: latest - 다크모드 지원
@@ -193,25 +265,64 @@ graph TD
 
 ### 1. 뉴스 데이터 흐름
 ```
-NewsAPI (RSS 수집)
+NewsAPI (RSS + Naver News 수집)
+    ↓
+Categorizer (카테고리 자동 분류)
     ↓
 NewsFeed (데이터 페칭)
     ↓
 NewsCard (개별 기사 표시)
     ↓
-SummarizeAPI (AI 요약)
+SummarizeAPI (AI 요약 + Supabase 저장)
 ```
 
-### 2. PDF 생성 흐름
+### 2. 검색 흐름
 ```
-NewsCard/BulkActions (사용자 액션)
+NewsHeader (검색 입력)
     ↓
-lib/pdf-utils.ts (PDF 생성)
+SearchKeywordAPI (키워드 분석 + OpenAI 분리 + Supabase 저장)
     ↓
-jsPDF (PDF 라이브러리)
+SearchAPI (Naver News 검색)
+    ↓
+NewsFeed (검색 결과 표시)
+    ↓
+TrendingKeywords (인기 검색어 업데이트)
 ```
 
-### 3. 테마 관리 흐름
+### 3. 인증 흐름
+```
+LoginModal (Google OAuth)
+    ↓
+Supabase Auth
+    ↓
+UseAuth Hook (세션 관리)
+    ↓
+전역 사용자 상태
+```
+
+### 4. 분석 흐름
+```
+NewsCard (링크 클릭 / AI 요약 요청)
+    ↓
+LinkClickAPI / SummarizeAPI
+    ↓
+Supabase (news_summary_analytics 저장)
+    ↓
+MyPage (사용자별 통계 표시)
+```
+
+### 5. 이메일 다이제스트 흐름
+```
+Cron Job (매일 정기 실행)
+    ↓
+EmailDigestAPI
+    ↓
+Supabase (구독 키워드 + 뉴스 조회)
+    ↓
+Resend (이메일 발송)
+```
+
+### 6. 테마 관리 흐름
 ```
 ThemeProvider (next-themes)
     ↓
@@ -220,15 +331,26 @@ ThemeToggle (테마 전환)
 전역 CSS 변수 업데이트
 ```
 
-### 4. 필터 상태 흐름
+### 7. 필터 상태 흐름
 ```
-HomePage (상태 관리)
+HomePage (useNewsFilters 훅)
     ↓
 NewsCategories/RegionFilter/TimeRangeFilter (필터 UI)
     ↓
-NewsFeed (필터 적용)
+NewsFeed (필터 적용 + availableCategories 계산)
     ↓
 NewsCard (필터링된 데이터 표시)
+```
+
+### 8. 레이아웃 모드 흐름
+```
+HomePage (useLayoutMode 훅)
+    ↓
+LayoutSwitcher (레이아웃 선택)
+    ↓
+LocalStorage (설정 저장)
+    ↓
+NewsFeed (Grid/List/Compact 렌더링)
 ```
 
 ## ⚠️ 의존성 품질 체크
@@ -335,11 +457,15 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 
 ## 📊 의존성 통계
 
-- **총 프로덕션 의존성**: 56개
+- **총 프로덕션 의존성**: 58개
 - **총 개발 의존성**: 7개
-- **외부 API**: 2개 (Naver News, OpenAI)
+- **외부 API**: 3개 (Naver News, OpenAI, Resend)
+- **데이터베이스**: Supabase (PostgreSQL)
+- **외부 서비스**: Supabase Auth, Supabase Storage
 - **사용 중인 Radix UI**: ~10개
 - **미사용 Radix UI**: ~20개 (정리 권장)
+- **커스텀 훅**: 5개 (useNewsFilters, useLayoutMode, useRecentArticles, useAuth, useArticleSummary)
+- **API 엔드포인트**: 15개+
 
 ## 🎯 최적화 우선순위
 
