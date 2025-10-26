@@ -54,6 +54,20 @@ export function useEmailSettings() {
   }) => {
     if (!user) {
       console.warn("User not logged in")
+      alert("로그인이 필요합니다.")
+      return false
+    }
+
+    // 이메일 유효성 검사
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(newSettings.email)) {
+      alert("올바른 이메일 주소를 입력해주세요.")
+      return false
+    }
+
+    // 발송 요일 검사
+    if (newSettings.enabled && newSettings.deliveryDays.length === 0) {
+      alert("최소 하나의 발송 요일을 선택해주세요.")
       return false
     }
 
@@ -73,7 +87,8 @@ export function useEmailSettings() {
         await fetchSettings() // 목록 새로고침
         return true
       } else {
-        console.error("Failed to save settings")
+        const errorData = await response.json().catch(() => ({}))
+        console.error("Failed to save settings:", errorData)
         return false
       }
     } catch (error) {

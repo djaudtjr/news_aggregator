@@ -141,17 +141,14 @@ export default function MyPage() {
   // 키워드 추가 핸들러
   const handleAddKeyword = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newKeyword.trim()) return
-
-    // 최대 3개 제한
-    if (keywords.length >= 3) {
-      alert("구독 키워드는 최대 3개까지만 추가할 수 있습니다.")
+    if (!newKeyword.trim()) {
       return
     }
 
-    const success = await addKeyword(newKeyword)
+    const success = await addKeyword(newKeyword.trim())
     if (success) {
       setNewKeyword("")
+      alert(`"${newKeyword.trim()}" 키워드가 추가되었습니다.`)
     }
   }
 
@@ -166,7 +163,12 @@ export default function MyPage() {
 
   // 이메일 설정 저장 핸들러
   const handleSaveEmailSettings = async () => {
-    await saveSettings(emailForm)
+    const success = await saveSettings(emailForm)
+    if (success) {
+      alert("✅ 이메일 알림 설정이 저장되었습니다.")
+    } else {
+      alert("❌ 설정 저장에 실패했습니다. 다시 시도해주세요.")
+    }
   }
 
   // 요일 토글 핸들러
@@ -439,11 +441,29 @@ export default function MyPage() {
                   placeholder="예: AI, 삼성전자, 기후변화"
                   value={newKeyword}
                   onChange={(e) => setNewKeyword(e.target.value)}
+                  disabled={keywords?.length >= 3}
                 />
-                <Button type="submit" size="icon">
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={keywords?.length >= 3 || !newKeyword.trim()}
+                  title={keywords?.length >= 3 ? "최대 3개까지 추가 가능합니다" : "키워드 추가"}
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </form>
+
+              {/* 최대 개수 안내 */}
+              {keywords && keywords.length >= 3 && (
+                <p className="text-xs text-muted-foreground">
+                  ⚠️ 최대 3개의 키워드까지만 구독할 수 있습니다.
+                </p>
+              )}
+              {keywords && keywords.length > 0 && keywords.length < 3 && (
+                <p className="text-xs text-muted-foreground">
+                  {3 - keywords.length}개 더 추가할 수 있습니다.
+                </p>
+              )}
 
               {/* 키워드 목록 */}
               <div className="space-y-2">

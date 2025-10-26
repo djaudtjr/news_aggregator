@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "./useAuth"
+import { supabase } from "@/lib/supabase/client"
 
 export interface SubscribedKeyword {
   id: string
@@ -24,10 +25,16 @@ export function useSubscribedKeywords() {
 
     try {
       setLoading(true)
-      const response = await fetch(`/api/subscriptions/keywords?userId=${user.id}`)
-      if (response.ok) {
-        const data = await response.json()
-        setKeywords(data.keywords || [])
+      const { data, error } = await supabase
+        .from("subscribed_keywords")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+
+      if (error) {
+        console.error("Failed to fetch keywords:", error)
+      } else {
+        setKeywords(data || [])
       }
     } catch (error) {
       console.error("Failed to fetch keywords:", error)
@@ -45,33 +52,50 @@ export function useSubscribedKeywords() {
   const addKeyword = async (keyword: string) => {
     if (!user) {
       console.warn("User not logged in")
+      alert("로그인이 필요합니다.")
+      return false
+    }
+
+    const normalizedKeyword = keyword.trim()
+
+    if (!normalizedKeyword) {
+      alert("키워드를 입력해주세요.")
+      return false
+    }
+
+    // 최대 3개 체크
+    if (keywords.length >= 3) {
+      alert("구독 키워드는 최대 3개까지만 추가할 수 있습니다.")
       return false
     }
 
     try {
-      const response = await fetch("/api/subscriptions/keywords", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          keyword,
-        }),
-      })
+      const { data, error } = await supabase
+        .from("subscribed_keywords")
+        .insert({
+          user_id: user.id,
+          keyword: normalizedKeyword,
+        })
+        .select()
+        .single()
 
-      if (response.ok) {
-        await fetchKeywords() // 목록 새로고침
-        return true
-      } else if (response.status === 409) {
-        console.warn("Keyword already subscribed")
-        return false
-      } else {
-        console.error("Failed to add keyword")
+      if (error) {
+        // 중복 키워드 체크 (UNIQUE 제약 위반)
+        if (error.code === "23505") {
+          alert("이미 구독 중인 키워드입니다.")
+          return false
+        }
+
+        console.error("Failed to add keyword:", error)
+        alert("키워드 추가에 실패했습니다.")
         return false
       }
+
+      await fetchKeywords() // 목록 새로고침
+      return true
     } catch (error) {
       console.error("Failed to add keyword:", error)
+      alert("키워드 추가 중 오류가 발생했습니다.")
       return false
     }
   }
@@ -84,17 +108,19 @@ export function useSubscribedKeywords() {
     }
 
     try {
-      const response = await fetch(`/api/subscriptions/keywords?userId=${user.id}&keywordId=${keywordId}`, {
-        method: "DELETE",
-      })
+      const { error } = await supabase
+        .from("subscribed_keywords")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("id", keywordId)
 
-      if (response.ok) {
-        await fetchKeywords() // 목록 새로고침
-        return true
-      } else {
-        console.error("Failed to remove keyword")
+      if (error) {
+        console.error("Failed to remove keyword:", error)
         return false
       }
+
+      await fetchKeywords() // 목록 새로고침
+      return true
     } catch (error) {
       console.error("Failed to remove keyword:", error)
       return false

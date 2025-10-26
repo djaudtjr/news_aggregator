@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
-import { supabase } from "@/lib/supabase/client"
+import { supabaseServer } from "@/lib/supabase/server"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. 이메일 설정 조회
-    const { data: settings, error: settingsError } = await supabase
+    const { data: settings, error: settingsError } = await supabaseServer
       .from("email_subscription_settings")
       .select("*")
       .eq("user_id", userId)
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     // 2. 구독 키워드 조회
     // 참고: 요일/시간 체크는 Cron API에서 이미 수행됨
-    const { data: keywords, error: keywordsError } = await supabase
+    const { data: keywords, error: keywordsError } = await supabaseServer
       .from("subscribed_keywords")
       .select("keyword")
       .eq("user_id", userId)
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     // 각 키워드별로 뉴스 검색
     for (const { keyword } of keywords) {
-      const { data: news, error: newsError } = await supabase
+      const { data: news, error: newsError } = await supabaseServer
         .from("news_summaries")
         .select("title, description, link, source, pub_date")
         .or(`title.ilike.%${keyword}%,description.ilike.%${keyword}%`)
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     if (topNews.length === 0) {
       // 뉴스가 없어도 로그 기록
-      await supabase.from("email_delivery_logs").insert({
+      await supabaseServer.from("email_delivery_logs").insert({
         user_id: userId,
         email: settings.email,
         status: "success",
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
         console.error("[Email Digest] Resend error:", emailError)
 
         // 실패 로그 기록
-        await supabase.from("email_delivery_logs").insert({
+        await supabaseServer.from("email_delivery_logs").insert({
           user_id: userId,
           email: settings.email,
           status: "failed",
@@ -162,13 +162,13 @@ export async function POST(request: NextRequest) {
 
       // 6. 성공 로그 기록 및 last_sent_at 업데이트
       await Promise.all([
-        supabase.from("email_delivery_logs").insert({
+        supabaseServer.from("email_delivery_logs").insert({
           user_id: userId,
           email: settings.email,
           status: "success",
           news_count: topNews.length,
         }),
-        supabase
+        supabaseServer
           .from("email_subscription_settings")
           .update({ last_sent_at: new Date().toISOString() })
           .eq("user_id", userId),
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
     } catch (emailError: any) {
       console.error("[Email Digest] Send error:", emailError)
 
-      await supabase.from("email_delivery_logs").insert({
+      await supabaseServer.from("email_delivery_logs").insert({
         user_id: userId,
         email: settings.email,
         status: "failed",

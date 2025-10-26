@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase/client"
+import { supabaseServer } from "@/lib/supabase/server"
 
 /**
  * 이메일 구독 설정 조회
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from("email_subscription_settings")
       .select("*")
       .eq("user_id", userId)
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     }
 
     // UPSERT: 존재하면 업데이트, 없으면 생성
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from("email_subscription_settings")
       .upsert(settingsData, {
         onConflict: "user_id",
@@ -111,7 +111,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
     }
 
-    const { error } = await supabase.from("email_subscription_settings").delete().eq("user_id", userId)
+    const { error } = await supabaseServer.from("email_subscription_settings").delete().eq("user_id", userId)
 
     if (error) {
       console.error("[Email Settings] Delete error:", error)

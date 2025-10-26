@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase/client"
+import { supabaseServer } from "@/lib/supabase/server"
 
 /**
  * 매일 오전 7시 KST에 실행되는 Cron Job
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     console.log(`[Cron] Target delivery hour: ${targetDeliveryHour}시 구독자를 위한 뉴스 수집`)
 
     // 2. 활성화된 이메일 설정 조회 (오늘이 발송 요일이고 현재 시간이 발송 시간인 경우만)
-    const { data: subscribers, error: subscribersError } = await supabase
+    const { data: subscribers, error: subscribersError } = await supabaseServer
       .from("email_subscription_settings")
       .select("user_id, email, delivery_days, delivery_hour")
       .eq("enabled", true)

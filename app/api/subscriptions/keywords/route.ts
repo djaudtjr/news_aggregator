@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase/client"
+import { supabaseServer } from "@/lib/supabase/server"
 
 /**
  * 구독 키워드 목록 조회
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from("subscribed_keywords")
       .select("*")
       .eq("user_id", userId)
@@ -45,14 +45,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User ID and keyword are required" }, { status: 400 })
     }
 
-    // 키워드 정규화 (공백 제거, 소문자 변환)
+    // 키워드 정규화 (공백 제거)
     const normalizedKeyword = keyword.trim()
 
     if (!normalizedKeyword) {
       return NextResponse.json({ error: "Keyword cannot be empty" }, { status: 400 })
     }
 
-    const { data, error } = await supabase
+    // 기존 키워드 개수 확인 (최대 3개)
+    const { data: existingKeywords, error: countError } = await supabaseServer
+      .from("subscribed_keywords")
+      .select("id")
+      .eq("user_id", userId)
+
+    if (countError) {
+      console.error("[Keywords] Count error:", countError)
+      return NextResponse.json({ error: "Failed to check keyword count" }, { status: 500 })
+    }
+
+    if (existingKeywords && existingKeywords.length >= 3) {
+      return NextResponse.json({ error: "Maximum 3 keywords allowed" }, { status: 400 })
+    }
+
+    const { data, error } = await supabaseServer
       .from("subscribed_keywords")
       .insert({
         user_id: userId,
@@ -66,8 +81,16 @@ export async function POST(request: NextRequest) {
       if (error.code === "23505") {
         return NextResponse.json({ error: "Keyword already subscribed" }, { status: 409 })
       }
-      console.error("[Keywords] Insert error:", error)
-      return NextResponse.json({ error: "Failed to add keyword" }, { status: 500 })
+      console.error("[Keywords] Insert error:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
+      return NextResponse.json({
+        error: "Failed to add keyword",
+        details: error.message
+      }, { status: 500 })
     }
 
     return NextResponse.json({ keyword: data })
@@ -91,7 +114,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "User ID and keyword ID are required" }, { status: 400 })
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseServer
       .from("subscribed_keywords")
       .delete()
       .eq("user_id", userId)
