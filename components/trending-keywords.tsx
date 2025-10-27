@@ -43,6 +43,9 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
     queryFn: () => fetchTrendingKeywords(timeRange),
     staleTime: 2 * 60 * 1000, // 2분간 fresh 상태 유지
     gcTime: 5 * 60 * 1000, // 5분간 캐시 유지
+    refetchOnWindowFocus: false, // 윈도우 포커스 시 재요청 방지
+    refetchOnMount: false, // 마운트 시 재요청 방지
+    retry: 1, // 실패 시 1번만 재시도
   })
 
   const handleKeywordClick = (keyword: string) => {

@@ -587,11 +587,7 @@ export default function MyPage() {
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-xs">
                     선택한 요일{" "}
-                    {emailForm.deliveryHour === 6
-                      ? "오전 6시"
-                      : emailForm.deliveryHour === 12
-                        ? "오후 12시"
-                        : "오후 6시"}
+                    {emailForm.deliveryHour === 6 ? "오전 6시" : "오후 6시"}
                     에 최근 24시간 이내 구독 키워드 관련 뉴스 10개를 이메일로 받습니다.
                   </AlertDescription>
                 </Alert>

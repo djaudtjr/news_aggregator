@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { NewsCard } from "@/components/news-card"
 import { NewsCardCompact } from "@/components/news-card-compact"
 import { NewsCardList } from "@/components/news-card-list"
-import { Skeleton } from "@/components/ui/skeleton"
+import { NewsCardSkeleton, NewsCardCompactSkeleton, NewsCardListSkeleton } from "@/components/news-card-skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import type { NewsArticle } from "@/types/article"
@@ -66,6 +66,9 @@ export function NewsFeed({
     queryFn: () => fetchNews(searchQuery, activeRegion),
     staleTime: 5 * 60 * 1000, // 5분간 fresh 상태 유지
     gcTime: 10 * 60 * 1000, // 10분간 캐시 유지
+    refetchOnWindowFocus: false, // 윈도우 포커스 시 재요청 방지
+    refetchOnMount: false, // 마운트 시 재요청 방지 (캐시된 데이터 사용)
+    retry: 2, // 실패 시 2번만 재시도
   })
 
   const filteredArticles = articles.filter((article) => {
@@ -124,15 +127,25 @@ export function NewsFeed({
   }, [availableCategories, onAvailableCategoriesChange])
 
   if (loading) {
+    // 레이아웃 모드에 따른 스켈레톤 표시
+    const containerClass =
+      layoutMode === "grid"
+        ? "grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+        : layoutMode === "list"
+          ? "grid gap-6 md:grid-cols-1"
+          : "space-y-3"
+
+    const SkeletonComponent =
+      layoutMode === "compact"
+        ? NewsCardCompactSkeleton
+        : layoutMode === "list"
+          ? NewsCardListSkeleton
+          : NewsCardSkeleton
+
     return (
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="space-y-3">
-            <Skeleton className="h-48 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-2/3" />
-          </div>
+      <div className={containerClass}>
+        {Array.from({ length: 9 }).map((_, i) => (
+          <SkeletonComponent key={i} />
         ))}
       </div>
     )

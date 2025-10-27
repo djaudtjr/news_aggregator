@@ -5,6 +5,9 @@ import { fetchNaverNewsByQueries } from "@/lib/news/naver-news-fetcher"
 import { deduplicateArticles } from "@/lib/utils"
 import type { NewsArticle } from "@/types/article"
 
+// Next.js 캐싱 설정: 5분간 캐시 유지
+export const revalidate = 300 // 5분
+
 /**
  * 뉴스 피드 API 엔드포인트
  * RSS 피드 + 네이버 뉴스를 수집하여 통합된 뉴스 목록 반환
@@ -63,7 +66,14 @@ export async function GET() {
       categoryStats["all"] || 0
     )
 
-    return NextResponse.json({ articles })
+    return NextResponse.json(
+      { articles },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      }
+    )
   } catch (error) {
     console.error("[v0] Error in news API:", error)
     return NextResponse.json({ error: "Failed to fetch news", articles: [] }, { status: 500 })

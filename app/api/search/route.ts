@@ -133,14 +133,21 @@ export async function GET(request: NextRequest) {
       `[v0] Search completed: ${sortedResults.length} articles found, ${uniqueResults.length} unique (Region: ${region}, Korean: ${isKorean ? "yes" : "no"}, Translated: ${translated || "no"})`
     )
 
-    return NextResponse.json({
-      articles: uniqueResults,
-      query: {
-        original,
-        translated,
-        isKorean,
+    return NextResponse.json(
+      {
+        articles: uniqueResults,
+        query: {
+          original,
+          translated,
+          isKorean,
+        },
       },
-    })
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=180, stale-while-revalidate=360',
+        },
+      }
+    )
   } catch (error) {
     console.error("[v0] Search API error:", error)
     return NextResponse.json({ error: "검색 중 오류가 발생했습니다", articles: [] }, { status: 500 })

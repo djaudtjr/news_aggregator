@@ -52,29 +52,37 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. 최근 24시간 이내 뉴스 검색
-    const now = new Date()
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
-
     const allNews: NewsItem[] = []
 
-    // 각 키워드별로 뉴스 검색
+    // 각 키워드별로 뉴스 API에서 직접 검색
     for (const { keyword } of keywords) {
-      const { data: news, error: newsError } = await supabaseServer
-        .from("news_summaries")
-        .select("title, description, link, source, pub_date")
-        .or(`title.ilike.%${keyword}%,description.ilike.%${keyword}%`)
-        .gte("pub_date", yesterday)
-        .order("pub_date", { ascending: false })
-        .limit(10)
+      try {
+        const searchResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/search?q=${encodeURIComponent(keyword)}`,
+          { next: { revalidate: 0 } } // 캐시 사용 안함
+        )
 
-      if (!newsError && news) {
-        allNews.push(...news.map(n => ({
-          title: n.title,
-          description: n.description || "",
-          link: n.link,
-          source: n.source,
-          pubDate: n.pub_date,
-        })))
+        if (searchResponse.ok) {
+          const searchData = await searchResponse.json()
+          const articles = searchData.articles || []
+
+          // 최근 24시간 이내 뉴스만 필터링
+          const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
+          const recentArticles = articles.filter((article: any) => {
+            const pubDate = new Date(article.pubDate)
+            return pubDate >= yesterday
+          }).slice(0, 10) // 키워드당 최대 10개
+
+          allNews.push(...recentArticles.map((article: any) => ({
+            title: article.title,
+            description: article.description || "",
+            link: article.link,
+            source: article.source,
+            pubDate: article.pubDate,
+          })))
+        }
+      } catch (error) {
+        console.error(`[Email Digest] Error searching keyword "${keyword}":`, error)
       }
     }
 
