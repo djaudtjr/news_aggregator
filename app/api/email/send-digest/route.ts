@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
           const recentArticles = articles.filter((article: any) => {
             const pubDate = new Date(article.pubDate)
             return pubDate >= yesterday
-          }).slice(0, 10) // 키워드당 최대 10개
+          }).slice(0, 5) // 키워드당 최대 5개
 
           allNews.push(...recentArticles.map((article: any) => ({
             title: article.title,
@@ -91,14 +91,14 @@ export async function POST(request: NextRequest) {
       new Map(allNews.map(item => [item.link, item])).values()
     )
 
-    // 최신순 정렬 및 최대 10개만
+    // 최신순 정렬 및 최대 5개만
     const topNews = uniqueNews
       .sort((a, b) => {
         const dateA = a.pubDate ? new Date(a.pubDate).getTime() : 0
         const dateB = b.pubDate ? new Date(b.pubDate).getTime() : 0
         return dateB - dateA
       })
-      .slice(0, 10)
+      .slice(0, 5)
 
     if (topNews.length === 0) {
       // 뉴스가 없어도 로그 기록
