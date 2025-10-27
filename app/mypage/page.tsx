@@ -593,7 +593,7 @@ export default function MyPage() {
                   <AlertDescription className="text-xs">
                     선택한 요일{" "}
                     {emailForm.deliveryHour === 6 ? "오전 6시" : "오후 6시"}
-                    에 최근 24시간 이내 구독 키워드 관련 뉴스 10개를 이메일로 받습니다.
+                    에 구독 키워드당 최신 뉴스 5개씩 이메일로 받습니다.
                   </AlertDescription>
                 </Alert>
               )}
