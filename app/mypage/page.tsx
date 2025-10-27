@@ -549,7 +549,7 @@ export default function MyPage() {
                 <div className="flex items-center justify-between">
                   <Label>발송 시간 (KST)</Label>
                   <span className="text-xs text-muted-foreground">
-                    최대 1시간 정도 딜레이가 발생할 수 있습니다
+                    발송 시간은 ±1시간 정도 차이가 날 수 있습니다
                   </span>
                 </div>
                 <div className="flex gap-4">
