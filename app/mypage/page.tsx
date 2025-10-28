@@ -48,6 +48,10 @@ export default function MyPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [bookmarksPage, setBookmarksPage] = useState(1)
+  const [searchesPage, setSearchesPage] = useState(1)
+  const bookmarksPerPage = 5
+  const searchesPerPage = 5
 
   // 구독 키워드 관련
   const { keywords, addKeyword, removeKeyword } = useSubscribedKeywords()
@@ -107,6 +111,26 @@ export default function MyPage() {
       setLoading(false)
     }
   }, [user, fetchMyPageData]) // user가 변경되면 자동으로 데이터 로드
+
+  // 북마크 데이터가 변경되면 페이지 범위 조정
+  useEffect(() => {
+    if (data?.recentBookmarks) {
+      const totalPages = Math.ceil(data.recentBookmarks.length / bookmarksPerPage)
+      if (bookmarksPage > totalPages && totalPages > 0) {
+        setBookmarksPage(totalPages)
+      }
+    }
+  }, [data?.recentBookmarks, bookmarksPage, bookmarksPerPage])
+
+  // 검색 데이터가 변경되면 페이지 범위 조정
+  useEffect(() => {
+    if (data?.recentSearches) {
+      const totalPages = Math.ceil(data.recentSearches.length / searchesPerPage)
+      if (searchesPage > totalPages && totalPages > 0) {
+        setSearchesPage(totalPages)
+      }
+    }
+  }, [data?.recentSearches, searchesPage, searchesPerPage])
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query)
@@ -318,7 +342,14 @@ export default function MyPage() {
                     <TrendingUp className="h-5 w-5 text-primary" />
                     <CardTitle>최근 검색 키워드</CardTitle>
                   </div>
-                  <CardDescription>내가 자주 검색한 키워드</CardDescription>
+                  <CardDescription>
+                    내가 자주 검색한 키워드
+                    {data?.recentSearches && data.recentSearches.length > 0 && (
+                      <span className="ml-2">
+                        (총 {data.recentSearches.length}개)
+                      </span>
+                    )}
+                  </CardDescription>
                 </div>
                 {data?.recentSearches && data.recentSearches.length > 0 && (
                   <Button
@@ -338,25 +369,75 @@ export default function MyPage() {
             </CardHeader>
             <CardContent>
               {data?.recentSearches && data.recentSearches.length > 0 ? (
-                <div className="space-y-2">
-                  {data.recentSearches.map((search, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline">{index + 1}</Badge>
-                        <div>
-                          <div className="font-medium">{search.keyword}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(search.last_searched_at), { addSuffix: true, locale: ko })}
+                <>
+                  <div className="space-y-2">
+                    {data.recentSearches
+                      .slice((searchesPage - 1) * searchesPerPage, searchesPage * searchesPerPage)
+                      .map((search, index) => {
+                        // 전체 인덱스 계산 (페이징 고려)
+                        const globalIndex = (searchesPage - 1) * searchesPerPage + index + 1
+                        return (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Badge variant="outline">{globalIndex}</Badge>
+                              <div>
+                                <div className="font-medium">{search.keyword}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {formatDistanceToNow(new Date(search.last_searched_at), { addSuffix: true, locale: ko })}
+                                </div>
+                              </div>
+                            </div>
+                            <Badge variant="secondary">{search.search_count}회</Badge>
                           </div>
-                        </div>
+                        )
+                      })}
+                  </div>
+
+                  {/* 페이지네이션 */}
+                  {data.recentSearches.length > searchesPerPage && (
+                    <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSearchesPage((prev) => Math.max(1, prev - 1))}
+                        disabled={searchesPage === 1}
+                      >
+                        이전
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from(
+                          { length: Math.ceil(data.recentSearches.length / searchesPerPage) },
+                          (_, i) => i + 1
+                        ).map((page) => (
+                          <Button
+                            key={page}
+                            variant={searchesPage === page ? "default" : "ghost"}
+                            size="sm"
+                            onClick={() => setSearchesPage(page)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {page}
+                          </Button>
+                        ))}
                       </div>
-                      <Badge variant="secondary">{search.search_count}회</Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setSearchesPage((prev) =>
+                            Math.min(Math.ceil(data.recentSearches.length / searchesPerPage), prev + 1)
+                          )
+                        }
+                        disabled={searchesPage === Math.ceil(data.recentSearches.length / searchesPerPage)}
+                      >
+                        다음
+                      </Button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">검색 기록이 없습니다</p>
               )}
@@ -372,7 +453,14 @@ export default function MyPage() {
                     <Bookmark className="h-5 w-5 text-primary" />
                     <CardTitle>북마크한 기사</CardTitle>
                   </div>
-                  <CardDescription>저장한 뉴스 기사</CardDescription>
+                  <CardDescription>
+                    저장한 뉴스 기사
+                    {data?.recentBookmarks && data.recentBookmarks.length > 0 && (
+                      <span className="ml-2">
+                        (총 {data.recentBookmarks.length}개)
+                      </span>
+                    )}
+                  </CardDescription>
                 </div>
                 {data?.recentBookmarks && data.recentBookmarks.length > 0 && (
                   <Button
@@ -387,26 +475,72 @@ export default function MyPage() {
             </CardHeader>
             <CardContent>
               {data?.recentBookmarks && data.recentBookmarks.length > 0 ? (
-                <div className="space-y-2">
-                  {data.recentBookmarks.map((bookmark) => (
-                    <a
-                      key={bookmark.id}
-                      href={bookmark.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block p-3 rounded-lg border hover:bg-accent transition-colors"
-                    >
-                      <div className="font-medium line-clamp-2">{bookmark.title}</div>
-                      <div className="flex items-center gap-2 mt-2">
-                        {bookmark.source && <Badge variant="secondary">{bookmark.source}</Badge>}
-                        {bookmark.category && <Badge variant="outline">{bookmark.category}</Badge>}
+                <>
+                  <div className="space-y-2">
+                    {data.recentBookmarks
+                      .slice((bookmarksPage - 1) * bookmarksPerPage, bookmarksPage * bookmarksPerPage)
+                      .map((bookmark) => (
+                        <a
+                          key={bookmark.id}
+                          href={bookmark.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block p-3 rounded-lg border hover:bg-accent transition-colors"
+                        >
+                          <div className="font-medium line-clamp-2">{bookmark.title}</div>
+                          <div className="flex items-center gap-2 mt-2">
+                            {bookmark.source && <Badge variant="secondary">{bookmark.source}</Badge>}
+                            {bookmark.category && <Badge variant="outline">{bookmark.category}</Badge>}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-2">
+                            {formatDistanceToNow(new Date(bookmark.created_at), { addSuffix: true, locale: ko })}
+                          </div>
+                        </a>
+                      ))}
+                  </div>
+
+                  {/* 페이지네이션 */}
+                  {data.recentBookmarks.length > bookmarksPerPage && (
+                    <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setBookmarksPage((prev) => Math.max(1, prev - 1))}
+                        disabled={bookmarksPage === 1}
+                      >
+                        이전
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from(
+                          { length: Math.ceil(data.recentBookmarks.length / bookmarksPerPage) },
+                          (_, i) => i + 1
+                        ).map((page) => (
+                          <Button
+                            key={page}
+                            variant={bookmarksPage === page ? "default" : "ghost"}
+                            size="sm"
+                            onClick={() => setBookmarksPage(page)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {page}
+                          </Button>
+                        ))}
                       </div>
-                      <div className="text-xs text-muted-foreground mt-2">
-                        {formatDistanceToNow(new Date(bookmark.created_at), { addSuffix: true, locale: ko })}
-                      </div>
-                    </a>
-                  ))}
-                </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setBookmarksPage((prev) =>
+                            Math.min(Math.ceil(data.recentBookmarks.length / bookmarksPerPage), prev + 1)
+                          )
+                        }
+                        disabled={bookmarksPage === Math.ceil(data.recentBookmarks.length / bookmarksPerPage)}
+                      >
+                        다음
+                      </Button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">북마크한 기사가 없습니다</p>
               )}

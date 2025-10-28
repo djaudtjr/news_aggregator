@@ -46,13 +46,12 @@ export async function GET(request: NextRequest) {
     // 총 검색 횟수 계산
     const totalSearches = allSearchStats?.reduce((sum, stat) => sum + (stat.search_count || 0), 0) || 0
 
-    // 최근 검색 키워드 (상위 10개)
+    // 최근 검색 키워드 (전체, 페이징은 프론트엔드에서 처리)
     const { data: recentSearchStats, error: recentSearchError } = await supabaseServer
       .from("search_keyword_analytics")
       .select("keyword, search_count, last_searched_at")
       .eq("user_id", userId)
       .order("last_searched_at", { ascending: false })
-      .limit(10)
 
     if (recentSearchError) {
       console.error("[MyPage] Recent search stats error:", recentSearchError)
@@ -68,13 +67,12 @@ export async function GET(request: NextRequest) {
       console.error("[MyPage] Bookmark count error:", bookmarkCountError)
     }
 
-    // 4. 북마크 최근 10개 조회
+    // 4. 북마크 전체 조회 (페이징은 프론트엔드에서 처리)
     const { data: recentBookmarks, error: bookmarksError } = await supabaseServer
       .from("bookmarks")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(10)
 
     if (bookmarksError) {
       console.error("[MyPage] Recent bookmarks error:", bookmarksError)
