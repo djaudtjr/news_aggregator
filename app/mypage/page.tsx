@@ -81,16 +81,20 @@ export default function MyPage() {
 
     try {
       setLoading(true)
+      setError(null)
       const response = await fetch(`/api/mypage?userId=${user.id}`)
+
       if (response.ok) {
         const data = await response.json()
         setData(data)
       } else {
-        setError("Failed to load data")
+        const errorData = await response.json().catch(() => ({}))
+        console.error("API error:", response.status, errorData)
+        setError(`데이터를 불러올 수 없습니다 (${response.status})${errorData.details ? `: ${errorData.details}` : ''}`)
       }
     } catch (err) {
       console.error("Failed to fetch my page data:", err)
-      setError("Failed to load data")
+      setError(`데이터를 불러오는 중 오류가 발생했습니다: ${err instanceof Error ? err.message : '알 수 없는 오류'}`)
     } finally {
       setLoading(false)
     }

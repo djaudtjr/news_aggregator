@@ -34,14 +34,18 @@ export function useBookmarks() {
 
     try {
       setLoading(true)
+      console.log("[Bookmark] Fetching bookmarks for user:", user.id)
       const response = await fetch(`/api/bookmarks?userId=${user.id}`)
       if (response.ok) {
         const data = await response.json()
+        console.log("[Bookmark] Fetched bookmarks:", data.bookmarks?.length || 0)
         setBookmarks(data.bookmarks || [])
         setBookmarkedIds(new Set(data.bookmarks?.map((b: Bookmark) => b.article_id) || []))
+      } else {
+        console.error("[Bookmark] Failed to fetch bookmarks:", response.status)
       }
     } catch (error) {
-      console.error("Failed to fetch bookmarks:", error)
+      console.error("[Bookmark] Failed to fetch bookmarks:", error)
     } finally {
       setLoading(false)
     }
@@ -66,10 +70,12 @@ export function useBookmarks() {
   }) => {
     if (!user) {
       console.warn("User not logged in")
+      alert("로그인이 필요합니다")
       return false
     }
 
     try {
+      console.log("[Bookmark] Adding bookmark:", article.id, article.title)
       const response = await fetch("/api/bookmarks", {
         method: "POST",
         headers: {
@@ -90,17 +96,21 @@ export function useBookmarks() {
       })
 
       if (response.ok) {
+        console.log("[Bookmark] Successfully added bookmark")
         await fetchBookmarks() // 목록 새로고침
         return true
       } else if (response.status === 409) {
-        console.warn("Already bookmarked")
+        console.warn("[Bookmark] Already bookmarked")
         return false
       } else {
-        console.error("Failed to add bookmark")
+        const errorData = await response.json().catch(() => ({}))
+        console.error("[Bookmark] Failed to add bookmark:", response.status, errorData)
+        alert("북마크 추가에 실패했습니다")
         return false
       }
     } catch (error) {
-      console.error("Failed to add bookmark:", error)
+      console.error("[Bookmark] Failed to add bookmark:", error)
+      alert("북마크 추가 중 오류가 발생했습니다")
       return false
     }
   }
@@ -113,19 +123,23 @@ export function useBookmarks() {
     }
 
     try {
+      console.log("[Bookmark] Removing bookmark:", articleId)
       const response = await fetch(`/api/bookmarks?userId=${user.id}&articleId=${articleId}`, {
         method: "DELETE",
       })
 
       if (response.ok) {
+        console.log("[Bookmark] Successfully removed bookmark")
         await fetchBookmarks() // 목록 새로고침
         return true
       } else {
-        console.error("Failed to remove bookmark")
+        console.error("[Bookmark] Failed to remove bookmark:", response.status)
+        alert("북마크 삭제에 실패했습니다")
         return false
       }
     } catch (error) {
-      console.error("Failed to remove bookmark:", error)
+      console.error("[Bookmark] Failed to remove bookmark:", error)
+      alert("북마크 삭제 중 오류가 발생했습니다")
       return false
     }
   }

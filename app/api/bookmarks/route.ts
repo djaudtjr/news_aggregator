@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase/client"
+import { supabaseServer } from "@/lib/supabase/server"
 
 /**
  * 북마크 목록 조회
@@ -10,11 +10,11 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const userId = searchParams.get("userId")
 
-    if (!userId || userId === "Anonymous") {
+    if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from("bookmarks")
       .select("*")
       .eq("user_id", userId)
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { userId, articleId, title, description, link, source, imageUrl, category, region, pubDate } = body
 
-    if (!userId || userId === "Anonymous") {
+    if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
     }
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Article ID, title, and link are required" }, { status: 400 })
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from("bookmarks")
       .insert({
         user_id: userId,
@@ -94,13 +94,16 @@ export async function DELETE(request: NextRequest) {
     const articleId = searchParams.get("articleId")
     const deleteAll = searchParams.get("deleteAll")
 
-    if (!userId || userId === "Anonymous") {
+    if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
     }
 
     // 모든 북마크 삭제
     if (deleteAll === "true") {
-      const { error } = await supabase.from("bookmarks").delete().eq("user_id", userId)
+      const { error } = await supabaseServer
+        .from("bookmarks")
+        .delete()
+        .eq("user_id", userId)
 
       if (error) {
         console.error("[Bookmarks] Delete all error:", error)
@@ -115,7 +118,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Article ID is required" }, { status: 400 })
     }
 
-    const { error } = await supabase.from("bookmarks").delete().eq("user_id", userId).eq("article_id", articleId)
+    const { error } = await supabaseServer
+      .from("bookmarks")
+      .delete()
+      .eq("user_id", userId)
+      .eq("article_id", articleId)
 
     if (error) {
       console.error("[Bookmarks] Delete error:", error)

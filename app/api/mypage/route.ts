@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase/client"
+import { supabaseServer } from "@/lib/supabase/server"
 
 /**
  * 사용자 마이페이지 데이터 조회 API
@@ -10,12 +10,14 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const userId = searchParams.get("userId")
 
-    if (!userId || userId === "Anonymous") {
+    if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
     }
 
+    console.log("[MyPage] Fetching data for user:", userId)
+
     // 1. 사용 통계 조회
-    const { data: summaryStats, error: summaryError } = await supabase
+    const { data: summaryStats, error: summaryError } = await supabaseServer
       .from("news_summary_analytics")
       .select("summary_request_count, link_click_count")
       .eq("user_id", userId)
@@ -31,23 +33,43 @@ export async function GET(request: NextRequest) {
     // 링크 클릭 총 횟수
     const totalLinkClicks = summaryStats?.reduce((sum, stat) => sum + (stat.link_click_count || 0), 0) || 0
 
-    // 2. 검색 키워드 통계
-    const { data: searchStats, error: searchError } = await supabase
+    // 2. 검색 키워드 통계 - 전체 검색 횟수
+    const { data: allSearchStats, error: allSearchError } = await supabaseServer
+      .from("search_keyword_analytics")
+      .select("search_count")
+      .eq("user_id", userId)
+
+    if (allSearchError) {
+      console.error("[MyPage] All search stats error:", allSearchError)
+    }
+
+    // 총 검색 횟수 계산
+    const totalSearches = allSearchStats?.reduce((sum, stat) => sum + (stat.search_count || 0), 0) || 0
+
+    // 최근 검색 키워드 (상위 10개)
+    const { data: recentSearchStats, error: recentSearchError } = await supabaseServer
       .from("search_keyword_analytics")
       .select("keyword, search_count, last_searched_at")
       .eq("user_id", userId)
       .order("last_searched_at", { ascending: false })
       .limit(10)
 
-    if (searchError) {
-      console.error("[MyPage] Search stats error:", searchError)
+    if (recentSearchError) {
+      console.error("[MyPage] Recent search stats error:", recentSearchError)
     }
 
-    // 총 검색 횟수
-    const totalSearches = searchStats?.reduce((sum, stat) => sum + (stat.search_count || 0), 0) || 0
+    // 3. 북마크 전체 개수 조회
+    const { count: bookmarkCount, error: bookmarkCountError } = await supabaseServer
+      .from("bookmarks")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
 
-    // 3. 북마크 조회 (최근 10개)
-    const { data: bookmarks, error: bookmarksError } = await supabase
+    if (bookmarkCountError) {
+      console.error("[MyPage] Bookmark count error:", bookmarkCountError)
+    }
+
+    // 4. 북마크 최근 10개 조회
+    const { data: recentBookmarks, error: bookmarksError } = await supabaseServer
       .from("bookmarks")
       .select("*")
       .eq("user_id", userId)
@@ -55,21 +77,26 @@ export async function GET(request: NextRequest) {
       .limit(10)
 
     if (bookmarksError) {
-      console.error("[MyPage] Bookmarks error:", bookmarksError)
+      console.error("[MyPage] Recent bookmarks error:", bookmarksError)
     }
+
+    console.log("[MyPage] Data fetched successfully")
 
     return NextResponse.json({
       stats: {
         totalSummaryRequests,
         totalLinkClicks,
         totalSearches,
-        totalBookmarks: bookmarks?.length || 0,
+        totalBookmarks: bookmarkCount || 0,
       },
-      recentSearches: searchStats || [],
-      recentBookmarks: bookmarks || [],
+      recentSearches: recentSearchStats || [],
+      recentBookmarks: recentBookmarks || [],
     })
   } catch (error) {
-    console.error("[MyPage] Error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("[MyPage] Unexpected error:", error)
+    return NextResponse.json({
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : "Unknown error"
+    }, { status: 500 })
   }
 }
