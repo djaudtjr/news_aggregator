@@ -130,13 +130,17 @@ export function NewsCard({ article }: NewsCardProps) {
           <Button
             variant="secondary"
             size="icon"
-            className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm hover:bg-background/90 shadow-md"
+            className={`absolute top-2 right-2 backdrop-blur-sm shadow-md transition-all ${
+              isBookmarked(article.id)
+                ? "bg-yellow-400 hover:bg-yellow-500 text-yellow-900"
+                : "bg-background/80 hover:bg-background/90"
+            }`}
             onClick={handleBookmark}
             disabled={!user}
             title={user ? (isBookmarked(article.id) ? "북마크 해제" : "북마크") : "로그인 필요"}
           >
             {isBookmarked(article.id) ? (
-              <BookmarkCheck className="h-4 w-4 fill-current text-primary" />
+              <BookmarkCheck className="h-4 w-4 fill-current" />
             ) : (
               <Bookmark className="h-4 w-4" />
             )}
