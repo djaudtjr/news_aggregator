@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { TrendingUp, Search, Clock } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { supabase } from "@/lib/supabase/client"
+import type { RealtimeChannel } from "@supabase/supabase-js"
 
 interface TrendingKeyword {
   keyword: string
@@ -48,6 +50,46 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
     retry: 1, // 실패 시 1번만 재시도
   })
 
+  // Supabase Realtime 구독
+  useEffect(() => {
+    let channel: RealtimeChannel | null = null
+
+    const setupRealtimeSubscription = () => {
+      console.log("[TrendingKeywords] Setting up Realtime subscription...")
+
+      // search_keyword_analytics 테이블 변경 구독
+      channel = supabase
+        .channel("search_keyword_analytics_changes")
+        .on(
+          "postgres_changes",
+          {
+            event: "*", // INSERT, UPDATE, DELETE 모두 감지
+            schema: "public",
+            table: "search_keyword_analytics",
+          },
+          (payload) => {
+            console.log("[TrendingKeywords] Realtime update received:", payload)
+
+            // 테이블 변경 감지시 인기 검색어 목록 즉시 업데이트
+            refetch()
+          }
+        )
+        .subscribe((status) => {
+          console.log("[TrendingKeywords] Subscription status:", status)
+        })
+    }
+
+    setupRealtimeSubscription()
+
+    // Cleanup: 컴포넌트 언마운트시 구독 해제
+    return () => {
+      if (channel) {
+        console.log("[TrendingKeywords] Unsubscribing from Realtime...")
+        supabase.removeChannel(channel)
+      }
+    }
+  }, [refetch]) // refetch가 변경될 때만 재구독
+
   const handleKeywordClick = async (keyword: string) => {
     // 1. 먼저 검색 실행 (사용자에게 빠르게 결과 표시)
     if (onKeywordClick) {
@@ -55,6 +97,7 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
     }
 
     // 2. 검색 키워드 통계 기록 (백그라운드로 비동기 실행)
+    // Realtime 구독이 자동으로 업데이트를 처리하므로 별도 refetch 불필요
     try {
       await fetch("/api/analytics/search-keyword", {
         method: "POST",
@@ -66,12 +109,7 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
           keyword: keyword.trim(),
         }),
       })
-
-      // 3. 통계 기록 후 인기 검색어 목록 즉시 업데이트
-      // 약간의 지연 후 refetch (서버에서 통계가 업데이트될 시간 확보)
-      setTimeout(() => {
-        refetch()
-      }, 200) // 0.2초 후 업데이트
+      // DB 업데이트시 Realtime으로 자동 감지되어 refetch됨
     } catch (error) {
       // 통계 추적 실패해도 검색에는 영향 없음
       console.error("Failed to track trending keyword click:", error)

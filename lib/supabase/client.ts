@@ -7,4 +7,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn("[v0] Supabase credentials not found in environment variables")
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Realtime 설정 포함
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  realtime: {
+    params: {
+      eventsPerSecond: 10, // 초당 최대 이벤트 수
+    },
+  },
+})
