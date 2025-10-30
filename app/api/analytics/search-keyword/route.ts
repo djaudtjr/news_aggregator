@@ -131,9 +131,9 @@ export async function POST(request: NextRequest) {
     // 2. OpenAI로 키워드를 단어별로 분리
     const keywords = await splitKeywordsByAI(sanitizedKeyword)
 
-    // 3. 각 키워드를 DB에 저장
+    // 3. 각 키워드를 DB에 저장 (원본 형태로 저장)
     for (const kw of keywords) {
-      await recordSearchKeyword(effectiveUserId, kw.toLowerCase())
+      await recordSearchKeyword(effectiveUserId, kw)
     }
 
     return NextResponse.json({ success: true, keywords })
@@ -144,19 +144,36 @@ export async function POST(request: NextRequest) {
 }
 
 /**
+ * 키워드 정규화 (집계용)
+ * - 공백 제거
+ * - 영문 대문자로 변환
+ */
+function normalizeKeywordForGrouping(keyword: string): string {
+  return keyword
+    .replace(/\s+/g, "") // 모든 공백 제거
+    .toUpperCase() // 영문 대문자 변환
+}
+
+/**
  * 검색 키워드 통계 기록
  * @param userId 사용자 UID (비로그인은 'Anonymous')
- * @param keyword 검색 키워드
+ * @param keyword 검색 키워드 (원본 형태로 DB에 저장)
  */
 async function recordSearchKeyword(userId: string, keyword: string) {
   try {
-    // 기존 레코드 확인
-    const { data: existing } = await supabase
+    const trimmedKeyword = keyword.trim() // 앞뒤 공백만 제거
+    const normalizedKeyword = normalizeKeywordForGrouping(trimmedKeyword) // 집계용 정규화
+
+    // 정규화된 키워드로 기존 레코드 확인 (같은 의미의 키워드 찾기)
+    const { data: allRecords } = await supabase
       .from("search_keyword_analytics")
       .select("*")
       .eq("user_id", userId)
-      .eq("keyword", keyword)
-      .single()
+
+    // 정규화된 형태가 같은 레코드 찾기
+    const existing = allRecords?.find(
+      (record) => normalizeKeywordForGrouping(record.keyword) === normalizedKeyword
+    )
 
     if (existing) {
       // 기존 레코드가 있으면 검색 카운트 증가
@@ -164,28 +181,29 @@ async function recordSearchKeyword(userId: string, keyword: string) {
         .from("search_keyword_analytics")
         .update({
           search_count: existing.search_count + 1,
+          // keyword는 업데이트하지 않음 (가장 먼저 저장된 형태 유지)
           // last_searched_at은 트리거에서 자동 업데이트
         })
         .eq("user_id", userId)
-        .eq("keyword", keyword)
+        .eq("keyword", existing.keyword) // 기존 키워드로 업데이트
 
       if (error) {
         console.error("[Analytics] Failed to update search keyword count:", error)
       } else {
-        console.log(`[Analytics] Search keyword recorded for user ${userId}, keyword: "${keyword}"`)
+        console.log(`[Analytics] Search keyword recorded for user ${userId}, keyword: "${existing.keyword}" (normalized: "${normalizedKeyword}")`)
       }
     } else {
-      // 새 레코드 생성
+      // 새 레코드 생성 (원본 형태로 저장)
       const { error } = await supabase.from("search_keyword_analytics").insert({
         user_id: userId,
-        keyword: keyword,
+        keyword: trimmedKeyword, // 앞뒤 공백만 제거한 원본 저장
         search_count: 1,
       })
 
       if (error) {
         console.error("[Analytics] Failed to insert search keyword record:", error)
       } else {
-        console.log(`[Analytics] Search keyword record created for user ${userId}, keyword: "${keyword}"`)
+        console.log(`[Analytics] Search keyword record created for user ${userId}, keyword: "${trimmedKeyword}" (normalized: "${normalizedKeyword}")`)
       }
     }
   } catch (error) {

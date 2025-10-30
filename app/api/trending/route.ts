@@ -2,8 +2,20 @@ import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase/client"
 
 /**
+ * 키워드 정규화 (집계용)
+ * - 공백 제거
+ * - 영문 대문자로 변환
+ */
+function normalizeKeywordForGrouping(keyword: string): string {
+  return keyword
+    .replace(/\s+/g, "") // 모든 공백 제거
+    .toUpperCase() // 영문 대문자 변환
+}
+
+/**
  * 인기 검색어 조회 API
  * 최근 24시간 동안 가장 많이 검색된 키워드를 반환
+ * 정규화된 키워드로 그룹핑하여 중복 제거
  */
 export async function GET(request: NextRequest) {
   try {
@@ -32,28 +44,50 @@ export async function GET(request: NextRequest) {
         cutoffDate.setHours(now.getHours() - 24)
     }
 
-    // 인기 검색어 조회
+    // 모든 검색어 조회 (시간 범위 내)
     const { data, error } = await supabase
       .from("search_keyword_analytics")
       .select("keyword, search_count")
       .gte("last_searched_at", cutoffDate.toISOString())
-      .order("search_count", { ascending: false })
-      .limit(limit)
 
     if (error) {
       console.error("[Trending] Database error:", error)
       return NextResponse.json({ error: "Failed to fetch trending keywords" }, { status: 500 })
     }
 
+    // 정규화된 키워드로 그룹핑
+    const groupedMap = new Map<string, { keyword: string; searchCount: number }>()
+
+    for (const item of data) {
+      const normalizedKey = normalizeKeywordForGrouping(item.keyword)
+      const existing = groupedMap.get(normalizedKey)
+
+      if (existing) {
+        // 기존 그룹에 카운트 합산
+        existing.searchCount += item.search_count
+      } else {
+        // 새로운 그룹 생성 (DB에 저장된 원본 키워드 사용)
+        groupedMap.set(normalizedKey, {
+          keyword: item.keyword,
+          searchCount: item.search_count,
+        })
+      }
+    }
+
+    // Map을 배열로 변환하고 검색 횟수 기준 정렬
+    const sortedKeywords = Array.from(groupedMap.values())
+      .sort((a, b) => b.searchCount - a.searchCount)
+      .slice(0, limit)
+
     // 전체 검색 횟수 계산
-    const totalSearches = data.reduce((sum, item) => sum + item.search_count, 0)
+    const totalSearches = sortedKeywords.reduce((sum, item) => sum + item.searchCount, 0)
 
     // 검색어 데이터 가공
-    const trendingKeywords = data.map((item, index) => ({
+    const trendingKeywords = sortedKeywords.map((item, index) => ({
       keyword: item.keyword,
-      searchCount: item.search_count,
+      searchCount: item.searchCount,
       rank: index + 1,
-      percentage: totalSearches > 0 ? Math.round((item.search_count / totalSearches) * 100) : 0,
+      percentage: totalSearches > 0 ? Math.round((item.searchCount / totalSearches) * 100) : 0,
     }))
 
     return NextResponse.json({
