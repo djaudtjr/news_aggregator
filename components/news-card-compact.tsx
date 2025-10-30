@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Clock, ExternalLink, Bookmark, BookmarkCheck } from "lucide-react"
@@ -14,7 +15,7 @@ interface NewsCardCompactProps {
   article: NewsArticle
 }
 
-export function NewsCardCompact({ article }: NewsCardCompactProps) {
+function NewsCardCompactComponent({ article }: NewsCardCompactProps) {
   const timeAgo = formatDistanceToNow(new Date(article.pubDate), { addSuffix: true, locale: ko })
   const { addRecentArticle } = useRecentArticles()
   const { user } = useAuth()
@@ -94,6 +95,7 @@ export function NewsCardCompact({ article }: NewsCardCompactProps) {
             src={article.imageUrl}
             alt={article.title}
             className="w-20 h-20 object-cover rounded"
+            loading="lazy"
             onError={(e) => {
               e.currentTarget.style.display = "none"
             }}
@@ -163,3 +165,8 @@ export function NewsCardCompact({ article }: NewsCardCompactProps) {
     </div>
   )
 }
+
+// 메모이제이션: article.id가 변경되지 않으면 리렌더링하지 않음
+export const NewsCardCompact = memo(NewsCardCompactComponent, (prevProps, nextProps) => {
+  return prevProps.article.id === nextProps.article.id
+})

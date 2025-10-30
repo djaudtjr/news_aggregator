@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, memo } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,7 +19,7 @@ interface NewsCardListProps {
   article: NewsArticle
 }
 
-export function NewsCardList({ article }: NewsCardListProps) {
+function NewsCardListComponent({ article }: NewsCardListProps) {
   const timeAgo = formatDistanceToNow(new Date(article.pubDate), { addSuffix: true, locale: ko })
   const { user } = useAuth()
   const { summary, keyPoints, isLoading, fromCache, generateSummary } = useArticleSummary(article.id)
@@ -118,6 +118,9 @@ export function NewsCardList({ article }: NewsCardListProps) {
             className="object-cover"
             sizes="192px"
             onError={handleImageError}
+            loading="lazy"
+            placeholder="blur"
+            blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
           />
           {/* 북마크 버튼을 이미지 위에 배치 */}
           <Button
@@ -204,3 +207,8 @@ export function NewsCardList({ article }: NewsCardListProps) {
     </Card>
   )
 }
+
+// 메모이제이션: article.id가 변경되지 않으면 리렌더링하지 않음
+export const NewsCardList = memo(NewsCardListComponent, (prevProps, nextProps) => {
+  return prevProps.article.id === nextProps.article.id
+})
