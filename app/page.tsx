@@ -48,9 +48,18 @@ export default function HomePage() {
     refresh() // 시간 범위 변경 시 새로고침
   }
 
+  const handleRefresh = () => {
+    // 메인화면으로 이동: 모든 필터 초기화
+    setActiveCategory("all")
+    setActiveRegion("all")
+    setSearchQuery("")
+    setTimeRange(1) // 1일로 초기화
+    refresh()
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <NewsHeader searchQuery={searchQuery} onSearchChange={setSearchQuery} onRefresh={refresh} />
+      <NewsHeader searchQuery={searchQuery} onSearchChange={setSearchQuery} onRefresh={handleRefresh} />
       <main className="container mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* 메인 콘텐츠 */}

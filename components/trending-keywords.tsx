@@ -48,9 +48,27 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
     retry: 1, // 실패 시 1번만 재시도
   })
 
-  const handleKeywordClick = (keyword: string) => {
+  const handleKeywordClick = async (keyword: string) => {
+    // 1. 먼저 검색 실행 (사용자에게 빠르게 결과 표시)
     if (onKeywordClick) {
       onKeywordClick(keyword)
+    }
+
+    // 2. 검색 키워드 통계 기록 (백그라운드로 비동기 실행)
+    try {
+      await fetch("/api/analytics/search-keyword", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: null, // 인기 검색어 클릭은 익명으로 기록
+          keyword: keyword.trim(),
+        }),
+      })
+    } catch (error) {
+      // 통계 추적 실패해도 검색에는 영향 없음
+      console.error("Failed to track trending keyword click:", error)
     }
   }
 

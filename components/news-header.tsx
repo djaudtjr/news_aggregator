@@ -63,10 +63,22 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh }: NewsHeade
   }
 
   const handleRefresh = () => {
-    // 검색창이 비어있으면 검색 모드 초기화
-    if (inputValue.trim().length === 0) {
-      onSearchChange("")
-    }
+    // 새로고침 버튼 클릭 시 메인화면으로 이동
+    // 1. 검색어 초기화
+    setInputValue("")
+    onSearchChange("")
+
+    // 2. 새로고침 트리거
+    onRefresh()
+  }
+
+  const handleLogoClick = () => {
+    // 로고 클릭 시 메인화면으로 이동
+    // 1. 검색어 초기화
+    setInputValue("")
+    onSearchChange("")
+
+    // 2. 새로고침 트리거
     onRefresh()
   }
 
@@ -81,10 +93,10 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh }: NewsHeade
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={handleLogoClick}>
           <Radio className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Pulse</h1>
-        </Link>
+        </div>
 
         <div className="hidden md:flex flex-1 max-w-md mx-8">
           <div className="relative w-full flex gap-2">
