@@ -52,18 +52,30 @@
 ### 📧 이메일 구독 기능
 
 - **키워드 구독**: 최대 3개 키워드 구독 (뉴스 제목/본문 검색)
-- **예약 발송 시스템**:
-  - Cron Job 실행: KST 5시, 11시, 17시 (발송 1시간 전)
-  - 실제 발송: KST 6시, 12시, 18시 (Resend 예약 발송)
-  - 여러 구독자의 뉴스를 충분한 시간 동안 수집
+- **즉시 발송 시스템**:
+  - Cron Job 실행: KST 오전 6시, 오후 6시 (±3시간 시간 범위로 Vercel Cron 딜레이 대응)
+  - Gmail SMTP로 즉시 발송 (DNS 설정 불필요)
+  - 키워드당 최신 뉴스 5개씩 (예: 3개 키워드 → 최대 15개 기사)
 - **발송 설정**:
   - 발송 요일 선택 (일~토)
-  - 발송 시간 선택 (6시, 12시, 18시 라디오 버튼)
+  - 발송 시간 선택 (6시, 18시 라디오 버튼)
   - 활성화/비활성화 토글
-- **이메일 템플릿**:
-  - 깔끔한 HTML 디자인
-  - 최근 24시간 이내 뉴스 최대 10개
-  - 뉴스 제목, 설명, 출처, 날짜, 원문 링크
+  - 즉시 테스트 전송 버튼
+- **AI 기반 이메일 템플릿**:
+  - 키워드별 섹션으로 구성된 레이아웃
+  - 전문 크롤링 및 AI 요약 (GPT-4o-mini)
+  - 각 기사별 핵심 포인트 추출
+  - 반응형 HTML 디자인
+  - 뉴스 제목, AI 요약, 핵심 포인트, 출처, 날짜, 원문 링크 포함
+
+### 🔥 실시간 인기 검색어
+
+- **Supabase Realtime 통합**: 검색 키워드 변경시 실시간 업데이트
+- **스마트 중복 제거**: 키워드 정규화 (공백 제거, 대문자 변환)
+  - "AI", "ai", " AI " → "AI"로 통합
+  - "인공지능", " 인공지능 " → "인공지능"으로 통합
+- **다중 브라우저 동기화**: 연결된 모든 브라우저가 동시에 업데이트
+- **시간 범위 필터**: 1시간, 24시간, 7일
 
 ## 기술 스택
 
@@ -82,9 +94,9 @@
 - **RSS 파싱**: fast-xml-parser
 - **웹 크롤링**: Cheerio
 - **AI**: OpenAI API (GPT-4o-mini)
-- **데이터베이스**: Supabase (PostgreSQL)
+- **데이터베이스**: Supabase (PostgreSQL with Realtime)
 - **번역**: Naver Cloud Papago API
-- **이메일**: Resend (예약 발송 지원)
+- **이메일**: Gmail SMTP (nodemailer)
 - **Cron**: Vercel Cron Jobs
 
 ### 개발 도구
@@ -150,6 +162,7 @@ news-aggregator/
 - OpenAI API 키
 - Naver Cloud Platform 계정 (Papago API용)
 - 네이버 개발자 센터 계정 (뉴스 API용)
+- Gmail 계정 (App Password 필요)
 
 ### 설정
 
@@ -186,8 +199,9 @@ news-aggregator/
    NAVER_CLIENT_ID=your_naver_client_id
    NAVER_CLIENT_SECRET=your_naver_client_secret
 
-   # Resend (이메일 발송)
-   RESEND_API_KEY=your_resend_api_key
+   # Gmail SMTP (이메일 발송)
+   GMAIL_USERNAME=your_gmail@gmail.com
+   GMAIL_APP_PASSWORD=your_16_character_app_password
 
    # Base URL
    NEXT_PUBLIC_BASE_URL=http://localhost:3000
@@ -202,6 +216,19 @@ news-aggregator/
 
    ```bash
    # supabase/schema.sql 내용을 복사하여 Supabase에서 실행
+   ```
+
+   **Realtime 기능 활성화** (인기 검색어용):
+
+   ```sql
+   -- Realtime publication 생성
+   BEGIN;
+     DROP PUBLICATION IF EXISTS supabase_realtime;
+     CREATE PUBLICATION supabase_realtime;
+   COMMIT;
+
+   -- search_keyword_analytics 테이블 추가
+   ALTER PUBLICATION supabase_realtime ADD TABLE search_keyword_analytics;
    ```
 
 5. **개발 서버 실행**
@@ -415,6 +442,16 @@ pnpm lint
 1. [developers.naver.com](https://developers.naver.com)에서 등록
 2. 뉴스 검색 API 애플리케이션 생성
 3. Client ID와 Client Secret 발급
+
+### Gmail SMTP
+
+1. Gmail 계정 로그인
+2. Google 계정 설정 → 보안 → 2단계 인증 활성화
+3. 앱 비밀번호 생성:
+   - Google 계정 → 보안 → 2단계 인증 → 앱 비밀번호
+   - "메일"과 사용 중인 기기 선택
+   - 생성된 16자리 비밀번호를 `GMAIL_APP_PASSWORD`에 입력
+4. DNS 설정 불필요 (Gmail SMTP 서버 직접 사용)
 
 ## 기여하기
 

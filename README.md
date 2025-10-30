@@ -44,18 +44,29 @@ A modern, AI-powered news aggregation platform that collects, categorizes, and s
 
 ### 📧 Email Subscription
 - **Keyword Subscription**: Subscribe to up to 3 keywords (searches in news titles/content)
-- **Scheduled Delivery System**:
-  - Cron execution: KST 5AM, 11AM, 5PM (1 hour before delivery)
-  - Actual delivery: KST 6AM, 12PM, 6PM (via Resend scheduled sending)
-  - Sufficient time for collecting news for multiple subscribers
+- **Immediate Delivery System**:
+  - Cron execution: KST 5AM, 11AM, 5PM (±3 hour time window for Vercel Cron delay)
+  - Immediate delivery via Gmail SMTP (no DNS configuration required)
+  - 5 latest news articles per keyword (e.g., 3 keywords → up to 15 articles)
 - **Delivery Settings**:
   - Select delivery days (Sun-Sat)
-  - Choose delivery time (6AM, 12PM, or 6PM via radio buttons)
+  - Choose delivery time (6AM or 6PM via radio buttons)
   - Enable/disable toggle
-- **Email Template**:
-  - Clean HTML design
-  - Up to 10 news articles from the last 24 hours
-  - Includes news title, description, source, date, and original link
+  - Test send button for immediate testing
+- **AI-Powered Email Template**:
+  - Keyword-based sections with organized layout
+  - Full article crawling and AI summarization (GPT-4o-mini)
+  - Key points extraction for each article
+  - Responsive HTML design
+  - Includes news title, AI summary, key points, source, date, and original link
+
+### 🔥 Real-time Trending Keywords
+- **Supabase Realtime Integration**: Live updates when search keywords change
+- **Smart Deduplication**: Normalizes keywords (removes spaces, converts to uppercase)
+  - "AI", "ai", " AI " → unified as "AI"
+  - "인공지능", " 인공지능 " → unified as "인공지능"
+- **Multi-Browser Sync**: All connected browsers update simultaneously
+- **Time Range Filters**: 1 hour, 24 hours, 7 days
 
 ## Tech Stack
 
@@ -72,9 +83,9 @@ A modern, AI-powered news aggregation platform that collects, categorizes, and s
 - **RSS Parsing**: fast-xml-parser
 - **Web Scraping**: Cheerio
 - **AI**: OpenAI API (GPT-4o-mini)
-- **Database**: Supabase (PostgreSQL)
+- **Database**: Supabase (PostgreSQL with Realtime)
 - **Translation**: Naver Cloud Papago API
-- **Email**: Resend (with scheduled sending support)
+- **Email**: Gmail SMTP (nodemailer)
 - **Cron**: Vercel Cron Jobs
 
 ### Development
@@ -134,11 +145,11 @@ news-aggregator/
 ### Prerequisites
 - Node.js 18+ or compatible runtime
 - pnpm (recommended) or npm
-- Supabase account
+- Supabase account (with Realtime enabled)
 - OpenAI API key
 - Naver Cloud Platform account (for Papago API)
 - Naver Developers account (for News API)
-- Resend account (for email delivery)
+- Gmail account with App Password (for email delivery)
 
 ### Setup
 
@@ -171,8 +182,9 @@ news-aggregator/
    NAVER_CLIENT_ID=your_naver_client_id
    NAVER_CLIENT_SECRET=your_naver_client_secret
 
-   # Resend (Email Delivery)
-   RESEND_API_KEY=your_resend_api_key
+   # Gmail SMTP (Email Delivery)
+   GMAIL_USERNAME=your_gmail_address@gmail.com
+   GMAIL_APP_PASSWORD=your_16_digit_app_password
 
    # Base URL
    NEXT_PUBLIC_BASE_URL=http://localhost:3000
@@ -181,11 +193,39 @@ news-aggregator/
    CRON_SECRET=your_random_secret
    ```
 
+   **Gmail App Password Setup**:
+   1. Go to [Google Account Security](https://myaccount.google.com/security)
+   2. Enable 2-Step Verification
+   3. Go to "App passwords" section
+   4. Generate new app password for "Mail"
+   5. Copy the 16-digit password (without spaces)
+   6. Use it as `GMAIL_APP_PASSWORD`
+
 4. **Set up Supabase database**
-   Run the SQL schema in your Supabase SQL Editor:
+
+   a. Run the SQL schema in your Supabase SQL Editor:
    ```bash
    # Copy contents from supabase/schema.sql and execute in Supabase
    ```
+
+   b. Enable Realtime for `search_keyword_analytics` table:
+   ```sql
+   -- In Supabase SQL Editor
+   CREATE PUBLICATION supabase_realtime FOR TABLE search_keyword_analytics;
+
+   ALTER TABLE search_keyword_analytics ENABLE ROW LEVEL SECURITY;
+
+   CREATE POLICY "Allow public read access"
+   ON search_keyword_analytics FOR SELECT TO public USING (true);
+
+   CREATE POLICY "Allow authenticated write"
+   ON search_keyword_analytics FOR INSERT TO authenticated WITH CHECK (true);
+   ```
+
+   c. Or use Supabase Dashboard:
+   - Go to Database → Replication
+   - Find `search_keyword_analytics` table
+   - Click "Enable" toggle
 
 5. **Run the development server**
    ```bash
@@ -475,11 +515,14 @@ pnpm lint
 2. Create a News Search API application
 3. Get Client ID and Client Secret
 
-### Resend
-1. Sign up at [resend.com](https://resend.com)
-2. Create an API key
-3. (Optional) Add and verify custom domain for sending
-4. For testing, use `onboarding@resend.dev` as sender
+### Gmail
+1. Use an existing Gmail account or create a new one
+2. Enable 2-Step Verification in Google Account Security
+3. Generate an App Password for "Mail" application
+4. Copy the 16-digit password (remove spaces)
+5. Add to `.env.local` as `GMAIL_APP_PASSWORD`
+
+**Note**: Gmail has a daily sending limit of ~500 emails for regular accounts. For high-volume sending, consider Google Workspace or alternative services.
 
 ## Contributing
 

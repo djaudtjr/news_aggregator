@@ -1,5 +1,236 @@
 # 개발 변경 이력
 
+## 📌 [체크포인트 4] 2025-10-31 이메일 다이제스트 및 검색 시스템 고도화
+
+### ✅ 신규 기능
+
+#### 1. 이메일 다이제스트 시스템 개선
+- **Gmail SMTP 전환**: Resend에서 Gmail SMTP로 이메일 발송 방식 변경
+  - DNS 설정 불필요
+  - nodemailer 사용
+  - 앱 비밀번호 인증
+- **즉시 발송 시스템**: 예약 발송이 아닌 즉시 발송으로 변경
+  - Cron 시간: KST 6AM, 6PM (오전 6시, 오후 6시)
+  - ±3시간 시간 범위 적용 (Vercel Cron Job 딜레이 대응)
+- **키워드별 뉴스 수집**:
+  - 각 구독 키워드마다 최신 뉴스 5개씩 수집
+  - 총 5개가 아닌 키워드당 5개 수집 (예: 3개 키워드 → 최대 15개 뉴스)
+- **AI 요약 통합**:
+  - 뉴스 전문 크롤링 (`/api/crawl`)
+  - OpenAI GPT-4o-mini로 AI 요약 생성
+  - 요약 + 핵심 포인트 추출
+  - Supabase DB 캐싱 (중복 요약 방지)
+- **키워드별 섹션 이메일 템플릿**:
+  - 키워드별로 구분된 섹션
+  - 각 뉴스에 AI 요약 + 핵심 포인트 표시
+  - 반응형 HTML 디자인
+  - 출처 및 날짜 정보
+
+#### 2. 인기 검색어 시스템 고도화
+- **중복 제거 로직**:
+  - 정규화 함수 추가 (공백 제거, 대문자 변환)
+  - "AI", "ai", " AI " → "AI"로 통합
+  - "인공지능", " 인공지능 " → "인공지능"으로 통합
+- **DB 저장 최적화**:
+  - 원본 키워드는 DB에 그대로 저장
+  - 집계시 정규화된 키워드로 그룹핑
+  - 가장 많이 검색된 원본 형태로 표시
+- **Supabase Realtime 통합**:
+  - `search_keyword_analytics` 테이블 변경사항 실시간 구독
+  - INSERT/UPDATE/DELETE 이벤트 자동 감지
+  - 인기검색어 목록 실시간 자동 업데이트
+  - 다중 브라우저 동기화 지원
+
+#### 3. 카테고리 자동 분류 개선
+- **news_summaries 테이블 category 필드**:
+  - 구독 키워드 대신 자동 분류된 카테고리 저장
+  - `lib/news/categorizer.ts` 활용
+  - 9개 카테고리 자동 판별
+
+### 📝 주요 변경사항
+
+#### 추가된 파일
+- `lib/email/gmail.ts` - Gmail SMTP 설정 및 발송 로직
+- (없음, 기존 파일 수정)
+
+#### 수정된 파일
+- `app/api/email/send-digest/route.ts`:
+  - Gmail SMTP 전환
+  - 키워드별 5개씩 뉴스 수집
+  - AI 요약 및 크롤링 통합
+  - 키워드별 섹션 이메일 템플릿
+  - 자동 카테고리 분류 적용
+- `app/api/cron/send-daily-digest/route.ts`:
+  - ±3시간 시간 범위 쿼리
+  - 요일 필터링 (PostgreSQL contains)
+  - 즉시 발송 로직
+- `app/api/analytics/search-keyword/route.ts`:
+  - 정규화 함수 추가
+  - 원본 키워드 저장 + 정규화 키워드로 중복 체크
+  - 기존 레코드 찾기 로직 개선
+- `app/api/trending/route.ts`:
+  - 정규화된 키워드로 그룹핑
+  - Map을 사용한 카운트 합산
+  - 원본 키워드 표시
+- `components/trending-keywords.tsx`:
+  - Supabase Realtime 구독 추가
+  - useEffect로 채널 구독
+  - 자동 refetch 로직
+  - Cleanup 로직
+- `lib/supabase/client.ts`:
+  - Realtime 옵션 추가
+  - eventsPerSecond 설정
+- `app/mypage/page.tsx`:
+  - 이메일 설정 텍스트 수정 ("±1시간 딜레이")
+  - 키워드당 5개 안내 문구
+  - 테스트 전송 버튼 추가 (2:1 비율)
+- `package.json`:
+  - `nodemailer` 추가
+  - `@types/nodemailer` 추가
+  - 미사용 패키지 17개 제거 (resend, recharts 등)
+- `.env.local` / `.env`:
+  - `GMAIL_USERNAME` 추가
+  - `GMAIL_APP_PASSWORD` 추가
+  - `NEXT_PUBLIC_BASE_URL` 추가
+
+### 🔧 기술적 개선
+
+#### 1. 이메일 발송 시스템
+- **Gmail SMTP 통합**:
+  - nodemailer 라이브러리 사용
+  - App Password 인증
+  - DNS 설정 불필요
+- **AI 요약 캐싱**:
+  - Supabase `news_summaries` 테이블 활용
+  - 기존 요약 재사용으로 API 비용 절감
+  - 조회수 트래킹
+
+#### 2. Supabase Realtime
+- **WebSocket 연결**:
+  - postgres_changes 이벤트 구독
+  - 초당 최대 10개 이벤트 처리
+  - 자동 재연결
+- **구독 관리**:
+  - 컴포넌트 마운트시 구독
+  - 언마운트시 자동 해제
+  - 메모리 누수 방지
+
+#### 3. 검색 키워드 정규화
+- **정규화 규칙**:
+  - 모든 공백 제거 (`/\s+/g`)
+  - 영문 대문자 변환 (`toUpperCase()`)
+- **그룹핑 알고리즘**:
+  - Map을 사용한 O(n) 복잡도
+  - 정규화 키워드를 Map 키로 사용
+  - 원본 키워드 보존
+
+### 🐛 버그 수정
+
+1. **Gmail 인증 오류 (535)**
+   - 문제: `GMAIL_APP_PASSWORD`에 공백 포함
+   - 해결: 공백 제거 안내
+
+2. **인기검색어 중복 표시**
+   - 문제: "AI", "ai", " AI " 등이 별도로 표시됨
+   - 해결: 정규화 로직 추가로 통합
+
+3. **이메일 발송 실패**
+   - 문제: Resend DNS 설정 필요
+   - 해결: Gmail SMTP로 전환
+
+4. **버튼 크기 반전**
+   - 문제: 테스트 전송 버튼이 더 큼
+   - 해결: flex-[2], flex-[1] 비율 조정
+
+### 🔄 Supabase 설정 가이드
+
+#### Realtime 활성화
+```sql
+-- Publication 생성
+CREATE PUBLICATION supabase_realtime FOR TABLE search_keyword_analytics;
+
+-- RLS 활성화
+ALTER TABLE search_keyword_analytics ENABLE ROW LEVEL SECURITY;
+
+-- 읽기 권한 (public)
+CREATE POLICY "Allow public read access"
+ON search_keyword_analytics
+FOR SELECT
+TO public
+USING (true);
+
+-- 쓰기 권한 (authenticated)
+CREATE POLICY "Allow authenticated insert"
+ON search_keyword_analytics
+FOR INSERT
+TO authenticated
+WITH CHECK (true);
+```
+
+#### Replication 설정
+1. Supabase Dashboard → Database → Replication
+2. `search_keyword_analytics` 테이블 Enable
+3. 완료!
+
+### 📊 프로젝트 현황
+
+#### 패키지 관리
+- **제거된 패키지** (17개):
+  - `resend` (Gmail SMTP로 대체)
+  - `recharts`
+  - `input-otp`
+  - `vaul`
+  - `cmdk`
+  - `react-day-picker`
+  - `embla-carousel-react`
+  - 10개 미사용 Radix UI 컴포넌트
+
+- **추가된 패키지**:
+  - `nodemailer`
+  - `@types/nodemailer`
+
+#### 기능 확장
+- **이메일 시스템**: Resend scheduled → Gmail SMTP immediate
+- **인기검색어**: 기본 집계 → Realtime + 정규화
+- **AI 요약**: 별도 기능 → 이메일 통합
+
+### 💡 구조 개선
+
+#### ✅ 개선된 부분
+
+1. **이메일 발송 시스템**
+   - 의존성 감소: DNS 설정 불필요
+   - 비용 절감: AI 요약 캐싱
+   - 사용자 경험: 키워드별 구조화된 템플릿
+
+2. **인기검색어 시스템**
+   - 실시간성: Realtime으로 즉시 반영
+   - 정확도: 정규화로 중복 제거
+   - 확장성: 다중 사용자 동기화
+
+3. **Cron Job 안정성**
+   - Vercel 딜레이 대응: ±3시간 범위
+   - 정확한 타겟팅: 요일 필터링
+
+### 🔄 남은 개선 작업
+
+#### 우선순위 높음
+- [ ] Gmail 발송 제한 확인 (일일 500통)
+- [ ] 이메일 템플릿 다국어 지원
+- [ ] 에러 알림 시스템
+
+#### 우선순위 중간
+- [ ] 이메일 오픈율 트래킹
+- [ ] 구독 해지 링크 추가
+- [ ] A/B 테스트 기능
+
+#### 우선순위 낮음
+- [ ] 이메일 미리보기 기능
+- [ ] 맞춤형 템플릿 선택
+- [ ] PDF 첨부 기능
+
+---
+
 ## 📌 [체크포인트 3] 2025-10-26 기능 확장 및 통합
 
 ### ✅ 신규 기능
