@@ -67,7 +67,7 @@ export function NewsFeed({
     staleTime: 5 * 60 * 1000, // 5분간 fresh 상태 유지
     gcTime: 10 * 60 * 1000, // 10분간 캐시 유지
     refetchOnWindowFocus: false, // 윈도우 포커스 시 재요청 방지
-    refetchOnMount: false, // 마운트 시 재요청 방지 (캐시된 데이터 사용)
+    refetchOnMount: true, // 마운트 시 fresh하지 않은 데이터만 재요청
     retry: 2, // 실패 시 2번만 재시도
   })
 
@@ -110,7 +110,7 @@ export function NewsFeed({
   }, [articles, searchQuery])
 
   // 카테고리 변경을 상위 컴포넌트에 전달 (무한 루프 방지)
-  const prevCategoriesRef = useRef<Set<string>>()
+  const prevCategoriesRef = useRef<Set<string> | undefined>(undefined)
   useEffect(() => {
     if (!onAvailableCategoriesChange) return
 
