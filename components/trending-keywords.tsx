@@ -66,6 +66,12 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
           keyword: keyword.trim(),
         }),
       })
+
+      // 3. 통계 기록 후 인기 검색어 목록 즉시 업데이트
+      // 약간의 지연 후 refetch (서버에서 통계가 업데이트될 시간 확보)
+      setTimeout(() => {
+        refetch()
+      }, 200) // 0.2초 후 업데이트
     } catch (error) {
       // 통계 추적 실패해도 검색에는 영향 없음
       console.error("Failed to track trending keyword click:", error)

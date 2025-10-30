@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { NewsHeader } from "@/components/news-header"
 import { NewsFeed } from "@/components/news-feed"
 import { NewsCategories } from "@/components/news-categories"
@@ -30,9 +30,15 @@ export default function HomePage() {
   const { layoutMode, setLayoutMode } = useLayoutMode()
 
   const [availableCategories, setAvailableCategories] = useState<Set<string> | undefined>(undefined)
+  const [trendingRefreshKey, setTrendingRefreshKey] = useState(0)
 
   const handleTrendingKeywordClick = (keyword: string) => {
     setSearchQuery(keyword)
+  }
+
+  const handleSearchTracked = () => {
+    // 인기 검색어 컴포넌트를 다시 렌더링하여 업데이트된 데이터 가져오기
+    setTrendingRefreshKey(prev => prev + 1)
   }
 
   const handleCategoryChange = (category: string) => {
@@ -59,7 +65,12 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <NewsHeader searchQuery={searchQuery} onSearchChange={setSearchQuery} onRefresh={handleRefresh} />
+      <NewsHeader
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onRefresh={handleRefresh}
+        onSearchTracked={handleSearchTracked}
+      />
       <main className="container mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* 메인 콘텐츠 */}
@@ -88,7 +99,10 @@ export default function HomePage() {
           {/* 사이드바 */}
           <aside className="w-full lg:w-80 shrink-0">
             <div className="sticky top-20 space-y-6 max-h-[calc(100vh-6rem)] overflow-y-auto">
-              <TrendingKeywords onKeywordClick={handleTrendingKeywordClick} />
+              <TrendingKeywords
+                key={trendingRefreshKey}
+                onKeywordClick={handleTrendingKeywordClick}
+              />
               <RecentArticles />
             </div>
           </aside>

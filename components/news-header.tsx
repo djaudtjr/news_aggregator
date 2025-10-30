@@ -13,9 +13,10 @@ interface NewsHeaderProps {
   searchQuery: string
   onSearchChange: (query: string) => void
   onRefresh: () => void
+  onSearchTracked?: () => void // 검색 통계 기록 후 호출할 콜백
 }
 
-export function NewsHeader({ searchQuery, onSearchChange, onRefresh }: NewsHeaderProps) {
+export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTracked }: NewsHeaderProps) {
   const [inputValue, setInputValue] = useState(searchQuery)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const { user, signOut } = useAuth()
@@ -27,7 +28,7 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh }: NewsHeade
     }
   }, [searchQuery])
 
-  const handleSearch = (keyword: string) => {
+  const handleSearch = async (keyword: string) => {
     if (!keyword || keyword.trim().length === 0) {
       onSearchChange("")
       return
@@ -36,20 +37,29 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh }: NewsHeade
     // 1. 먼저 검색 실행 (사용자에게 빠르게 결과 표시)
     onSearchChange(keyword)
 
-    // 2. 검색 키워드 통계 기록 (백그라운드로 비동기 실행, await 없이)
-    fetch("/api/analytics/search-keyword", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId: user?.id || null,
-        keyword: keyword.trim(),
-      }),
-    }).catch((error) => {
+    // 2. 검색 키워드 통계 기록 (백그라운드로 비동기 실행)
+    try {
+      await fetch("/api/analytics/search-keyword", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user?.id || null,
+          keyword: keyword.trim(),
+        }),
+      })
+
+      // 3. 통계 기록 후 인기 검색어 업데이트 트리거
+      if (onSearchTracked) {
+        setTimeout(() => {
+          onSearchTracked()
+        }, 200) // 0.2초 후 업데이트
+      }
+    } catch (error) {
       // 통계 추적 실패해도 검색에는 영향 없음
       console.error("Failed to track search keyword:", error)
-    })
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

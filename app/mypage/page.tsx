@@ -140,9 +140,8 @@ export default function MyPage() {
   }
 
   const handleRefresh = () => {
-    if (user) {
-      fetchMyPageData()
-    }
+    // 새로고침 버튼이나 로고 클릭 시 메인 페이지로 이동
+    router.push('/')
   }
 
   // 모든 북마크 삭제
