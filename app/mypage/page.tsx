@@ -198,6 +198,57 @@ export default function MyPage() {
     }
   }
 
+  // 테스트 이메일 전송 핸들러
+  const [sendingTestEmail, setSendingTestEmail] = useState(false)
+  const handleSendTestEmail = async () => {
+    if (!user) {
+      alert("로그인이 필요합니다.")
+      return
+    }
+
+    if (keywords.length === 0) {
+      alert("먼저 구독 키워드를 추가해주세요.")
+      return
+    }
+
+    if (!emailForm.email) {
+      alert("이메일 주소를 입력해주세요.")
+      return
+    }
+
+    if (!confirm("테스트 이메일을 전송하시겠습니까?")) {
+      return
+    }
+
+    try {
+      setSendingTestEmail(true)
+      console.log(`[Test Email] Sending test email to ${emailForm.email}...`)
+
+      const response = await fetch("/api/email/send-digest", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.id,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        alert(`✅ 테스트 이메일이 전송되었습니다!\n\n📧 수신: ${emailForm.email}\n📰 뉴스 개수: ${result.newsCount}개`)
+      } else {
+        alert(`❌ 이메일 전송 실패\n\n${result.error || "알 수 없는 오류가 발생했습니다."}`)
+      }
+    } catch (error: any) {
+      console.error("[Test Email] Error:", error)
+      alert(`❌ 이메일 전송 중 오류가 발생했습니다.\n\n${error.message}`)
+    } finally {
+      setSendingTestEmail(false)
+    }
+  }
+
   // 요일 토글 핸들러
   const toggleDeliveryDay = (day: number) => {
     setEmailForm((prev) => {
@@ -718,10 +769,20 @@ export default function MyPage() {
                 </div>
               </div>
 
-              {/* 저장 버튼 */}
-              <Button onClick={handleSaveEmailSettings} className="w-full">
-                설정 저장
-              </Button>
+              {/* 저장 및 테스트 버튼 */}
+              <div className="flex gap-2">
+                <Button onClick={handleSaveEmailSettings} className="flex-[2]">
+                  설정 저장
+                </Button>
+                <Button
+                  onClick={handleSendTestEmail}
+                  variant="outline"
+                  disabled={sendingTestEmail || !emailForm.email || keywords.length === 0}
+                  className="flex-[1]"
+                >
+                  {sendingTestEmail ? "전송 중..." : "테스트 전송"}
+                </Button>
+              </div>
 
               {/* 안내 문구 */}
               {emailForm.enabled && (
