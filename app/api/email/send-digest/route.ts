@@ -1,8 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
 import { supabaseServer } from "@/lib/supabase/server"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { sendEmail } from "@/lib/email/gmail"
 
 interface NewsItem {
   title: string
@@ -19,7 +17,7 @@ interface NewsItem {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, scheduledDeliveryHour } = body
+    const { userId } = body
 
     if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
@@ -119,54 +117,15 @@ export async function POST(request: NextRequest) {
     // 4. 이메일 HTML 생성
     const emailHtml = generateEmailHtml(topNews, keywords.map(k => k.keyword))
 
-    // 5. 이메일 발송 (예약 발송 또는 즉시 발송)
-    let scheduledAt: string | undefined = undefined
-
-    // scheduledDeliveryHour가 제공된 경우 예약 발송
-    if (scheduledDeliveryHour !== undefined) {
-      const kstOffset = 9 * 60 // KST는 UTC+9
-      const kstNow = new Date(now.getTime() + kstOffset * 60 * 1000)
-
-      // 오늘 날짜의 scheduledDeliveryHour 시간으로 설정
-      const scheduledKstTime = new Date(kstNow)
-      scheduledKstTime.setUTCHours(scheduledDeliveryHour, 0, 0, 0)
-
-      // UTC로 변환
-      const scheduledUtcTime = new Date(scheduledKstTime.getTime() - kstOffset * 60 * 1000)
-      scheduledAt = scheduledUtcTime.toISOString()
-
-      console.log(`[Email Digest] Scheduling email for ${settings.email} at ${scheduledAt} (${scheduledDeliveryHour}:00 KST)`)
-    }
-
+    // 5. Gmail SMTP로 즉시 이메일 발송
     try {
-      const emailPayload: any = {
-        from: "News Aggregator <onboarding@resend.dev>", // TODO: 실제 도메인으로 변경
-        to: [settings.email],
+      console.log(`[Email Digest] Sending email to ${settings.email} via Gmail SMTP...`)
+
+      const emailResult = await sendEmail({
+        to: settings.email,
         subject: `📰 오늘의 뉴스 다이제스트 - ${keywords.map(k => k.keyword).join(", ")}`,
         html: emailHtml,
-      }
-
-      // 예약 발송 시간이 있으면 추가
-      if (scheduledAt) {
-        emailPayload.scheduledAt = scheduledAt
-      }
-
-      const { data: emailData, error: emailError } = await resend.emails.send(emailPayload)
-
-      if (emailError) {
-        console.error("[Email Digest] Resend error:", emailError)
-
-        // 실패 로그 기록
-        await supabaseServer.from("email_delivery_logs").insert({
-          user_id: userId,
-          email: settings.email,
-          status: "failed",
-          news_count: topNews.length,
-          error_message: emailError.message || "Unknown error",
-        })
-
-        return NextResponse.json({ error: "Failed to send email", details: emailError }, { status: 500 })
-      }
+      })
 
       // 6. 성공 로그 기록 및 last_sent_at 업데이트
       await Promise.all([
@@ -185,11 +144,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         newsCount: topNews.length,
-        emailId: emailData?.id,
-        scheduledAt: scheduledAt || null
+        messageId: emailResult.messageId,
       })
     } catch (emailError: any) {
-      console.error("[Email Digest] Send error:", emailError)
+      console.error("[Email Digest] Gmail SMTP error:", emailError)
 
       await supabaseServer.from("email_delivery_logs").insert({
         user_id: userId,
@@ -199,7 +157,7 @@ export async function POST(request: NextRequest) {
         error_message: emailError.message || "Unknown error",
       })
 
-      return NextResponse.json({ error: "Failed to send email" }, { status: 500 })
+      return NextResponse.json({ error: "Failed to send email", details: emailError.message }, { status: 500 })
     }
   } catch (error: any) {
     console.error("[Email Digest] Error:", error)
