@@ -489,54 +489,54 @@ export default function MyPage() {
                   </div>
                 </div>
 
-                {/* 발송 요일 & 발송 시간 */}
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Label className="whitespace-nowrap">발송 요일</Label>
-                    <div className="flex gap-1">
-                      {["일", "월", "화", "수", "목", "금", "토"].map((day, index) => (
-                        <Button
-                          key={index}
-                          variant={emailForm.deliveryDays.includes(index) ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => toggleDeliveryDay(index)}
-                          disabled={!emailForm.enabled}
-                          className="w-8 h-8 p-0 text-xs"
-                        >
-                          {day}
-                        </Button>
-                      ))}
-                    </div>
+                {/* 발송 요일 */}
+                <div className="flex items-center gap-2">
+                  <Label className="whitespace-nowrap">발송 요일</Label>
+                  <div className="flex gap-1">
+                    {["일", "월", "화", "수", "목", "금", "토"].map((day, index) => (
+                      <Button
+                        key={index}
+                        variant={emailForm.deliveryDays.includes(index) ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => toggleDeliveryDay(index)}
+                        disabled={!emailForm.enabled}
+                        className="w-8 h-8 p-0 text-xs"
+                      >
+                        {day}
+                      </Button>
+                    ))}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="whitespace-nowrap">발송 시간</Label>
-                    <div className="flex gap-3">
-                      {[
-                        { value: 6, label: "오전 6시" },
-                        { value: 18, label: "오후 6시" },
-                      ].map((option) => (
-                        <div key={option.value} className="flex items-center space-x-1.5">
-                          <input
-                            type="radio"
-                            id={`hour-${option.value}`}
-                            name="delivery-hour"
-                            value={option.value}
-                            checked={emailForm.deliveryHour === option.value}
-                            onChange={(e) =>
-                              setEmailForm((prev) => ({ ...prev, deliveryHour: parseInt(e.target.value) }))
-                            }
-                            disabled={!emailForm.enabled}
-                            className="h-4 w-4 text-primary focus:ring-primary"
-                          />
-                          <Label
-                            htmlFor={`hour-${option.value}`}
-                            className={!emailForm.enabled ? "text-muted-foreground" : "cursor-pointer"}
-                          >
-                            {option.label}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
+                </div>
+
+                {/* 발송 시간 */}
+                <div className="flex items-center gap-2">
+                  <Label className="whitespace-nowrap">발송 시간</Label>
+                  <div className="flex gap-3">
+                    {[
+                      { value: 6, label: "오전 6시" },
+                      { value: 18, label: "오후 6시" },
+                    ].map((option) => (
+                      <div key={option.value} className="flex items-center space-x-1.5">
+                        <input
+                          type="radio"
+                          id={`hour-${option.value}`}
+                          name="delivery-hour"
+                          value={option.value}
+                          checked={emailForm.deliveryHour === option.value}
+                          onChange={(e) =>
+                            setEmailForm((prev) => ({ ...prev, deliveryHour: parseInt(e.target.value) }))
+                          }
+                          disabled={!emailForm.enabled}
+                          className="h-4 w-4 text-primary focus:ring-primary"
+                        />
+                        <Label
+                          htmlFor={`hour-${option.value}`}
+                          className={!emailForm.enabled ? "text-muted-foreground" : "cursor-pointer"}
+                        >
+                          {option.label}
+                        </Label>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
