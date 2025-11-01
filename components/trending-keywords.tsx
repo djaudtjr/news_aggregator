@@ -8,8 +8,10 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { supabase } from "@/lib/supabase/client"
 import type { RealtimeChannel } from "@supabase/supabase-js"
+import { format } from "date-fns"
 
 interface TrendingKeyword {
   keyword: string
@@ -22,6 +24,9 @@ interface TrendingResponse {
   keywords: TrendingKeyword[]
   totalSearches: number
   timeRange: string
+  requestedTimeRange?: string
+  fallbackApplied?: boolean
+  customDateRange?: { startDate: string; endDate: string }
   generatedAt: string
 }
 
@@ -29,8 +34,17 @@ interface TrendingKeywordsProps {
   onKeywordClick?: (keyword: string) => void
 }
 
-async function fetchTrendingKeywords(timeRange: string): Promise<TrendingResponse> {
-  const response = await fetch(`/api/trending?limit=7&timeRange=${timeRange}`)
+async function fetchTrendingKeywords(
+  timeRange: string,
+  customDates?: { startDate: Date; endDate: Date }
+): Promise<TrendingResponse> {
+  let url = `/api/trending?limit=7&timeRange=${timeRange}`
+
+  if (customDates) {
+    url += `&startDate=${customDates.startDate.toISOString()}&endDate=${customDates.endDate.toISOString()}`
+  }
+
+  const response = await fetch(url)
   if (!response.ok) {
     throw new Error("Failed to fetch trending keywords")
   }
@@ -39,10 +53,15 @@ async function fetchTrendingKeywords(timeRange: string): Promise<TrendingRespons
 
 export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
   const [timeRange, setTimeRange] = useState<"1h" | "24h" | "7d">("24h")
+  const [isDateDialogOpen, setIsDateDialogOpen] = useState(false)
+  const [customDateRange, setCustomDateRange] = useState<{ startDate: Date; endDate: Date } | null>(null)
+  const [startDateInput, setStartDateInput] = useState("")
+  const [endDateInput, setEndDateInput] = useState("")
+  const [dateError, setDateError] = useState("")
 
   const { data, isLoading: loading, refetch } = useQuery({
-    queryKey: ['trending', timeRange],
-    queryFn: () => fetchTrendingKeywords(timeRange),
+    queryKey: ['trending', timeRange, customDateRange],
+    queryFn: () => fetchTrendingKeywords(timeRange, customDateRange || undefined),
     staleTime: 2 * 60 * 1000, // 2분간 fresh 상태 유지
     gcTime: 5 * 60 * 1000, // 5분간 캐시 유지
     refetchOnWindowFocus: false, // 윈도우 포커스 시 재요청 방지
@@ -124,9 +143,63 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
         return "오늘"
       case "7d":
         return "이번 주"
+      case "custom":
+        return "커스텀 기간"
       default:
         return "오늘"
     }
+  }
+
+  const handleApplyCustomDates = () => {
+    setDateError("")
+
+    // 날짜 형식 검증
+    if (!startDateInput || !endDateInput) {
+      setDateError("시작일과 종료일을 모두 입력해주세요.")
+      return
+    }
+
+    const startDate = new Date(startDateInput)
+    const endDate = new Date(endDateInput)
+
+    // 유효한 날짜인지 확인
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      setDateError("올바른 날짜 형식이 아닙니다.")
+      return
+    }
+
+    // 시작일이 종료일보다 늦은지 확인
+    if (startDate > endDate) {
+      setDateError("시작일이 종료일보다 늦을 수 없습니다.")
+      return
+    }
+
+    // 최대 91일 제한 확인
+    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+    if (daysDiff > 91) {
+      setDateError("최대 91일까지만 선택할 수 있습니다.")
+      return
+    }
+
+    // 미래 날짜 확인
+    const today = new Date()
+    today.setHours(23, 59, 59, 999)
+    if (endDate > today) {
+      setDateError("미래 날짜는 선택할 수 없습니다.")
+      return
+    }
+
+    setCustomDateRange({ startDate, endDate })
+    setIsDateDialogOpen(false)
+    setDateError("")
+  }
+
+  const handleResetToPreset = (preset: "1h" | "24h" | "7d") => {
+    setTimeRange(preset)
+    setCustomDateRange(null)
+    setStartDateInput("")
+    setEndDateInput("")
+    setDateError("")
   }
 
   if (loading) {
@@ -155,12 +228,111 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
     return (
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            <CardTitle>인기 검색어</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              <CardTitle>인기 검색어</CardTitle>
+            </div>
+            <Dialog open={isDateDialogOpen} onOpenChange={setIsDateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" title="기간 설정">
+                  <Clock className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>검색 기간 설정</DialogTitle>
+                  <DialogDescription>
+                    인기 검색어를 조회할 기간을 입력하세요 (최대 91일)
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label htmlFor="start-date" className="text-sm font-medium">
+                        시작일
+                      </label>
+                      <input
+                        id="start-date"
+                        type="date"
+                        value={startDateInput}
+                        onChange={(e) => setStartDateInput(e.target.value)}
+                        max={new Date().toISOString().split('T')[0]}
+                        className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="end-date" className="text-sm font-medium">
+                        종료일
+                      </label>
+                      <input
+                        id="end-date"
+                        type="date"
+                        value={endDateInput}
+                        onChange={(e) => setEndDateInput(e.target.value)}
+                        max={new Date().toISOString().split('T')[0]}
+                        className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      />
+                    </div>
+                  </div>
+
+                  {dateError && (
+                    <div className="text-sm text-red-500 bg-red-50 dark:bg-red-950 p-2 rounded-md">
+                      {dateError}
+                    </div>
+                  )}
+
+                  <div className="text-xs text-muted-foreground">
+                    예시: 시작일 2025-07-01, 종료일 2025-10-31 (최대 91일)
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button onClick={handleApplyCustomDates} className="flex-1">
+                      적용
+                    </Button>
+                    <Button variant="outline" onClick={() => {
+                      setIsDateDialogOpen(false)
+                      setDateError("")
+                    }}>
+                      취소
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
-          <CardDescription>아직 검색 데이터가 없습니다</CardDescription>
+          <CardDescription>
+            {customDateRange ? (
+              <>
+                {format(new Date(customDateRange.startDate), "yyyy.MM.dd")} ~{" "}
+                {format(new Date(customDateRange.endDate), "yyyy.MM.dd")} 기간 내 검색 결과가 없습니다
+              </>
+            ) : (
+              "최근 검색 결과가 없습니다"
+            )}
+          </CardDescription>
         </CardHeader>
+        <CardContent>
+          <Tabs value={timeRange} onValueChange={(v) => handleResetToPreset(v as "1h" | "24h" | "7d")} className="mb-4">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="1h">1시간</TabsTrigger>
+              <TabsTrigger value="24h">24시간</TabsTrigger>
+              <TabsTrigger value="7d">7일</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {customDateRange && (
+            <div className="flex justify-center">
+              <Button variant="outline" onClick={() => handleResetToPreset("24h")}>
+                검색 기간 초기화
+              </Button>
+            </div>
+          )}
+
+          <div className="text-center py-8 text-muted-foreground">
+            검색 데이터가 없습니다
+          </div>
+        </CardContent>
       </Card>
     )
   }
@@ -173,20 +345,109 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
             <TrendingUp className="h-5 w-5 text-primary" />
             <CardTitle>인기 검색어</CardTitle>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => refetch()} title="새로고침">
-            <Clock className="h-4 w-4" />
-          </Button>
+          <Dialog open={isDateDialogOpen} onOpenChange={setIsDateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" title="기간 설정">
+                <Clock className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>검색 기간 설정</DialogTitle>
+                <DialogDescription>
+                  인기 검색어를 조회할 기간을 입력하세요 (최대 91일)
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="start-date" className="text-sm font-medium">
+                      시작일
+                    </label>
+                    <input
+                      id="start-date"
+                      type="date"
+                      value={startDateInput}
+                      onChange={(e) => setStartDateInput(e.target.value)}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="end-date" className="text-sm font-medium">
+                      종료일
+                    </label>
+                    <input
+                      id="end-date"
+                      type="date"
+                      value={endDateInput}
+                      onChange={(e) => setEndDateInput(e.target.value)}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    />
+                  </div>
+                </div>
+
+                {dateError && (
+                  <div className="text-sm text-red-500 bg-red-50 dark:bg-red-950 p-2 rounded-md">
+                    {dateError}
+                  </div>
+                )}
+
+                <div className="text-xs text-muted-foreground">
+                  예시: 시작일 2025-07-01, 종료일 2025-10-31 (최대 91일)
+                </div>
+
+                <div className="flex gap-2">
+                  <Button onClick={handleApplyCustomDates} className="flex-1">
+                    적용
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    setIsDateDialogOpen(false)
+                    setDateError("")
+                  }}>
+                    취소
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
-        <CardDescription>{getTimeRangeLabel(timeRange)} 인기 키워드</CardDescription>
+        <CardDescription>
+          {data.customDateRange ? (
+            <>
+              {format(new Date(data.customDateRange.startDate), "yyyy.MM.dd")} ~{" "}
+              {format(new Date(data.customDateRange.endDate), "yyyy.MM.dd")}
+            </>
+          ) : (
+            <>
+              {getTimeRangeLabel(data.timeRange)} 인기 키워드
+              {data.fallbackApplied && data.requestedTimeRange && (
+                <span className="text-xs text-muted-foreground ml-1">
+                  ({getTimeRangeLabel(data.requestedTimeRange)} 데이터 없음)
+                </span>
+              )}
+            </>
+          )}
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as "1h" | "24h" | "7d")} className="mb-4">
+        <Tabs value={timeRange} onValueChange={(v) => handleResetToPreset(v as "1h" | "24h" | "7d")} className="mb-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="1h">1시간</TabsTrigger>
             <TabsTrigger value="24h">24시간</TabsTrigger>
             <TabsTrigger value="7d">7일</TabsTrigger>
           </TabsList>
         </Tabs>
+
+        {customDateRange && (
+          <div className="mb-4 flex items-center justify-between p-2 bg-muted rounded-md">
+            <span className="text-sm text-muted-foreground">커스텀 기간 적용 중</span>
+            <Button variant="ghost" size="sm" onClick={() => handleResetToPreset("24h")}>
+              기본 기간으로 돌아가기
+            </Button>
+          </div>
+        )}
 
         <div className="space-y-2">
           {data.keywords.map((item, index) => (
