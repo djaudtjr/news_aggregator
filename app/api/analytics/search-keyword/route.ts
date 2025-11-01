@@ -132,8 +132,10 @@ export async function POST(request: NextRequest) {
     const keywords = await splitKeywordsByAI(sanitizedKeyword)
 
     // 3. 각 키워드를 DB에 저장 (원본 형태로 저장)
-    for (const kw of keywords) {
-      await recordSearchKeyword(effectiveUserId, kw)
+    // 첫 번째 키워드(원본)는 'user_input', 나머지 AI 추출 키워드는 'ai_extracted'
+    for (let i = 0; i < keywords.length; i++) {
+      const keywordSource = i === 0 ? "user_input" : "ai_extracted"
+      await recordSearchKeyword(effectiveUserId, keywords[i], keywordSource)
     }
 
     return NextResponse.json({ success: true, keywords })
@@ -158,8 +160,9 @@ function normalizeKeywordForGrouping(keyword: string): string {
  * 검색 키워드 통계 기록
  * @param userId 사용자 UID (비로그인은 'Anonymous')
  * @param keyword 검색 키워드 (원본 형태로 DB에 저장)
+ * @param keywordSource 키워드 출처 ('user_input' 또는 'ai_extracted')
  */
-async function recordSearchKeyword(userId: string, keyword: string) {
+async function recordSearchKeyword(userId: string, keyword: string, keywordSource: "user_input" | "ai_extracted") {
   try {
     const trimmedKeyword = keyword.trim() // 앞뒤 공백만 제거
     const normalizedKeyword = normalizeKeywordForGrouping(trimmedKeyword) // 집계용 정규화
@@ -169,6 +172,7 @@ async function recordSearchKeyword(userId: string, keyword: string) {
       .from("search_keyword_analytics")
       .select("*")
       .eq("user_id", userId)
+      .eq("keyword_source", keywordSource)
 
     // 정규화된 형태가 같은 레코드 찾기
     const existing = allRecords?.find(
@@ -197,6 +201,7 @@ async function recordSearchKeyword(userId: string, keyword: string) {
       const { error } = await supabase.from("search_keyword_analytics").insert({
         user_id: userId,
         keyword: trimmedKeyword, // 앞뒤 공백만 제거한 원본 저장
+        keyword_source: keywordSource, // 키워드 출처 저장
         search_count: 1,
       })
 

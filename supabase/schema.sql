@@ -168,12 +168,15 @@ CREATE TABLE IF NOT EXISTS search_keyword_analytics (
   -- 조회수 (해당 사용자가 이 키워드로 검색한 횟수)
   search_count INTEGER DEFAULT 1 NOT NULL,
 
+  -- 키워드 출처 (user_input: 사용자 직접 입력, ai_extracted: AI가 추출한 키워드)
+  keyword_source TEXT NOT NULL DEFAULT 'user_input' CHECK (keyword_source IN ('user_input', 'ai_extracted')),
+
   -- 타임스탬프
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   last_searched_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
 
-  -- 제약 조건: user_id + keyword 조합은 유일해야 함
-  CONSTRAINT unique_user_keyword UNIQUE (user_id, keyword)
+  -- 제약 조건: user_id + keyword + keyword_source 조합은 유일해야 함
+  CONSTRAINT unique_user_keyword_source UNIQUE (user_id, keyword, keyword_source)
 );
 
 -- 인덱스 생성
@@ -188,6 +191,9 @@ CREATE INDEX IF NOT EXISTS idx_search_keyword_analytics_last_searched
 
 CREATE INDEX IF NOT EXISTS idx_search_keyword_analytics_search_count
   ON search_keyword_analytics(search_count DESC);
+
+CREATE INDEX IF NOT EXISTS idx_search_keyword_analytics_keyword_source
+  ON search_keyword_analytics(keyword_source);
 
 -- last_searched_at 자동 업데이트 트리거
 CREATE OR REPLACE FUNCTION update_last_searched_at_column()
@@ -227,6 +233,7 @@ COMMENT ON TABLE search_keyword_analytics IS '사용자별 검색 키워드 조�
 COMMENT ON COLUMN search_keyword_analytics.user_id IS '사용자 UID (Supabase Auth), 비로그인은 Anonymous';
 COMMENT ON COLUMN search_keyword_analytics.keyword IS '검색한 키워드';
 COMMENT ON COLUMN search_keyword_analytics.search_count IS '해당 사용자가 이 키워드로 검색한 총 횟수';
+COMMENT ON COLUMN search_keyword_analytics.keyword_source IS '키워드 출처 (user_input: 사용자 직접 입력, ai_extracted: AI가 추출한 키워드)';
 COMMENT ON COLUMN search_keyword_analytics.last_searched_at IS '마지막 검색 일시';
 
 

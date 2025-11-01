@@ -44,10 +44,11 @@ export async function GET(request: NextRequest) {
         cutoffDate.setHours(now.getHours() - 24)
     }
 
-    // 모든 검색어 조회 (시간 범위 내)
+    // 사용자가 직접 입력한 검색어만 조회 (시간 범위 내)
     const { data, error } = await supabase
       .from("search_keyword_analytics")
       .select("keyword, search_count")
+      .eq("keyword_source", "user_input")
       .gte("last_searched_at", cutoffDate.toISOString())
 
     if (error) {
