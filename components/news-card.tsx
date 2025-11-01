@@ -4,7 +4,9 @@ import { useState, memo } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, Clock, Sparkles, Bookmark, BookmarkCheck } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { ExternalLink, Clock, Sparkles, Bookmark, BookmarkCheck, ChevronDown, ChevronUp, Maximize2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import Image from "next/image"
 import { useArticleSummary } from "@/hooks/useArticleSummary"
@@ -24,6 +26,10 @@ function NewsCardComponent({ article }: NewsCardProps) {
   const { summary, keyPoints, isLoading, fromCache, loadingProgress, loadingMessage, generateSummary } = useArticleSummary(article.id)
   const { addRecentArticle } = useRecentArticles()
   const { toggleBookmark, isBookmarked } = useBookmarks()
+
+  // AI 요약 UI 상태 관리
+  const [isExpanded, setIsExpanded] = useState(false) // 접힘/펼침 상태
+  const [isModalOpen, setIsModalOpen] = useState(false) // 모달 열림/닫힘 상태
 
   // URL 유효성 검사
   const isValidUrl = (url: string | undefined): boolean => {
@@ -115,6 +121,7 @@ function NewsCardComponent({ article }: NewsCardProps) {
   }
 
   return (
+    <>
     <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg">
       {imageUrl && (
         <div className="relative h-48 w-full overflow-hidden bg-muted">
@@ -162,13 +169,24 @@ function NewsCardComponent({ article }: NewsCardProps) {
       </CardHeader>
       <CardContent className="flex-1">
         <CardDescription className="line-clamp-3">{article.description}</CardDescription>
-        {summary && (
+        {/* 요약이 완료되고 펼쳐진 상태일 때만 표시 */}
+        {summary && isExpanded && (
           <div className="mt-4 p-3 bg-muted rounded-lg border">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold">
-                AI 요약 {fromCache && <span className="text-xs text-muted-foreground">(캐시됨)</span>}
-              </span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold">
+                  AI 요약 {fromCache && <span className="text-xs text-muted-foreground">(캐시됨)</span>}
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsExpanded(false)}
+                className="h-6 w-6 shrink-0"
+              >
+                <ChevronUp className="h-4 w-4" />
+              </Button>
             </div>
             <p className="text-sm text-foreground mb-2">{summary}</p>
             {keyPoints && keyPoints.length > 0 && (
@@ -188,21 +206,82 @@ function NewsCardComponent({ article }: NewsCardProps) {
         )}
       </CardContent>
       <CardFooter className="flex flex-col gap-2">
-        {/* AI 요약 버튼 - 전체 너비 */}
-        <Button
-          variant="outline"
-          className="w-full bg-transparent"
-          onClick={handleSummarize}
-          disabled={isLoading || !!summary}
-        >
-          <Sparkles className="mr-2 h-4 w-4" />
-          {isLoading ? (
-            <div className="flex flex-col items-center gap-1 w-full">
-              <span>{loadingMessage}</span>
-              <span className="text-xs text-muted-foreground">{loadingProgress}%</span>
-            </div>
-          ) : summary ? "요약 완료" : "AI 요약"}
-        </Button>
+        {/* AI 요약 버튼 */}
+        {summary ? (
+          // 요약 완료 상태: Popup 아이콘 + 요약완료 버튼
+          <div className="flex items-center gap-2 w-full">
+            {/* Popover로 감싼 Popup 아이콘 - 마우스 오버 시 요약 내용 표시 */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 max-h-96 overflow-y-auto">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <h4 className="font-semibold text-sm">AI 요약</h4>
+                    {fromCache && <span className="text-xs text-muted-foreground">(캐시됨)</span>}
+                  </div>
+                  <p className="text-sm">{summary}</p>
+                  {keyPoints && keyPoints.length > 0 && (
+                    <div className="mt-3 pt-3 border-t">
+                      <p className="text-xs font-semibold mb-2">핵심 포인트</p>
+                      <ul className="space-y-1">
+                        {keyPoints.map((point, index) => (
+                          <li key={index} className="text-xs flex items-start gap-2">
+                            <span className="text-primary">•</span>
+                            <span>{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* 요약완료 버튼 - 열고닫기 아이콘 */}
+            <Button
+              variant="outline"
+              className="flex-1 bg-transparent"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              <span>요약 완료</span>
+              {isExpanded ? (
+                <ChevronUp className="ml-2 h-4 w-4" />
+              ) : (
+                <ChevronDown className="ml-2 h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        ) : (
+          // 요약 전 또는 로딩 중
+          <Button
+            variant="outline"
+            className="w-full bg-transparent"
+            onClick={handleSummarize}
+            disabled={isLoading}
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            {isLoading ? (
+              <div className="flex flex-col items-center gap-1 w-full">
+                <span>{loadingMessage}</span>
+                <span className="text-xs text-muted-foreground">{loadingProgress}%</span>
+              </div>
+            ) : (
+              "AI 요약"
+            )}
+          </Button>
+        )}
+
         {/* Read More 버튼 - 전체 너비 */}
         <Button variant="default" className="w-full" asChild>
           <a href={article.link} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>
@@ -212,6 +291,56 @@ function NewsCardComponent({ article }: NewsCardProps) {
         </Button>
       </CardFooter>
     </Card>
+
+    {/* AI 요약 모달 Dialog */}
+    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <DialogContent className="sm:max-w-3xl max-w-[90vw] max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <span>AI 요약</span>
+            {fromCache && <Badge variant="secondary">캐시됨</Badge>}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            {article.title}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 mt-4">
+          {/* 요약 내용 */}
+          <div>
+            <h3 className="font-semibold text-sm mb-2">📝 요약</h3>
+            <p className="text-sm leading-relaxed">{summary}</p>
+          </div>
+
+          {/* 핵심 포인트 */}
+          {keyPoints && keyPoints.length > 0 && (
+            <div className="pt-4 border-t">
+              <h3 className="font-semibold text-sm mb-3">💡 핵심 포인트</h3>
+              <ul className="space-y-2">
+                {keyPoints.map((point, index) => (
+                  <li key={index} className="text-sm flex items-start gap-3">
+                    <span className="text-primary font-bold mt-0.5">{index + 1}.</span>
+                    <span className="flex-1">{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* 원문 보기 버튼 */}
+          <div className="pt-4 border-t">
+            <Button variant="default" className="w-full" asChild>
+              <a href={article.link} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>
+                <ExternalLink className="mr-2 h-4 w-4" />
+                원문 보기
+              </a>
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  </>
   )
 }
 
