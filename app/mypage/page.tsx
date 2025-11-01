@@ -17,6 +17,7 @@ import { ko } from "date-fns/locale"
 import { useRouter } from "next/navigation"
 import { useSubscribedKeywords } from "@/hooks/useSubscribedKeywords"
 import { useEmailSettings } from "@/hooks/useEmailSettings"
+import { useToast } from "@/hooks/use-toast"
 
 interface MyPageData {
   stats: {
@@ -44,6 +45,7 @@ interface MyPageData {
 export default function MyPage() {
   const { user } = useAuth()
   const router = useRouter()
+  const { toast } = useToast()
   const [data, setData] = useState<MyPageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -156,12 +158,24 @@ export default function MyPage() {
 
       if (response.ok) {
         await fetchMyPageData() // 데이터 새로고침
+        toast({
+          title: "✅ 북마크 삭제 완료",
+          description: "모든 북마크가 삭제되었습니다.",
+        })
       } else {
-        alert("북마크 삭제에 실패했습니다.")
+        toast({
+          title: "❌ 삭제 실패",
+          description: "북마크 삭제에 실패했습니다.",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Failed to delete bookmarks:", error)
-      alert("북마크 삭제 중 오류가 발생했습니다.")
+      toast({
+        title: "❌ 오류 발생",
+        description: "북마크 삭제 중 오류가 발생했습니다.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -174,8 +188,12 @@ export default function MyPage() {
 
     const success = await addKeyword(newKeyword.trim())
     if (success) {
+      const keyword = newKeyword.trim()
       setNewKeyword("")
-      alert(`"${newKeyword.trim()}" 키워드가 추가되었습니다.`)
+      toast({
+        title: "✅ 키워드 추가 완료",
+        description: `"${keyword}" 키워드가 추가되었습니다.`,
+      })
     }
   }
 
@@ -190,11 +208,39 @@ export default function MyPage() {
 
   // 이메일 설정 저장 핸들러
   const handleSaveEmailSettings = async () => {
+    // 구독 키워드가 없으면 이메일 알림 자동 off
+    if (keywords.length === 0) {
+      const updatedForm = { ...emailForm, enabled: false }
+      const success = await saveSettings(updatedForm)
+      if (success) {
+        setEmailForm(updatedForm)
+        toast({
+          title: "⚠️ 키워드 없음",
+          description: "구독 키워드가 없어서 이메일은 비활성화되어 저장되었습니다.",
+          variant: "default",
+        })
+      } else {
+        toast({
+          title: "❌ 저장 실패",
+          description: "설정 저장에 실패했습니다. 다시 시도해주세요.",
+          variant: "destructive",
+        })
+      }
+      return
+    }
+
     const success = await saveSettings(emailForm)
     if (success) {
-      alert("✅ 이메일 알림 설정이 저장되었습니다.")
+      toast({
+        title: "✅ 저장 완료",
+        description: "이메일 알림 설정이 저장되었습니다.",
+      })
     } else {
-      alert("❌ 설정 저장에 실패했습니다. 다시 시도해주세요.")
+      toast({
+        title: "❌ 저장 실패",
+        description: "설정 저장에 실패했습니다. 다시 시도해주세요.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -202,17 +248,29 @@ export default function MyPage() {
   const [sendingTestEmail, setSendingTestEmail] = useState(false)
   const handleSendTestEmail = async () => {
     if (!user) {
-      alert("로그인이 필요합니다.")
+      toast({
+        title: "⚠️ 로그인 필요",
+        description: "로그인이 필요합니다.",
+        variant: "destructive",
+      })
       return
     }
 
     if (keywords.length === 0) {
-      alert("먼저 구독 키워드를 추가해주세요.")
+      toast({
+        title: "⚠️ 키워드 없음",
+        description: "먼저 구독 키워드를 추가해주세요.",
+        variant: "destructive",
+      })
       return
     }
 
     if (!emailForm.email) {
-      alert("이메일 주소를 입력해주세요.")
+      toast({
+        title: "⚠️ 이메일 미입력",
+        description: "이메일 주소를 입력해주세요.",
+        variant: "destructive",
+      })
       return
     }
 
@@ -237,13 +295,24 @@ export default function MyPage() {
       const result = await response.json()
 
       if (response.ok) {
-        alert(`✅ 테스트 이메일이 전송되었습니다!\n\n📧 수신: ${emailForm.email}\n📰 뉴스 개수: ${result.newsCount}개`)
+        toast({
+          title: "✅ 전송 완료",
+          description: `테스트 이메일이 전송되었습니다!\n📧 수신: ${emailForm.email}\n📰 뉴스 개수: ${result.newsCount}개`,
+        })
       } else {
-        alert(`❌ 이메일 전송 실패\n\n${result.error || "알 수 없는 오류가 발생했습니다."}`)
+        toast({
+          title: "❌ 전송 실패",
+          description: result.error || "알 수 없는 오류가 발생했습니다.",
+          variant: "destructive",
+        })
       }
     } catch (error: any) {
       console.error("[Test Email] Error:", error)
-      alert(`❌ 이메일 전송 중 오류가 발생했습니다.\n\n${error.message}`)
+      toast({
+        title: "❌ 오류 발생",
+        description: `이메일 전송 중 오류가 발생했습니다.\n${error.message}`,
+        variant: "destructive",
+      })
     } finally {
       setSendingTestEmail(false)
     }
@@ -594,7 +663,10 @@ export default function MyPage() {
                     size="sm"
                     onClick={() => {
                       if (confirm("모든 검색 기록을 삭제하시겠습니까?")) {
-                        alert("검색 기록 삭제 기능은 곧 추가됩니다.")
+                        toast({
+                          title: "🚧 준비 중",
+                          description: "검색 기록 삭제 기능은 곧 추가됩니다.",
+                        })
                       }
                     }}
                   >
