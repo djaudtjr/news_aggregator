@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "./useAuth"
+import type { NewsArticle } from "@/types/article"
 
 /**
  * 기사 AI 요약 커스텀 훅
@@ -7,6 +9,7 @@ import { useAuth } from "./useAuth"
  */
 export function useArticleSummary(newsId: string) {
   const { user } = useAuth()
+  const queryClient = useQueryClient()
   const [summary, setSummary] = useState<string | null>(null)
   const [keyPoints, setKeyPoints] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -87,6 +90,43 @@ export function useArticleSummary(newsId: string) {
 
       if (data.fromCache) {
         console.log(`[v0] Summary loaded from cache (viewed ${data.viewCount} times)`)
+      }
+
+      // AI가 카테고리를 재분류했으면 React Query 캐시 업데이트 (즉시 반영)
+      if (data.category) {
+        console.log(`[v0] Updating category to "${data.category}" for article ${newsId}`)
+
+        // 모든 'news' 쿼리 캐시를 찾아서 업데이트
+        const queries = queryClient.getQueriesData<{ articles: NewsArticle[] }>({
+          queryKey: ['news']
+        })
+
+        console.log(`[v0] Found ${queries.length} news queries to update`)
+
+        queries.forEach(([queryKey, queryData]) => {
+          if (queryData?.articles) {
+            const updatedArticles = queryData.articles.map((article) =>
+              article.id === newsId
+                ? { ...article, category: data.category }
+                : article
+            )
+
+            // 실제로 변경된 경우에만 업데이트
+            const hasChanges = updatedArticles.some(
+              (article, idx) => article !== queryData.articles[idx]
+            )
+
+            if (hasChanges) {
+              queryClient.setQueryData(queryKey, {
+                ...queryData,
+                articles: updatedArticles
+              })
+              console.log(`[v0] Updated query:`, queryKey)
+            }
+          }
+        })
+
+        console.log(`[v0] Category updated in cache, filter will now work without refresh`)
       }
     } catch (err) {
       console.error("[v0] Error summarizing article:", err)

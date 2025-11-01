@@ -18,6 +18,36 @@ export async function POST(request: NextRequest) {
     // 사용자 ID (비로그인은 'Anonymous')
     const effectiveUserId = userId || "Anonymous"
 
+    // 0. DB에서 활성화된 카테고리 목록 가져오기 (AI 카테고리 분류에 사용)
+    let availableCategories: string[] = []
+    try {
+      const { data: categoriesData } = await supabase
+        .from("codes")
+        .select("code, label_ko")
+        .eq("code_type", "news_category")
+        .eq("is_active", true)
+        .neq("code", "all") // "all"은 제외
+        .order("display_order", { ascending: true })
+
+      if (categoriesData && categoriesData.length > 0) {
+        availableCategories = categoriesData.map((c) => `${c.code} (${c.label_ko})`)
+        console.log(`[v0] Loaded ${availableCategories.length} categories for AI classification`)
+      }
+    } catch (error) {
+      console.error("[v0] Failed to fetch categories, using defaults:", error)
+      // 기본 카테고리 사용
+      availableCategories = [
+        "world (세계)",
+        "politics (정치)",
+        "business (비즈니스)",
+        "technology (기술)",
+        "science (과학)",
+        "health (건강)",
+        "sports (스포츠)",
+        "entertainment (엔터테인먼트)",
+      ]
+    }
+
     // 1. DB에서 기존 요약 확인
     try {
       const { data: existingSummary, error: dbError } = await supabase
@@ -42,6 +72,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           summary: existingSummary.summary,
           keyPoints: existingSummary.key_points,
+          category: existingSummary.category,
           fromCache: true,
           viewCount: existingSummary.view_count + 1,
         })
@@ -92,7 +123,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "OpenAI API key is required" }, { status: 400 })
     }
 
-    console.log("[v0] Calling OpenAI API for summarization")
+    console.log("[v0] Calling OpenAI API for summarization and categorization")
 
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -106,31 +137,52 @@ export async function POST(request: NextRequest) {
           messages: [
             {
               role: "system",
-              content: `당신은 뉴스 기사를 분석하는 전문가입니다.
-다음 형식으로 응답해주세요:
+              content: `당신은 뉴스 기사를 정확하게 분석하고 분류하는 전문가입니다.
+주어진 뉴스 기사를 분석하여 다음 JSON 형식으로 응답해주세요:
 
-[요약]
-(3-5문장으로 핵심 내용 요약)
+{
+  "summary": "3-5문장으로 핵심 내용을 간결하게 요약 (300자 이내)",
+  "keyPoints": ["핵심 포인트 1", "핵심 포인트 2", "핵심 포인트 3"],
+  "category": "카테고리 코드"
+}
 
-[핵심 포인트]
-- (핵심 포인트 1)
-- (핵심 포인트 2)
-- (핵심 포인트 3)
+카테고리 선택 가능 목록:
+${availableCategories.join(", ")}
 
-규칙:
-1. 핵심 내용만 간결하게 요약
-2. 중요한 사실과 수치 포함
-3. 객관적이고 중립적인 톤 유지
-4. 300자 이내로 작성
-5. 한국어로 작성`,
+카테고리 분류 기준:
+- world (세계): 국제 정세, 외교, 국가 간 관계, 글로벌 이슈
+- politics (정치): 정부, 정당, 선거, 정책, 법안, 의회 활동
+- business (비즈니스): 기업 경영, 주식시장, 경제 지표, 산업 동향, 부동산 (스포츠/연예 관련 비즈니스 제외)
+- technology (기술): IT, 소프트웨어, 하드웨어, AI, 인터넷, 앱, 게임
+- science (과학): 연구, 발견, 우주, 환경, 기후, 학술
+- health (건강): 의료, 질병, 건강 관리, 병원, 제약
+- sports (스포츠): 모든 스포츠 관련 뉴스 (선수 이적, 계약, 경기 결과, 스포츠 비즈니스 포함)
+- entertainment (엔터테인먼트): 연예인, 영화, 음악, 드라마, 예능, K-POP (연예계 비즈니스 포함)
+
+중요한 분류 규칙:
+1. 스포츠 선수의 이적, 계약, 연봉 등은 금액이 언급되어도 "sports" 카테고리입니다
+2. 연예인의 계약, 수익, 활동 등은 "entertainment" 카테고리입니다
+3. 기사의 주요 주제가 무엇인지 파악하여 가장 적합한 카테고리를 선택하세요
+4. 예시:
+   - "축구 선수 A가 B팀으로 이적, 이적료 100억" → sports
+   - "배우 C가 드라마 출연료 1억 받아" → entertainment
+   - "삼성전자 영업이익 증가" → business
+   - "AI 기술로 신약 개발" → technology (또는 science)
+
+요약 및 핵심 포인트 작성 규칙:
+1. summary: 핵심 내용만 간결하게 요약, 중요한 사실과 수치 포함, 객관적이고 중립적인 톤 유지, 300자 이내, 한국어로 작성
+2. keyPoints: 3-5개의 핵심 포인트를 배열로 제공, 각 포인트는 간결하게 작성
+3. category: 위의 분류 기준에 따라 가장 적합한 카테고리의 코드만 입력 (괄호 안의 한글은 제외하고 영문 코드만)
+4. 반드시 유효한 JSON 형식으로 응답`,
             },
             {
               role: "user",
-              content: `다음 뉴스 기사를 분석해주세요:\n\n${content}`,
+              content: `다음 뉴스 기사를 분석하고 분류해주세요:\n\n${content}`,
             },
           ],
-          max_tokens: 800,
-          temperature: 0.3,
+          max_tokens: 1000,
+          temperature: 0.2,
+          response_format: { type: "json_object" },
         }),
       })
 
@@ -155,32 +207,40 @@ export async function POST(request: NextRequest) {
       }
 
       const data = await response.json()
-      console.log("[v0] Summary generated successfully")
+      console.log("[v0] Summary and categorization generated successfully")
 
-      const aiResponse = data.choices?.[0]?.message?.content || "요약을 생성할 수 없습니다."
+      const aiResponse = data.choices?.[0]?.message?.content || "{}"
 
-      // 응답 파싱 (요약과 핵심 포인트 분리)
-      const parts = aiResponse.split("[핵심 포인트]")
-      const summary = parts[0].replace("[요약]", "").trim()
+      // JSON 응답 파싱
+      let summary = "요약을 생성할 수 없습니다."
       let keyPoints: string[] = []
+      let aiCategory: string | null = null
 
-      if (parts.length > 1) {
-        const pointsText = parts[1].trim()
-        keyPoints = pointsText
-          .split("\n")
-          .filter((line: string) => line.trim().startsWith("-"))
-          .map((line: string) => line.trim().replace(/^-\s*/, ""))
+      try {
+        const parsedResponse = JSON.parse(aiResponse)
+        summary = parsedResponse.summary || "요약을 생성할 수 없습니다."
+        keyPoints = Array.isArray(parsedResponse.keyPoints) ? parsedResponse.keyPoints : []
+        // AI가 분류한 카테고리 사용, 없으면 기존 텍스트 기반 카테고리 사용
+        aiCategory = parsedResponse.category || category || null
+
+        console.log(`[v0] Parsed AI response - Category: ${aiCategory}, KeyPoints: ${keyPoints.length}`)
+      } catch (parseError) {
+        console.error("[v0] Failed to parse AI JSON response:", parseError)
+        console.error("[v0] Raw AI response:", aiResponse)
+        // JSON 파싱 실패시 기존 카테고리 사용
+        aiCategory = category || null
       }
 
-      // 4. DB에 저장 (AI 요약 정보만 저장, 크롤링된 전문은 저장하지 않음)
+      // 4. DB에 저장 (AI 요약 정보 및 AI가 분류한 카테고리 저장)
       // UPSERT 사용: 링크 클릭으로 이미 레코드가 있을 수 있음
+      // AI 요약 실행 후에는 AI가 분류한 카테고리로 업데이트됨
       try {
         const { error: upsertError } = await supabase.from("news_summaries").upsert(
           {
             news_id: newsId,
             news_url: link,
             news_title: title,
-            category: category || null,
+            category: aiCategory, // AI가 분류한 카테고리 사용
             summary,
             key_points: keyPoints.length > 0 ? keyPoints : null,
             view_count: 1,
@@ -205,6 +265,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         summary,
         keyPoints: keyPoints.length > 0 ? keyPoints : undefined,
+        category: aiCategory,
         fromCache: false,
         viewCount: 1,
       })

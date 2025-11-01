@@ -4,6 +4,7 @@ import { processSearchQuery } from "@/lib/utils/language-utils"
 import { deduplicateArticles } from "@/lib/utils"
 import { RSS_FEEDS } from "@/lib/news/feeds"
 import { fetchRSSFeed } from "@/lib/news/rss-fetcher"
+import { supabase } from "@/lib/supabase/client"
 import type { NewsArticle } from "@/types/article"
 
 // 국제 뉴스 캐시 (메모리 캐시, 5분 유효)
@@ -128,6 +129,43 @@ export async function GET(request: NextRequest) {
 
     // 중복 제거 (ID 기반 + 제목 유사도 80% 이상)
     const uniqueResults = deduplicateArticles(sortedResults, 0.8)
+
+    // AI가 분류한 카테고리 적용 (news_summaries 테이블에서 조회)
+    try {
+      // 모든 뉴스 ID 추출
+      const newsIds = uniqueResults.map(article => article.id)
+
+      if (newsIds.length > 0) {
+        // news_summaries 테이블에서 AI가 분류한 카테고리 조회
+        const { data: summaries } = await supabase
+          .from("news_summaries")
+          .select("news_id, category")
+          .in("news_id", newsIds)
+          .not("category", "is", null)
+
+        if (summaries && summaries.length > 0) {
+          // AI 카테고리를 Map으로 변환
+          const aiCategoryMap = new Map(
+            summaries.map(s => [s.news_id, s.category])
+          )
+
+          // 뉴스 데이터에 AI 카테고리 적용
+          let updatedCount = 0
+          uniqueResults.forEach(article => {
+            const aiCategory = aiCategoryMap.get(article.id)
+            if (aiCategory) {
+              article.category = aiCategory
+              updatedCount++
+            }
+          })
+
+          console.log(`[v0] Applied AI-classified categories to ${updatedCount} search results`)
+        }
+      }
+    } catch (error) {
+      console.error("[v0] Failed to fetch AI categories for search results:", error)
+      // 에러가 발생해도 계속 진행 (기본 카테고리 사용)
+    }
 
     console.log(
       `[v0] Search completed: ${sortedResults.length} articles found, ${uniqueResults.length} unique (Region: ${region}, Korean: ${isKorean ? "yes" : "no"}, Translated: ${translated || "no"})`
