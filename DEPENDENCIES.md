@@ -381,7 +381,6 @@ NewsFeed (Grid/List/Compact 렌더링)
 **위치**:
 - `components/news-card.tsx` (API 키 저장)
 - `components/bulk-actions.tsx` (선택된 기사 ID)
-- `components/api-key-settings.tsx` (API 키 저장)
 
 **문제**:
 - 서버 사이드 렌더링 시 호환성 이슈
