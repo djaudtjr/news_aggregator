@@ -69,6 +69,7 @@ export function NewsFeed({
   onAvailableCategoriesChange,
 }: NewsFeedProps) {
   const [allCategories, setAllCategories] = useState<Set<string>>(new Set())
+  const [showLoadingMessage, setShowLoadingMessage] = useState(false)
 
   // DB에서 카테고리 목록 가져오기
   useEffect(() => {
@@ -157,6 +158,21 @@ export function NewsFeed({
     }
   }, [availableCategories, onAvailableCategoriesChange])
 
+  // 로딩 2초 후 메시지 표시
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        setShowLoadingMessage(true)
+      }, 2000)
+      return () => {
+        clearTimeout(timer)
+        setShowLoadingMessage(false)
+      }
+    } else {
+      setShowLoadingMessage(false)
+    }
+  }, [loading])
+
   if (loading) {
     // 레이아웃 모드에 따른 스켈레톤 표시
     const containerClass =
@@ -174,10 +190,19 @@ export function NewsFeed({
           : NewsCardSkeleton
 
     return (
-      <div className={containerClass}>
-        {Array.from({ length: 9 }).map((_, i) => (
-          <SkeletonComponent key={i} />
-        ))}
+      <div className="space-y-4">
+        {showLoadingMessage && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>뉴스를 불러오는 중입니다</AlertTitle>
+            <AlertDescription>잠시만 기다려주세요...</AlertDescription>
+          </Alert>
+        )}
+        <div className={containerClass}>
+          {Array.from({ length: 9 }).map((_, i) => (
+            <SkeletonComponent key={i} />
+          ))}
+        </div>
       </div>
     )
   }

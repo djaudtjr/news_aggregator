@@ -21,7 +21,7 @@ interface NewsCardProps {
 function NewsCardComponent({ article }: NewsCardProps) {
   const timeAgo = formatDistanceToNow(new Date(article.pubDate), { addSuffix: true })
   const { user } = useAuth()
-  const { summary, keyPoints, isLoading, fromCache, generateSummary } = useArticleSummary(article.id)
+  const { summary, keyPoints, isLoading, fromCache, loadingProgress, loadingMessage, generateSummary } = useArticleSummary(article.id)
   const { addRecentArticle } = useRecentArticles()
   const { toggleBookmark, isBookmarked } = useBookmarks()
 
@@ -196,7 +196,12 @@ function NewsCardComponent({ article }: NewsCardProps) {
           disabled={isLoading || !!summary}
         >
           <Sparkles className="mr-2 h-4 w-4" />
-          {isLoading ? "요약 중..." : summary ? "요약 완료" : "AI 요약"}
+          {isLoading ? (
+            <div className="flex flex-col items-center gap-1 w-full">
+              <span>{loadingMessage}</span>
+              <span className="text-xs text-muted-foreground">{loadingProgress}%</span>
+            </div>
+          ) : summary ? "요약 완료" : "AI 요약"}
         </Button>
         {/* Read More 버튼 - 전체 너비 */}
         <Button variant="default" className="w-full" asChild>

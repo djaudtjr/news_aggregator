@@ -15,6 +15,8 @@ export function useArticleSummary(newsId: string) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fromCache, setFromCache] = useState(false)
+  const [loadingProgress, setLoadingProgress] = useState(0)
+  const [loadingMessage, setLoadingMessage] = useState("")
 
   // 컴포넌트 마운트 시 기존 요약 불러오기
   useEffect(() => {
@@ -61,8 +63,20 @@ export function useArticleSummary(newsId: string) {
     setIsLoading(true)
     setError(null)
     setFromCache(false)
+    setLoadingProgress(0)
+    setLoadingMessage("기사 내용을 가져오는 중...")
 
     try {
+      // 진행률 시뮬레이션
+      const progressInterval = setInterval(() => {
+        setLoadingProgress(prev => {
+          if (prev < 90) return prev + 10
+          return prev
+        })
+      }, 500)
+
+      setTimeout(() => setLoadingMessage("AI가 요약을 생성하는 중..."), 1500)
+
       const response = await fetch("/api/summarize", {
         method: "POST",
         headers: {
@@ -78,6 +92,10 @@ export function useArticleSummary(newsId: string) {
           userId: user?.id || null, // 로그인한 사용자 ID 전달 (비로그인은 null -> 'Anonymous')
         }),
       })
+
+      clearInterval(progressInterval)
+      setLoadingProgress(100)
+      setLoadingMessage("요약 완료!")
 
       if (!response.ok) {
         throw new Error("Failed to summarize")
@@ -155,6 +173,8 @@ export function useArticleSummary(newsId: string) {
     isLoading,
     error,
     fromCache,
+    loadingProgress,
+    loadingMessage,
     generateSummary,
     resetSummary,
   }
