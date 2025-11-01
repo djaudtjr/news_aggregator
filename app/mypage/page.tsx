@@ -311,78 +311,265 @@ export default function MyPage() {
   return (
     <div className="min-h-screen bg-background">
       <NewsHeader searchQuery={searchQuery} onSearchChange={handleSearchChange} onRefresh={handleRefresh} />
-      <main className="container mx-auto px-4 py-6 space-y-6">
-        {/* 프로필 섹션 */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-4">
-              {user.user_metadata?.avatar_url ? (
-                <img
-                  src={user.user_metadata.avatar_url}
-                  alt={user.user_metadata?.full_name || "User"}
-                  className="h-16 w-16 rounded-full"
-                />
-              ) : (
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="h-8 w-8 text-primary" />
+      <main className="container mx-auto px-4 py-4 space-y-4">
+        {/* 상단: 프로필 (좌측) + 통계 (우측) */}
+        <div className="grid gap-4 md:grid-cols-4">
+          {/* 프로필 섹션 */}
+          <Card className="md:col-span-1">
+            <CardHeader className="pb-0.5 pt-1">
+              <div className="flex flex-col items-center gap-0">
+                {user.user_metadata?.avatar_url ? (
+                  <img
+                    src={user.user_metadata.avatar_url}
+                    alt={user.user_metadata?.full_name || "User"}
+                    className="h-10 w-10 rounded-full"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-5 w-5 text-primary" />
+                  </div>
+                )}
+                <div className="text-center leading-tight">
+                  <CardTitle className="text-sm mb-0">{user.user_metadata?.full_name || "사용자"}</CardTitle>
+                  <CardDescription className="text-xs leading-tight">{user.email}</CardDescription>
                 </div>
-              )}
-              <div>
-                <CardTitle>{user.user_metadata?.full_name || "사용자"}</CardTitle>
-                <CardDescription>{user.email}</CardDescription>
               </div>
-            </div>
-          </CardHeader>
-        </Card>
-
-        {/* 통계 카드 */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">AI 요약</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{data?.stats.totalSummaryRequests || 0}</div>
-              <p className="text-xs text-muted-foreground">총 요청 횟수</p>
-            </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">기사 조회</CardTitle>
-              <LinkIcon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{data?.stats.totalLinkClicks || 0}</div>
-              <p className="text-xs text-muted-foreground">총 클릭 횟수</p>
-            </CardContent>
-          </Card>
+          {/* 통계 카드 (AI요약, 기사조회, 검색) */}
+          <div className="md:col-span-3 grid gap-3 md:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 pt-1">
+                <CardTitle className="text-xs font-medium">AI 요약</CardTitle>
+                <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent className="pt-0.5 pb-1">
+                <div className="text-xl font-bold leading-none mb-0">{data?.stats.totalSummaryRequests || 0}</div>
+                <p className="text-[10px] text-muted-foreground leading-tight">총 요청 횟수</p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">검색</CardTitle>
-              <Search className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{data?.stats.totalSearches || 0}</div>
-              <p className="text-xs text-muted-foreground">총 검색 횟수</p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 pt-1">
+                <CardTitle className="text-xs font-medium">기사 조회</CardTitle>
+                <LinkIcon className="h-3.5 w-3.5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent className="pt-0.5 pb-1">
+                <div className="text-xl font-bold leading-none mb-0">{data?.stats.totalLinkClicks || 0}</div>
+                <p className="text-[10px] text-muted-foreground leading-tight">총 클릭 횟수</p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">북마크</CardTitle>
-              <Bookmark className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{data?.stats.totalBookmarks || 0}</div>
-              <p className="text-xs text-muted-foreground">저장한 기사</p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 pt-1">
+                <CardTitle className="text-xs font-medium">검색</CardTitle>
+                <Search className="h-3.5 w-3.5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent className="pt-0.5 pb-1">
+                <div className="text-xl font-bold leading-none mb-0">{data?.stats.totalSearches || 0}</div>
+                <p className="text-[10px] text-muted-foreground leading-tight">총 검색 횟수</p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
+        {/* 중단: 구독 키워드 + 이메일 알림 통합 (좌측) + 최근 검색 키워드 (우측) */}
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* 뉴스 구독 설정 (키워드 + 이메일 알림 통합) - 강조 */}
+          <Card className="border-primary/50 shadow-lg shadow-primary/10 bg-gradient-to-br from-primary/5 to-background ring-1 ring-primary/20">
+            <CardHeader className="bg-primary/5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Bell className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">뉴스 구독 설정</CardTitle>
+                  </div>
+                  <CardDescription className="font-medium">관심 키워드를 추가하고 이메일로 뉴스를 받아보세요</CardDescription>
+                </div>
+                {keywords && keywords.length > 0 && (
+                  <Button variant="ghost" size="sm" onClick={handleClearAllKeywords}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* 구독 키워드 섹션 */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">1</Badge>
+                  <h3 className="font-semibold text-sm">구독 키워드</h3>
+                </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+                {/* 키워드 추가 폼 */}
+                <form onSubmit={handleAddKeyword} className="flex gap-1.5">
+                  <Input
+                    placeholder="예: AI, 삼성전자, 기후변화"
+                    value={newKeyword}
+                    onChange={(e) => setNewKeyword(e.target.value)}
+                    disabled={keywords?.length >= 3}
+                    className="h-9 text-sm"
+                  />
+                  <Button
+                    type="submit"
+                    size="icon"
+                    disabled={keywords?.length >= 3 || !newKeyword.trim()}
+                    title={keywords?.length >= 3 ? "최대 3개까지 추가 가능합니다" : "키워드 추가"}
+                    className="h-9 w-9"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </form>
+
+                {/* 최대 개수 안내 */}
+                {keywords && keywords.length >= 3 && (
+                  <p className="text-[10px] text-muted-foreground">
+                    ⚠️ 최대 3개의 키워드까지만 구독할 수 있습니다.
+                  </p>
+                )}
+                {keywords && keywords.length > 0 && keywords.length < 3 && (
+                  <p className="text-[10px] text-muted-foreground">
+                    {3 - keywords.length}개 더 추가할 수 있습니다.
+                  </p>
+                )}
+
+                {/* 키워드 목록 */}
+                <div className="flex flex-wrap gap-2">
+                  {keywords && keywords.length > 0 ? (
+                    keywords.map((kw) => (
+                      <div
+                        key={kw.id}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border bg-accent/50"
+                      >
+                        <span className="font-medium text-sm">{kw.keyword}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeKeyword(kw.id)}
+                          className="h-5 w-5 hover:bg-transparent"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-muted-foreground text-center py-2 w-full">
+                      구독 중인 키워드가 없습니다
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t pt-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">2</Badge>
+                  <h3 className="font-semibold text-sm">이메일 알림</h3>
+                </div>
+
+                {/* 이메일 주소 & 이메일 활성화 토글 */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 flex items-center gap-2">
+                    <Label htmlFor="email-address" className="whitespace-nowrap">수신 이메일</Label>
+                    <Input
+                      id="email-address"
+                      type="email"
+                      value={emailForm.email}
+                      onChange={(e) => setEmailForm((prev) => ({ ...prev, email: e.target.value }))}
+                      disabled={!emailForm.enabled}
+                      className="flex-1"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="email-enabled" className="whitespace-nowrap">이메일 알림</Label>
+                    <Switch
+                      id="email-enabled"
+                      checked={emailForm.enabled}
+                      onCheckedChange={(checked) => setEmailForm((prev) => ({ ...prev, enabled: checked }))}
+                    />
+                  </div>
+                </div>
+
+                {/* 발송 요일 & 발송 시간 */}
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Label className="whitespace-nowrap">발송 요일</Label>
+                    <div className="flex gap-1">
+                      {["일", "월", "화", "수", "목", "금", "토"].map((day, index) => (
+                        <Button
+                          key={index}
+                          variant={emailForm.deliveryDays.includes(index) ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => toggleDeliveryDay(index)}
+                          disabled={!emailForm.enabled}
+                          className="w-8 h-8 p-0 text-xs"
+                        >
+                          {day}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="whitespace-nowrap">발송 시간</Label>
+                    <div className="flex gap-3">
+                      {[
+                        { value: 6, label: "오전 6시" },
+                        { value: 18, label: "오후 6시" },
+                      ].map((option) => (
+                        <div key={option.value} className="flex items-center space-x-1.5">
+                          <input
+                            type="radio"
+                            id={`hour-${option.value}`}
+                            name="delivery-hour"
+                            value={option.value}
+                            checked={emailForm.deliveryHour === option.value}
+                            onChange={(e) =>
+                              setEmailForm((prev) => ({ ...prev, deliveryHour: parseInt(e.target.value) }))
+                            }
+                            disabled={!emailForm.enabled}
+                            className="h-4 w-4 text-primary focus:ring-primary"
+                          />
+                          <Label
+                            htmlFor={`hour-${option.value}`}
+                            className={!emailForm.enabled ? "text-muted-foreground" : "cursor-pointer"}
+                          >
+                            {option.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 저장 및 테스트 버튼 */}
+                <div className="flex gap-2">
+                  <Button onClick={handleSaveEmailSettings} className="flex-[2] h-9 text-sm">
+                    설정 저장
+                  </Button>
+                  <Button
+                    onClick={handleSendTestEmail}
+                    variant="outline"
+                    disabled={sendingTestEmail || !emailForm.email || keywords.length === 0}
+                    className="flex-[1] h-9 text-sm"
+                  >
+                    {sendingTestEmail ? "전송 중..." : "테스트"}
+                  </Button>
+                </div>
+
+                {/* 안내 문구 */}
+                {emailForm.enabled && (
+                  <Alert className="py-2">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    <AlertDescription className="text-[10px]">
+                      선택한 요일{" "}
+                      {emailForm.deliveryHour === 6 ? "오전 6시" : "오후 6시"}
+                      에 구독 키워드당 최신 뉴스 5개씩 이메일로 받습니다.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* 최근 검색 키워드 */}
           <Card>
             <CardHeader>
@@ -407,7 +594,6 @@ export default function MyPage() {
                     size="sm"
                     onClick={() => {
                       if (confirm("모든 검색 기록을 삭제하시겠습니까?")) {
-                        // TODO: API 호출로 검색 기록 삭제
                         alert("검색 기록 삭제 기능은 곧 추가됩니다.")
                       }
                     }}
@@ -424,14 +610,13 @@ export default function MyPage() {
                     {data.recentSearches
                       .slice((searchesPage - 1) * searchesPerPage, searchesPage * searchesPerPage)
                       .map((search, index) => {
-                        // 전체 인덱스 계산 (페이징 고려)
                         const globalIndex = (searchesPage - 1) * searchesPerPage + index + 1
                         return (
                           <div
                             key={index}
-                            className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors"
+                            className="flex items-center justify-between p-2 rounded-lg border hover:bg-accent transition-colors"
                           >
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
                               <Badge variant="outline">{globalIndex}</Badge>
                               <div>
                                 <div className="font-medium">{search.keyword}</div>
@@ -448,7 +633,7 @@ export default function MyPage() {
 
                   {/* 페이지네이션 */}
                   {data.recentSearches.length > searchesPerPage && (
-                    <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t">
+                    <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t">
                       <Button
                         variant="outline"
                         size="sm"
@@ -489,315 +674,105 @@ export default function MyPage() {
                   )}
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">검색 기록이 없습니다</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* 북마크한 기사 */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Bookmark className="h-5 w-5 text-primary" />
-                    <CardTitle>북마크한 기사</CardTitle>
-                  </div>
-                  <CardDescription>
-                    저장한 뉴스 기사
-                    {data?.recentBookmarks && data.recentBookmarks.length > 0 && (
-                      <span className="ml-2">
-                        (총 {data.recentBookmarks.length}개)
-                      </span>
-                    )}
-                  </CardDescription>
-                </div>
-                {data?.recentBookmarks && data.recentBookmarks.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearAllBookmarks}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {data?.recentBookmarks && data.recentBookmarks.length > 0 ? (
-                <>
-                  <div className="space-y-2">
-                    {data.recentBookmarks
-                      .slice((bookmarksPage - 1) * bookmarksPerPage, bookmarksPage * bookmarksPerPage)
-                      .map((bookmark) => (
-                        <a
-                          key={bookmark.id}
-                          href={bookmark.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block p-3 rounded-lg border hover:bg-accent transition-colors"
-                        >
-                          <div className="font-medium line-clamp-2">{bookmark.title}</div>
-                          <div className="flex items-center gap-2 mt-2">
-                            {bookmark.source && <Badge variant="secondary">{bookmark.source}</Badge>}
-                            {bookmark.category && <Badge variant="outline">{bookmark.category}</Badge>}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-2">
-                            {formatDistanceToNow(new Date(bookmark.created_at), { addSuffix: true, locale: ko })}
-                          </div>
-                        </a>
-                      ))}
-                  </div>
-
-                  {/* 페이지네이션 */}
-                  {data.recentBookmarks.length > bookmarksPerPage && (
-                    <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setBookmarksPage((prev) => Math.max(1, prev - 1))}
-                        disabled={bookmarksPage === 1}
-                      >
-                        이전
-                      </Button>
-                      <div className="flex items-center gap-1">
-                        {Array.from(
-                          { length: Math.ceil(data.recentBookmarks.length / bookmarksPerPage) },
-                          (_, i) => i + 1
-                        ).map((page) => (
-                          <Button
-                            key={page}
-                            variant={bookmarksPage === page ? "default" : "ghost"}
-                            size="sm"
-                            onClick={() => setBookmarksPage(page)}
-                            className="w-8 h-8 p-0"
-                          >
-                            {page}
-                          </Button>
-                        ))}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          setBookmarksPage((prev) =>
-                            Math.min(Math.ceil(data.recentBookmarks.length / bookmarksPerPage), prev + 1)
-                          )
-                        }
-                        disabled={bookmarksPage === Math.ceil(data.recentBookmarks.length / bookmarksPerPage)}
-                      >
-                        다음
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">북마크한 기사가 없습니다</p>
+                <p className="text-sm text-muted-foreground text-center py-6">검색 기록이 없습니다</p>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* 구독 관리 섹션 */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* 구독 키워드 */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Bell className="h-5 w-5 text-primary" />
-                    <CardTitle>구독 키워드</CardTitle>
-                  </div>
-                  <CardDescription>관심 키워드를 추가하면 이메일로 뉴스를 받아볼 수 있습니다</CardDescription>
-                </div>
-                {keywords && keywords.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearAllKeywords}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* 키워드 추가 폼 */}
-              <form onSubmit={handleAddKeyword} className="flex gap-2">
-                <Input
-                  placeholder="예: AI, 삼성전자, 기후변화"
-                  value={newKeyword}
-                  onChange={(e) => setNewKeyword(e.target.value)}
-                  disabled={keywords?.length >= 3}
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  disabled={keywords?.length >= 3 || !newKeyword.trim()}
-                  title={keywords?.length >= 3 ? "최대 3개까지 추가 가능합니다" : "키워드 추가"}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </form>
-
-              {/* 최대 개수 안내 */}
-              {keywords && keywords.length >= 3 && (
-                <p className="text-xs text-muted-foreground">
-                  ⚠️ 최대 3개의 키워드까지만 구독할 수 있습니다.
-                </p>
-              )}
-              {keywords && keywords.length > 0 && keywords.length < 3 && (
-                <p className="text-xs text-muted-foreground">
-                  {3 - keywords.length}개 더 추가할 수 있습니다.
-                </p>
-              )}
-
-              {/* 키워드 목록 */}
-              <div className="space-y-2">
-                {keywords && keywords.length > 0 ? (
-                  keywords.map((kw) => (
-                    <div
-                      key={kw.id}
-                      className="flex items-center justify-between p-3 rounded-lg border bg-accent/50"
-                    >
-                      <span className="font-medium">{kw.keyword}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeKeyword(kw.id)}
-                        className="h-8 w-8"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    구독 중인 키워드가 없습니다
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 이메일 알림 설정 */}
-          <Card>
-            <CardHeader>
+        {/* 하단: 북마크한 기사 (전체 너비) */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-primary" />
-                <CardTitle>이메일 알림 설정</CardTitle>
+                <Bookmark className="h-5 w-5 text-primary" />
+                <CardTitle>북마크한 기사</CardTitle>
               </div>
-              <CardDescription>구독 키워드 뉴스를 이메일로 받아보세요</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* 이메일 활성화 토글 */}
-              <div className="flex items-center justify-between">
-                <Label htmlFor="email-enabled">이메일 알림</Label>
-                <Switch
-                  id="email-enabled"
-                  checked={emailForm.enabled}
-                  onCheckedChange={(checked) => setEmailForm((prev) => ({ ...prev, enabled: checked }))}
-                />
-              </div>
-
-              {/* 이메일 주소 */}
-              <div className="space-y-2">
-                <Label htmlFor="email-address">수신 이메일</Label>
-                <Input
-                  id="email-address"
-                  type="email"
-                  value={emailForm.email}
-                  onChange={(e) => setEmailForm((prev) => ({ ...prev, email: e.target.value }))}
-                  disabled={!emailForm.enabled}
-                />
-              </div>
-
-              {/* 발송 요일 */}
-              <div className="space-y-2">
-                <Label>발송 요일</Label>
-                <div className="flex gap-2">
-                  {["일", "월", "화", "수", "목", "금", "토"].map((day, index) => (
-                    <Button
-                      key={index}
-                      variant={emailForm.deliveryDays.includes(index) ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => toggleDeliveryDay(index)}
-                      disabled={!emailForm.enabled}
-                      className="w-10 h-10 p-0"
-                    >
-                      {day}
+              <div className="flex items-center gap-2">
+                {data?.recentBookmarks && data.recentBookmarks.length > 0 && (
+                  <>
+                    <Badge variant="secondary">{data.recentBookmarks.length}개</Badge>
+                    <Button variant="ghost" size="sm" onClick={handleClearAllBookmarks}>
+                      <Trash2 className="h-4 w-4" />
                     </Button>
-                  ))}
-                </div>
+                  </>
+                )}
               </div>
-
-              {/* 발송 시간 */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>발송 시간 (KST)</Label>
-                  <span className="text-xs text-muted-foreground">
-                    발송 시간은 ±1시간 정도 차이가 날 수 있습니다
-                  </span>
-                </div>
-                <div className="flex gap-4">
-                  {[
-                    { value: 6, label: "오전 6시" },
-                    { value: 18, label: "오후 6시" },
-                  ].map((option) => (
-                    <div key={option.value} className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id={`hour-${option.value}`}
-                        name="delivery-hour"
-                        value={option.value}
-                        checked={emailForm.deliveryHour === option.value}
-                        onChange={(e) =>
-                          setEmailForm((prev) => ({ ...prev, deliveryHour: parseInt(e.target.value) }))
-                        }
-                        disabled={!emailForm.enabled}
-                        className="h-4 w-4 text-primary focus:ring-primary"
-                      />
-                      <Label
-                        htmlFor={`hour-${option.value}`}
-                        className={!emailForm.enabled ? "text-muted-foreground" : "cursor-pointer"}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {data?.recentBookmarks && data.recentBookmarks.length > 0 ? (
+              <>
+                <div className="space-y-2">
+                  {data.recentBookmarks
+                    .slice((bookmarksPage - 1) * bookmarksPerPage, bookmarksPage * bookmarksPerPage)
+                    .map((bookmark) => (
+                      <a
+                        key={bookmark.id}
+                        href={bookmark.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block p-2 rounded-lg border hover:bg-accent transition-colors"
                       >
-                        {option.label}
-                      </Label>
-                    </div>
-                  ))}
+                        <div className="font-medium line-clamp-2">{bookmark.title}</div>
+                        <div className="flex items-center gap-2 mt-2">
+                          {bookmark.source && <Badge variant="secondary">{bookmark.source}</Badge>}
+                          {bookmark.category && <Badge variant="outline">{bookmark.category}</Badge>}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-2">
+                          {formatDistanceToNow(new Date(bookmark.created_at), { addSuffix: true, locale: ko })}
+                        </div>
+                      </a>
+                    ))}
                 </div>
-              </div>
 
-              {/* 저장 및 테스트 버튼 */}
-              <div className="flex gap-2">
-                <Button onClick={handleSaveEmailSettings} className="flex-[2]">
-                  설정 저장
-                </Button>
-                <Button
-                  onClick={handleSendTestEmail}
-                  variant="outline"
-                  disabled={sendingTestEmail || !emailForm.email || keywords.length === 0}
-                  className="flex-[1]"
-                >
-                  {sendingTestEmail ? "전송 중..." : "테스트 전송"}
-                </Button>
-              </div>
-
-              {/* 안내 문구 */}
-              {emailForm.enabled && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-xs">
-                    선택한 요일{" "}
-                    {emailForm.deliveryHour === 6 ? "오전 6시" : "오후 6시"}
-                    에 구독 키워드당 최신 뉴스 5개씩 이메일로 받습니다.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                {/* 페이지네이션 */}
+                {data.recentBookmarks.length > bookmarksPerPage && (
+                  <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setBookmarksPage((prev) => Math.max(1, prev - 1))}
+                      disabled={bookmarksPage === 1}
+                    >
+                      이전
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from(
+                        { length: Math.ceil(data.recentBookmarks.length / bookmarksPerPage) },
+                        (_, i) => i + 1
+                      ).map((page) => (
+                        <Button
+                          key={page}
+                          variant={bookmarksPage === page ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => setBookmarksPage(page)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {page}
+                        </Button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setBookmarksPage((prev) =>
+                          Math.min(Math.ceil(data.recentBookmarks.length / bookmarksPerPage), prev + 1)
+                        )
+                      }
+                      disabled={bookmarksPage === Math.ceil(data.recentBookmarks.length / bookmarksPerPage)}
+                    >
+                      다음
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-6">북마크한 기사가 없습니다</p>
+            )}
+          </CardContent>
+        </Card>
       </main>
     </div>
   )
