@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { QueryProvider } from "@/lib/providers/query-provider"
 import { BookmarksProvider } from "@/lib/providers/bookmarks-provider"
+import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
 const geist = Geist({
@@ -35,6 +36,7 @@ export default function RootLayout({
           <BookmarksProvider>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
               {children}
+              <Toaster />
             </ThemeProvider>
           </BookmarksProvider>
         </QueryProvider>

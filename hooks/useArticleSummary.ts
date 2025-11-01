@@ -1,7 +1,21 @@
 import { useState, useEffect } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "./useAuth"
+import { useToast } from "./use-toast"
 import type { NewsArticle } from "@/types/article"
+
+// 카테고리 코드를 한글 라벨로 변환하는 맵
+const CATEGORY_LABELS: Record<string, string> = {
+  all: "전체",
+  world: "세계",
+  politics: "정치",
+  business: "비즈니스",
+  technology: "기술",
+  science: "과학",
+  health: "건강",
+  sports: "스포츠",
+  entertainment: "엔터테인먼트",
+}
 
 /**
  * 기사 AI 요약 커스텀 훅
@@ -10,6 +24,7 @@ import type { NewsArticle } from "@/types/article"
 export function useArticleSummary(newsId: string) {
   const { user } = useAuth()
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const [summary, setSummary] = useState<string | null>(null)
   const [keyPoints, setKeyPoints] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -113,6 +128,23 @@ export function useArticleSummary(newsId: string) {
       // AI가 카테고리를 재분류했으면 React Query 캐시 업데이트 (즉시 반영)
       if (data.category) {
         console.log(`[v0] Updating category to "${data.category}" for article ${newsId}`)
+
+        // 카테고리가 변경되었는지 확인
+        const categoryChanged = category && data.category !== category
+
+        if (categoryChanged) {
+          const oldCategoryLabel = CATEGORY_LABELS[category] || category
+          const newCategoryLabel = CATEGORY_LABELS[data.category] || data.category
+
+          // 카테고리 변경 알림 표시
+          toast({
+            title: "📂 카테고리 재분류",
+            description: `${oldCategoryLabel} → ${newCategoryLabel}`,
+            duration: 3000,
+          })
+
+          console.log(`[v0] Category changed: ${category} → ${data.category}`)
+        }
 
         // 모든 'news' 쿼리 캐시를 찾아서 업데이트
         const queries = queryClient.getQueriesData<{ articles: NewsArticle[] }>({
