@@ -326,3 +326,97 @@ COMMENT ON TABLE user_preferences IS '사용자 개인화 설정 (관심 카테�
 COMMENT ON COLUMN user_preferences.user_id IS '사용자 UID (Supabase Auth)';
 COMMENT ON COLUMN user_preferences.preferred_categories IS '선호하는 뉴스 카테고리 배열';
 COMMENT ON COLUMN user_preferences.preferred_region IS '선호하는 지역 (all, domestic, international)';
+
+
+-- ============================================================================
+-- 코드 테이블
+-- 카테고리, 지역 등 코드성 데이터를 DB에서 관리
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS codes (
+  -- 기본 키
+  id BIGSERIAL PRIMARY KEY,
+
+  -- 코드 타입 (예: 'news_category', 'region', etc.)
+  code_type TEXT NOT NULL,
+
+  -- 코드 값 (예: 'world', 'politics', 'business')
+  code TEXT NOT NULL,
+
+  -- 한국어 레이블
+  label_ko TEXT NOT NULL,
+
+  -- 영어 레이블 (선택)
+  label_en TEXT,
+
+  -- 표시 순서
+  display_order INTEGER NOT NULL DEFAULT 0,
+
+  -- 활성화 여부
+  is_active BOOLEAN NOT NULL DEFAULT true,
+
+  -- 타임스탬프
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+
+  -- 제약 조건: code_type + code 조합은 유일해야 함
+  CONSTRAINT unique_code_type_code UNIQUE (code_type, code)
+);
+
+-- 인덱스 생성
+CREATE INDEX IF NOT EXISTS idx_codes_code_type
+  ON codes(code_type);
+
+CREATE INDEX IF NOT EXISTS idx_codes_code_type_is_active
+  ON codes(code_type, is_active);
+
+CREATE INDEX IF NOT EXISTS idx_codes_display_order
+  ON codes(display_order);
+
+-- updated_at 자동 업데이트 트리거
+CREATE TRIGGER update_codes_updated_at
+  BEFORE UPDATE ON codes
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- Row Level Security (RLS) 활성화
+ALTER TABLE codes ENABLE ROW LEVEL SECURITY;
+
+-- 모든 사용자가 읽기 가능
+CREATE POLICY "Enable read access for all users" ON codes
+  FOR SELECT USING (true);
+
+-- 인증된 사용자만 삽입 가능 (관리자용)
+CREATE POLICY "Enable insert for authenticated users only" ON codes
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- 인증된 사용자만 업데이트 가능 (관리자용)
+CREATE POLICY "Enable update for authenticated users only" ON codes
+  FOR UPDATE USING (auth.role() = 'authenticated');
+
+-- 설명
+COMMENT ON TABLE codes IS '코드성 데이터 관리 테이블 (카테고리, 지역 등)';
+COMMENT ON COLUMN codes.code_type IS '코드 타입 (예: news_category, region)';
+COMMENT ON COLUMN codes.code IS '코드 값 (예: world, politics, business)';
+COMMENT ON COLUMN codes.label_ko IS '한국어 레이블';
+COMMENT ON COLUMN codes.label_en IS '영어 레이블';
+COMMENT ON COLUMN codes.display_order IS '화면 표시 순서';
+COMMENT ON COLUMN codes.is_active IS '활성화 여부';
+
+
+-- ============================================================================
+-- 초기 데이터 삽입: 뉴스 카테고리
+-- ============================================================================
+
+INSERT INTO codes (code_type, code, label_ko, label_en, display_order, is_active)
+VALUES
+  ('news_category', 'all', '전체', 'All', 1, true),
+  ('news_category', 'world', '세계', 'World', 2, true),
+  ('news_category', 'politics', '정치', 'Politics', 3, true),
+  ('news_category', 'business', '비즈니스', 'Business', 4, true),
+  ('news_category', 'technology', '기술', 'Technology', 5, true),
+  ('news_category', 'science', '과학', 'Science', 6, true),
+  ('news_category', 'health', '건강', 'Health', 7, true),
+  ('news_category', 'sports', '스포츠', 'Sports', 8, true),
+  ('news_category', 'entertainment', '엔터테인먼트', 'Entertainment', 9, true)
+ON CONFLICT (code_type, code) DO NOTHING;

@@ -44,8 +44,10 @@ export interface RSSItem {
 
 /**
  * 뉴스 카테고리 타입
+ * DB의 codes 테이블에서 관리되며, 동적으로 추가/수정 가능
+ * 기본 카테고리: all, world, politics, business, technology, science, health, sports, entertainment
  */
-export type NewsCategory = "all" | "world" | "politics" | "technology" | "business" | "science" | "health" | "sports" | "entertainment"
+export type NewsCategory = string
 
 /**
  * 지역 필터 타입

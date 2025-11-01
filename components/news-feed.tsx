@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { NewsCard } from "@/components/news-card"
 import { NewsCardCompact } from "@/components/news-card-compact"
@@ -10,6 +10,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import type { NewsArticle } from "@/types/article"
 import type { LayoutMode } from "@/hooks/useLayoutMode"
+
+interface Category {
+  id: number
+  code: string
+  label_ko: string
+  label_en: string | null
+  display_order: number
+}
 
 interface NewsFeedProps {
   activeCategory: string
@@ -60,6 +68,29 @@ export function NewsFeed({
   layoutMode,
   onAvailableCategoriesChange,
 }: NewsFeedProps) {
+  const [allCategories, setAllCategories] = useState<Set<string>>(new Set())
+
+  // DB에서 카테고리 목록 가져오기
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const response = await fetch("/api/codes?codeType=news_category")
+        if (!response.ok) {
+          throw new Error("Failed to fetch categories")
+        }
+        const data = await response.json()
+        const categories = new Set<string>(data.codes?.map((c: Category) => c.code) || [])
+        setAllCategories(categories)
+      } catch (error) {
+        console.error("Error fetching categories:", error)
+        // 에러 발생 시 기본 카테고리 사용
+        setAllCategories(new Set(["all", "world", "politics", "business", "technology", "science", "health", "sports", "entertainment"]))
+      }
+    }
+
+    fetchCategories()
+  }, [])
+
   // React Query로 데이터 fetching
   const { data: articles = [], isLoading: loading, error } = useQuery({
     queryKey: ['news', searchQuery, activeRegion, refreshTrigger],
@@ -104,10 +135,10 @@ export function NewsFeed({
       })
       return categories
     } else {
-      // 일반 모드에서는 모든 카테고리 활성화
-      return new Set(["all", "world", "politics", "business", "technology", "science", "health", "sports", "entertainment"])
+      // 일반 모드에서는 DB에서 가져온 모든 카테고리 활성화
+      return allCategories
     }
-  }, [articles, searchQuery])
+  }, [articles, searchQuery, allCategories])
 
   // 카테고리 변경을 상위 컴포넌트에 전달 (무한 루프 방지)
   const prevCategoriesRef = useRef<Set<string> | undefined>(undefined)
