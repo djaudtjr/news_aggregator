@@ -168,8 +168,8 @@ export async function POST(request: NextRequest) {
         const pointsText = parts[1].trim()
         keyPoints = pointsText
           .split("\n")
-          .filter((line) => line.trim().startsWith("-"))
-          .map((line) => line.trim().replace(/^-\s*/, ""))
+          .filter((line: string) => line.trim().startsWith("-"))
+          .map((line: string) => line.trim().replace(/^-\s*/, ""))
       }
 
       // 4. DB에 저장 (AI 요약 정보만 저장, 크롤링된 전문은 저장하지 않음)
