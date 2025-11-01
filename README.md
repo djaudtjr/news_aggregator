@@ -26,7 +26,7 @@ A modern, AI-powered news aggregation platform that collects, categorizes, and s
 - **Real-time Search**: Search across all news sources
 - **Bilingual Support**: Korean language detection (Papago API integration)
 - **Region Filtering**: Filter by domestic/international news
-- **Category Filtering**: World, Technology, Business, Science, Health, Sports, Entertainment
+- **Category Filtering**: World, Politics, Business, Technology, Science, Health, Sports, Entertainment
 - **Time Range**: Filter news by recency (1-48 hours)
 
 ### 🎨 Modern UI/UX
