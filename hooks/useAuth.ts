@@ -12,19 +12,39 @@ export function useAuth() {
     // 현재 사용자 정보 가져오기
     const fetchUser = async () => {
       try {
+        // 먼저 세션이 있는지 확인
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabaseBrowser.auth.getSession()
+
+        if (sessionError) {
+          console.warn("[Auth] Session error:", sessionError.message)
+          setUser(null)
+          setLoading(false)
+          return
+        }
+
+        // 세션이 없으면 로그인하지 않은 상태
+        if (!session) {
+          setUser(null)
+          setLoading(false)
+          return
+        }
+
+        // 세션이 있으면 사용자 정보 가져오기
         const {
           data: { user },
-          error,
+          error: userError,
         } = await supabaseBrowser.auth.getUser()
 
-        // Refresh token 에러 처리
-        if (error) {
-          console.warn("[Auth] Token error:", error.message)
-          // 토큰이 유효하지 않으면 세션 정리
-          if (error.message.includes("refresh") || error.message.includes("token")) {
+        if (userError) {
+          console.warn("[Auth] User error:", userError.message)
+          // 토큰 관련 에러면 세션 정리
+          if (userError.message.includes("refresh") || userError.message.includes("token")) {
             await supabaseBrowser.auth.signOut()
-            setUser(null)
           }
+          setUser(null)
         } else {
           setUser(user)
         }
@@ -63,10 +83,15 @@ export function useAuth() {
   }, [])
 
   const signInWithGoogle = async () => {
+    // 개발 환경에서는 localhost:3003으로 리다이렉트
+    const redirectUrl = window.location.hostname === 'localhost'
+      ? `http://localhost:3003/auth/callback`
+      : `${window.location.origin}/auth/callback`
+
     const { error } = await supabaseBrowser.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: redirectUrl,
       },
     })
 

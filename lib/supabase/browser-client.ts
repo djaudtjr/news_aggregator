@@ -14,4 +14,11 @@ if (
   )
 }
 
-export const supabaseBrowser = createClient(supabaseUrl, supabaseAnonKey)
+export const supabaseBrowser = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'supabase-auth',
+  },
+})

@@ -69,6 +69,14 @@ export default function MyPage() {
   const { keywords, addKeyword, removeKeyword } = useSubscribedKeywords()
   const [newKeyword, setNewKeyword] = useState("")
 
+  // 추천 키워드 관련
+  const [recommendations, setRecommendations] = useState<Array<{
+    keyword: string
+    subscriberCount: number
+    rank: number
+  }>>([])
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false)
+
   // 이메일 설정 관련
   const { settings: emailSettings, saveSettings } = useEmailSettings()
   const [emailForm, setEmailForm] = useState({
@@ -123,6 +131,32 @@ export default function MyPage() {
       setLoading(false)
     }
   }, [user, fetchMyPageData]) // user가 변경되면 자동으로 데이터 로드
+
+  // 추천 키워드 가져오기
+  const fetchRecommendations = useCallback(async () => {
+    if (!user) return
+
+    try {
+      setRecommendationsLoading(true)
+      const response = await fetch(`/api/recommendations/keywords?userId=${user.id}&limit=5`)
+
+      if (response.ok) {
+        const data = await response.json()
+        setRecommendations(data.recommendations || [])
+      }
+    } catch (err) {
+      console.error("Failed to fetch recommendations:", err)
+    } finally {
+      setRecommendationsLoading(false)
+    }
+  }, [user])
+
+  // 키워드 변경시 추천 목록 갱신
+  useEffect(() => {
+    if (user && keywords !== undefined) {
+      fetchRecommendations()
+    }
+  }, [user, keywords, fetchRecommendations])
 
   // 북마크 데이터가 변경되면 페이지 범위 조정
   useEffect(() => {
@@ -200,6 +234,17 @@ export default function MyPage() {
     if (success) {
       const keyword = newKeyword.trim()
       setNewKeyword("")
+      toast({
+        title: "✅ 키워드 추가 완료",
+        description: `"${keyword}" 키워드가 추가되었습니다.`,
+      })
+    }
+  }
+
+  // 추천 키워드 추가 핸들러
+  const handleAddRecommendedKeyword = async (keyword: string) => {
+    const success = await addKeyword(keyword)
+    if (success) {
       toast({
         title: "✅ 키워드 추가 완료",
         description: `"${keyword}" 키워드가 추가되었습니다.`,
@@ -569,6 +614,46 @@ export default function MyPage() {
                   )}
                 </div>
               </div>
+
+              {/* 추천 키워드 섹션 */}
+              {!loading && keywords && keywords.length < 3 && recommendations.length > 0 && (
+                <div className="border-t pt-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">💡</Badge>
+                    <h3 className="font-semibold text-sm">이런 키워드는 어떠세요?</h3>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    다른 사용자들이 많이 구독한 인기 키워드입니다
+                  </p>
+
+                  {recommendationsLoading ? (
+                    <div className="flex flex-wrap gap-2">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton key={i} className="h-8 w-20" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {recommendations.map((rec) => (
+                        <Button
+                          key={rec.keyword}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddRecommendedKeyword(rec.keyword)}
+                          disabled={keywords?.length >= 3}
+                          className="h-8 text-xs px-2.5"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          {rec.keyword}
+                          <Badge variant="secondary" className="ml-1.5 text-[9px] px-1 py-0">
+                            {rec.subscriberCount}명
+                          </Badge>
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="border-t pt-3 space-y-2">
                 <div className="flex items-center gap-2">
