@@ -6,12 +6,22 @@ import { NewsHeader } from "@/components/news-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, TrendingUp, Search, Bookmark, FileText, Link as LinkIcon, User, Bell, Plus, X, Mail, Trash2 } from "lucide-react"
+import { AlertCircle, TrendingUp, Search, Bookmark, FileText, Link as LinkIcon, User, Bell, Plus, X, Mail, Trash2, Send } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { formatDistanceToNow } from "date-fns"
 import { ko } from "date-fns/locale"
 import { useRouter } from "next/navigation"
@@ -246,7 +256,9 @@ export default function MyPage() {
 
   // 테스트 이메일 전송 핸들러
   const [sendingTestEmail, setSendingTestEmail] = useState(false)
-  const handleSendTestEmail = async () => {
+  const [showTestEmailDialog, setShowTestEmailDialog] = useState(false)
+
+  const handleTestEmailClick = () => {
     if (!user) {
       toast({
         title: "⚠️ 로그인 필요",
@@ -274,13 +286,20 @@ export default function MyPage() {
       return
     }
 
-    if (!confirm("테스트 이메일을 전송하시겠습니까?")) {
-      return
-    }
+    setShowTestEmailDialog(true)
+  }
+
+  const handleSendTestEmail = async () => {
+    setShowTestEmailDialog(false)
 
     try {
       setSendingTestEmail(true)
       console.log(`[Test Email] Sending test email to ${emailForm.email}...`)
+
+      toast({
+        title: "📤 발송 중...",
+        description: "테스트 이메일을 발송하고 있습니다. 잠시만 기다려주세요.",
+      })
 
       const response = await fetch("/api/email/send-digest", {
         method: "POST",
@@ -288,7 +307,7 @@ export default function MyPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: user.id,
+          userId: user!.id,
         }),
       })
 
@@ -296,21 +315,43 @@ export default function MyPage() {
 
       if (response.ok) {
         toast({
-          title: "✅ 전송 완료",
-          description: `테스트 이메일이 전송되었습니다!\n📧 수신: ${emailForm.email}\n📰 뉴스 개수: ${result.newsCount}개`,
+          title: "✅ 전송 완료!",
+          description: (
+            <div className="space-y-2">
+              <p className="font-semibold">테스트 이메일이 성공적으로 전송되었습니다!</p>
+              <div className="text-sm space-y-1 pl-2 border-l-2 border-green-500">
+                <p>📧 <strong>수신 주소:</strong> {emailForm.email}</p>
+                <p>📰 <strong>뉴스 개수:</strong> {result.newsCount}개</p>
+                <p>🔑 <strong>키워드:</strong> {keywords.map(k => k.keyword).join(", ")}</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">메일함을 확인해주세요!</p>
+            </div>
+          ),
+          duration: 8000,
         })
       } else {
         toast({
           title: "❌ 전송 실패",
-          description: result.error || "알 수 없는 오류가 발생했습니다.",
+          description: (
+            <div className="space-y-2">
+              <p className="font-semibold">이메일 전송에 실패했습니다.</p>
+              <p className="text-sm text-red-200">{result.error || "알 수 없는 오류가 발생했습니다."}</p>
+            </div>
+          ),
           variant: "destructive",
+          duration: 6000,
         })
       }
     } catch (error: any) {
       console.error("[Test Email] Error:", error)
       toast({
         title: "❌ 오류 발생",
-        description: `이메일 전송 중 오류가 발생했습니다.\n${error.message}`,
+        description: (
+          <div className="space-y-2">
+            <p className="font-semibold">이메일 전송 중 오류가 발생했습니다.</p>
+            <p className="text-sm text-red-200">{error.message}</p>
+          </div>
+        ),
         variant: "destructive",
       })
     } finally {
@@ -615,7 +656,7 @@ export default function MyPage() {
                     설정 저장
                   </Button>
                   <Button
-                    onClick={handleSendTestEmail}
+                    onClick={handleTestEmailClick}
                     variant="outline"
                     disabled={sendingTestEmail || !emailForm.email || keywords.length === 0}
                     className="flex-[1] h-9 text-sm"
@@ -846,6 +887,58 @@ export default function MyPage() {
           </CardContent>
         </Card>
       </main>
+
+      {/* 테스트 이메일 발송 확인 다이얼로그 */}
+      <AlertDialog open={showTestEmailDialog} onOpenChange={setShowTestEmailDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-blue-600" />
+              테스트 이메일 발송
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 pt-2">
+                <p className="text-base">다음 정보로 테스트 이메일을 발송하시겠습니까?</p>
+                <div className="bg-muted rounded-lg p-4 space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <Mail className="h-4 w-4 mt-0.5 text-blue-600" />
+                    <div>
+                      <p className="font-semibold text-foreground">수신 주소</p>
+                      <p className="text-muted-foreground">{emailForm.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Search className="h-4 w-4 mt-0.5 text-blue-600" />
+                    <div>
+                      <p className="font-semibold text-foreground">구독 키워드</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {keywords.map((item) => (
+                          <Badge key={item.id} variant="secondary" className="text-xs">
+                            {item.keyword}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  💡 최근 24시간 이내의 뉴스가 키워드별로 발송됩니다.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSendTestEmail}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              발송하기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

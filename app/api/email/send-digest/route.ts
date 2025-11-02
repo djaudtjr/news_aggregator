@@ -194,8 +194,8 @@ export async function POST(request: NextRequest) {
                         const pointsText = parts[1].trim()
                         keyPoints = pointsText
                           .split("\n")
-                          .filter((line) => line.trim().startsWith("-"))
-                          .map((line) => line.trim().replace(/^-\s*/, ""))
+                          .filter((line: string) => line.trim().startsWith("-"))
+                          .map((line: string) => line.trim().replace(/^-\s*/, ""))
                       }
 
                       console.log(`[Email Digest] Summary generated for: ${article.title}`)
@@ -324,10 +324,13 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * 이메일 HTML 생성 (키워드별 섹션으로 구성)
+ * 이메일 HTML 생성 (테이블 형태로 키워드별 뉴스를 나란히 표시)
  */
 function generateEmailHtml(keywordNewsArray: KeywordNews[]): string {
   const totalArticles = keywordNewsArray.reduce((sum, kn) => sum + kn.articles.length, 0)
+
+  // 최대 뉴스 개수 찾기 (가장 많은 뉴스를 가진 키워드 기준)
+  const maxArticles = Math.max(...keywordNewsArray.map(kn => kn.articles.length))
 
   return `
 <!DOCTYPE html>
@@ -341,68 +344,120 @@ function generateEmailHtml(keywordNewsArray: KeywordNews[]): string {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       line-height: 1.6;
       color: #333;
-      max-width: 700px;
-      margin: 0 auto;
+      margin: 0;
       padding: 20px;
-      background-color: #f5f5f5;
+      background-color: #f8fafc;
     }
     .container {
       background-color: #ffffff;
-      border-radius: 8px;
-      padding: 30px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    h1 {
-      color: #2563eb;
-      font-size: 28px;
-      margin-bottom: 10px;
-      border-bottom: 3px solid #2563eb;
-      padding-bottom: 10px;
+
+    /* 헤더 */
+    .header {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0 0 10px 0;
+      font-size: 32px;
+      font-weight: 700;
     }
     .header-info {
-      color: #64748b;
       font-size: 14px;
-      margin-bottom: 30px;
+      opacity: 0.9;
     }
-    .keyword-section {
-      margin-bottom: 40px;
-      border-left: 4px solid #2563eb;
-      padding-left: 20px;
-    }
-    .keyword-section:last-of-type {
-      margin-bottom: 20px;
-    }
-    .keyword-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: #2563eb;
-      margin-bottom: 20px;
+
+    /* 키워드 탭 네비게이션 */
+    .keyword-tabs {
       display: flex;
-      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 20px 30px;
+      background-color: #f1f5f9;
+      border-bottom: 2px solid #e2e8f0;
+      justify-content: center;
     }
-    .keyword-badge {
-      background-color: #2563eb;
-      color: white;
-      padding: 4px 12px;
-      border-radius: 12px;
+    .keyword-tab {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #ffffff;
+      color: #2563eb;
+      border-radius: 20px;
+      font-weight: 600;
       font-size: 14px;
-      margin-right: 10px;
+      border: 2px solid #2563eb;
     }
-    .news-item {
+    .keyword-tab-separator {
+      display: inline-block;
+      color: #cbd5e1;
+      font-weight: 300;
+      padding: 0 5px;
+    }
+
+    /* 테이블 영역 */
+    .content {
+      padding: 30px;
+      overflow-x: auto;
+    }
+    .news-table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-bottom: 20px;
+    }
+    .news-table th {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: white;
+      padding: 16px 12px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 16px;
+      border: 1px solid #1d4ed8;
+      width: auto;
+    }
+    .news-table th:first-child {
+      border-top-left-radius: 8px;
+    }
+    .news-table th:last-child {
+      border-top-right-radius: 8px;
+    }
+    .news-table td {
+      padding: 16px 12px;
+      vertical-align: top;
+      border: 1px solid #e2e8f0;
+      background-color: #ffffff;
+      width: auto;
+    }
+    .news-table tr:last-child td:first-child {
+      border-bottom-left-radius: 8px;
+    }
+    .news-table tr:last-child td:last-child {
+      border-bottom-right-radius: 8px;
+    }
+    .news-table tr:hover td {
+      background-color: #f8fafc;
+    }
+
+    /* 뉴스 카드 (테이블 셀 내부) */
+    .news-card {
       background-color: #f8fafc;
       border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 15px;
+      padding: 16px;
+      height: 100%;
       border: 1px solid #e2e8f0;
     }
-    .news-item:hover {
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
     .news-title {
-      font-size: 18px;
-      font-weight: 600;
+      font-size: 15px;
+      font-weight: 700;
       color: #1e293b;
-      margin-bottom: 10px;
+      line-height: 1.4;
+      margin: 0 0 10px 0;
     }
     .news-title a {
       color: #1e293b;
@@ -411,51 +466,66 @@ function generateEmailHtml(keywordNewsArray: KeywordNews[]): string {
     .news-title a:hover {
       color: #2563eb;
     }
+    .news-meta {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e2e8f0;
+    }
     .news-summary {
       color: #475569;
-      font-size: 15px;
+      font-size: 13px;
+      line-height: 1.6;
       margin-bottom: 12px;
-      line-height: 1.7;
-      background-color: #ffffff;
-      padding: 12px;
-      border-radius: 6px;
-      border-left: 3px solid #94a3b8;
-    }
-    .news-keypoints {
-      margin-top: 12px;
       padding: 10px;
       background-color: #ffffff;
       border-radius: 6px;
+      border-left: 3px solid #3b82f6;
+    }
+    .news-keypoints {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #fefce8;
+      border-radius: 6px;
+      border-left: 3px solid #eab308;
     }
     .keypoint-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: #64748b;
+      font-size: 11px;
+      font-weight: 700;
+      color: #854d0e;
       margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     .keypoint-list {
       margin: 0;
-      padding-left: 20px;
-      color: #64748b;
-      font-size: 14px;
+      padding-left: 18px;
+      color: #713f12;
+      font-size: 12px;
     }
     .keypoint-list li {
-      margin-bottom: 4px;
+      margin-bottom: 3px;
+      line-height: 1.4;
     }
-    .news-meta {
-      font-size: 12px;
-      color: #94a3b8;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid #e2e8f0;
-    }
-    .footer {
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 2px solid #e2e8f0;
+    .empty-cell {
       text-align: center;
-      color: #94a3b8;
-      font-size: 12px;
+      color: #cbd5e1;
+      font-size: 13px;
+      padding: 20px;
+    }
+
+    /* 푸터 */
+    .footer {
+      padding: 30px;
+      background-color: #f8fafc;
+      text-align: center;
+      color: #64748b;
+      font-size: 13px;
+      border-top: 2px solid #e2e8f0;
+    }
+    .footer p {
+      margin: 8px 0;
     }
     .footer a {
       color: #2563eb;
@@ -465,52 +535,99 @@ function generateEmailHtml(keywordNewsArray: KeywordNews[]): string {
     .footer a:hover {
       text-decoration: underline;
     }
+
+    /* 반응형 */
+    @media (max-width: 768px) {
+      .content {
+        padding: 15px;
+      }
+      .news-table {
+        font-size: 12px;
+      }
+      .news-table th,
+      .news-table td {
+        padding: 10px 8px;
+      }
+      .keyword-tabs {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .keyword-tab {
+        text-align: center;
+      }
+      .keyword-tab-separator {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>📰 오늘의 뉴스 다이제스트</h1>
-    <div class="header-info">
-      총 ${keywordNewsArray.length}개 키워드 · ${totalArticles}개 기사 · AI 요약 제공
+    <!-- 헤더 -->
+    <div class="header">
+      <h1>📰 오늘의 뉴스 다이제스트</h1>
+      <div class="header-info">
+        총 ${keywordNewsArray.length}개 키워드 · ${totalArticles}개 기사 · AI 요약 제공
+      </div>
     </div>
 
-    ${keywordNewsArray.map((keywordNews, sectionIndex) => `
-      <div class="keyword-section">
-        <div class="keyword-title">
-          <span class="keyword-badge">#${sectionIndex + 1}</span>
-          <span>${keywordNews.keyword}</span>
-        </div>
+    <!-- 키워드 탭 네비게이션 -->
+    <div class="keyword-tabs">
+      ${keywordNewsArray.map((keywordNews, index) => `
+        <span class="keyword-tab">${keywordNews.keyword}</span>${index < keywordNewsArray.length - 1 ? '<span class="keyword-tab-separator">|</span>' : ''}
+      `).join("")}
+    </div>
 
-        ${keywordNews.articles.map((item, index) => `
-          <div class="news-item">
-            <div class="news-title">
-              <a href="${item.link}" target="_blank">${index + 1}. ${item.title}</a>
-            </div>
+    <!-- 뉴스 테이블 -->
+    <div class="content">
+      <table class="news-table">
+        <thead>
+          <tr>
+            ${keywordNewsArray.map(kn => `<th>${kn.keyword} (${kn.articles.length})</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${Array.from({ length: maxArticles }, (_, rowIndex) => `
+            <tr>
+              ${keywordNewsArray.map(kn => {
+                const article = kn.articles[rowIndex]
+                if (!article) {
+                  return '<td class="empty-cell">-</td>'
+                }
+                return `
+                  <td>
+                    <div class="news-card">
+                      <h3 class="news-title">
+                        <a href="${article.link}" target="_blank">${article.title}</a>
+                      </h3>
+                      <div class="news-meta">
+                        ${article.source ? `📌 ${article.source}` : ""}
+                        ${article.pubDate ? ` · 🕐 ${new Date(article.pubDate).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}` : ""}
+                      </div>
+                      <div class="news-summary">
+                        ${article.summary || article.description}
+                      </div>
+                      ${article.keyPoints && article.keyPoints.length > 0 ? `
+                        <div class="news-keypoints">
+                          <div class="keypoint-title">💡 핵심 포인트</div>
+                          <ul class="keypoint-list">
+                            ${article.keyPoints.map(point => `<li>${point}</li>`).join("")}
+                          </ul>
+                        </div>
+                      ` : ""}
+                    </div>
+                  </td>
+                `
+              }).join("")}
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
 
-            <div class="news-summary">
-              ${item.summary || item.description}
-            </div>
-
-            ${item.keyPoints && item.keyPoints.length > 0 ? `
-              <div class="news-keypoints">
-                <div class="keypoint-title">💡 핵심 포인트</div>
-                <ul class="keypoint-list">
-                  ${item.keyPoints.map(point => `<li>${point}</li>`).join("")}
-                </ul>
-              </div>
-            ` : ""}
-
-            <div class="news-meta">
-              ${item.source ? `출처: ${item.source}` : ""}
-              ${item.pubDate ? ` · ${new Date(item.pubDate).toLocaleDateString("ko-KR")}` : ""}
-            </div>
-          </div>
-        `).join("")}
-      </div>
-    `).join("")}
-
+    <!-- 푸터 -->
     <div class="footer">
-      <p>이 이메일은 News Aggregator 구독 서비스에서 발송되었습니다.</p>
+      <p><strong>News Aggregator</strong> 구독 서비스</p>
       <p>구독을 변경하거나 취소하려면 <a href="${process.env.NEXT_PUBLIC_BASE_URL}/mypage">마이페이지</a>를 방문하세요.</p>
     </div>
   </div>
