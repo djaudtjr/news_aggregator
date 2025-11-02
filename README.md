@@ -54,10 +54,12 @@ A modern, AI-powered news aggregation platform that collects, categorizes, and s
   - Enable/disable toggle
   - Test send button for immediate testing
 - **AI-Powered Email Template**:
-  - Keyword-based sections with organized layout
+  - Table layout with keyword columns (e.g., "KOSPI | ETF | KOSDAQ")
+  - Each row displays one news article per keyword side-by-side
+  - Equal column widths for consistent viewing
   - Full article crawling and AI summarization (GPT-4o-mini)
   - Key points extraction for each article
-  - Responsive HTML design
+  - Responsive HTML design with card-based layout
   - Includes news title, AI summary, key points, source, date, and original link
 
 ### 🔥 Real-time Trending Keywords
@@ -67,6 +69,13 @@ A modern, AI-powered news aggregation platform that collects, categorizes, and s
   - "인공지능", " 인공지능 " → unified as "인공지능"
 - **Multi-Browser Sync**: All connected browsers update simultaneously
 - **Time Range Filters**: 1 hour, 24 hours, 7 days
+
+### 🎯 User Experience Enhancements
+- **MyPage Email Test Dialog**: Modern AlertDialog with detailed information
+  - Shows recipient email and subscribed keywords
+  - Styled "Send" button with clear visual hierarchy
+  - Progress toast notifications (sending, success, failure)
+  - Detailed success message with email stats (recipient, news count, keywords)
 
 ## Tech Stack
 
