@@ -83,10 +83,11 @@ export function useAuth() {
   }, [])
 
   const signInWithGoogle = async () => {
-    // 개발 환경에서는 localhost:3003으로 리다이렉트
-    const redirectUrl = window.location.hostname === 'localhost'
-      ? `http://localhost:3003/auth/callback`
-      : `${window.location.origin}/auth/callback`
+    // 환경 변수에서 BASE_URL 가져오기
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+    const redirectUrl = `${baseUrl}/auth/callback`
+
+    console.log("[Auth] Sign in redirect URL:", redirectUrl)
 
     const { error } = await supabaseBrowser.auth.signInWithOAuth({
       provider: "google",

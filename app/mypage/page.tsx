@@ -134,18 +134,25 @@ export default function MyPage() {
 
   // 추천 키워드 가져오기
   const fetchRecommendations = useCallback(async () => {
-    if (!user) return
+    if (!user) {
+      console.log("[Recommendations] No user, skipping fetch")
+      return
+    }
 
     try {
       setRecommendationsLoading(true)
+      console.log("[Recommendations] Fetching for user:", user.id)
       const response = await fetch(`/api/recommendations/keywords?userId=${user.id}&limit=5`)
 
       if (response.ok) {
         const data = await response.json()
+        console.log("[Recommendations] Received data:", data)
         setRecommendations(data.recommendations || [])
+      } else {
+        console.error("[Recommendations] API error:", response.status, await response.text())
       }
     } catch (err) {
-      console.error("Failed to fetch recommendations:", err)
+      console.error("[Recommendations] Failed to fetch:", err)
     } finally {
       setRecommendationsLoading(false)
     }
@@ -153,10 +160,11 @@ export default function MyPage() {
 
   // 키워드 변경시 추천 목록 갱신
   useEffect(() => {
-    if (user && keywords !== undefined) {
+    console.log("[Recommendations] Effect triggered - user:", !!user, "keywords:", keywords?.length, "loading:", loading)
+    if (user) {
       fetchRecommendations()
     }
-  }, [user, keywords, fetchRecommendations])
+  }, [user, fetchRecommendations])
 
   // 북마크 데이터가 변경되면 페이지 범위 조정
   useEffect(() => {
@@ -616,6 +624,16 @@ export default function MyPage() {
               </div>
 
               {/* 추천 키워드 섹션 */}
+              {(() => {
+                const shouldShow = !loading && keywords && keywords.length < 3 && recommendations.length > 0
+                console.log("[Recommendations] Render check:", {
+                  loading,
+                  keywordsLength: keywords?.length,
+                  recommendationsLength: recommendations.length,
+                  shouldShow
+                })
+                return null
+              })()}
               {!loading && keywords && keywords.length < 3 && recommendations.length > 0 && (
                 <div className="border-t pt-3 space-y-2">
                   <div className="flex items-center gap-2">
