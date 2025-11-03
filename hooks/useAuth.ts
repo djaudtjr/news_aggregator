@@ -95,8 +95,8 @@ export function useAuth() {
   }, [])
 
   const signInWithGoogle = async () => {
-    // 환경 변수에서 BASE_URL 가져오기
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+    // window.location.origin을 우선 사용 (로컬 개발 환경 지원)
+    const baseUrl = window.location.origin
     const redirectUrl = `${baseUrl}/auth/callback`
 
     console.log("[Auth] Sign in redirect URL:", redirectUrl)
