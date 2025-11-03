@@ -14,4 +14,18 @@ if (
   )
 }
 
-export const supabaseBrowser = createClient(supabaseUrl, supabaseAnonKey)
+export const supabaseBrowser = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    // 토큰 갱신 실패 시 자동으로 세션 정리
+    storage: typeof window !== "undefined" ? window.localStorage : undefined,
+  },
+  // 에러 로그 레벨 조정 (선택사항)
+  // global: {
+  //   headers: {
+  //     'x-client-info': 'supabase-js-web'
+  //   }
+  // }
+})

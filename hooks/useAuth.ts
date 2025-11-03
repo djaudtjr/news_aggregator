@@ -19,11 +19,19 @@ export function useAuth() {
 
         // Refresh token 에러 처리
         if (error) {
-          console.warn("[Auth] Token error:", error.message)
-          // 토큰이 유효하지 않으면 세션 정리
-          if (error.message.includes("refresh") || error.message.includes("token")) {
-            await supabaseBrowser.auth.signOut()
+          // AuthApiError는 일반적인 에러이므로 warn으로 처리
+          if (error.message.includes("Refresh Token Not Found") ||
+              error.message.includes("Invalid Refresh Token")) {
+            // 조용히 세션 정리 (콘솔 로그 최소화)
+            await supabaseBrowser.auth.signOut({ scope: "local" })
             setUser(null)
+          } else {
+            console.warn("[Auth] Token error:", error.message)
+            // 다른 토큰 관련 에러도 세션 정리
+            if (error.message.includes("refresh") || error.message.includes("token")) {
+              await supabaseBrowser.auth.signOut({ scope: "local" })
+              setUser(null)
+            }
           }
         } else {
           setUser(user)
@@ -47,13 +55,15 @@ export function useAuth() {
       // 토큰 만료나 에러 발생 시 자동 로그아웃
       if (event === "TOKEN_REFRESHED") {
         console.log("[Auth] Token refreshed successfully")
+        setUser(session?.user ?? null)
       } else if (event === "SIGNED_OUT") {
         setUser(null)
       } else if (event === "SIGNED_IN") {
         setUser(session?.user ?? null)
+      } else if (event === "USER_UPDATED") {
+        setUser(session?.user ?? null)
       }
 
-      setUser(session?.user ?? null)
       setLoading(false)
     })
 

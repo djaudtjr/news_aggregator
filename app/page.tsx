@@ -9,6 +9,8 @@ import { RegionFilter } from "@/components/region-filter"
 import { TrendingKeywords } from "@/components/trending-keywords"
 import { RecentArticles } from "@/components/recent-articles"
 import { LayoutSwitcher } from "@/components/layout-switcher"
+import { HeroSubscribeBanner } from "@/components/subscription/hero-subscribe-banner"
+import { Footer } from "@/components/footer"
 import { useNewsFilters } from "@/hooks/useNewsFilters"
 import { useLayoutMode } from "@/hooks/useLayoutMode"
 import type { NewsCategory, NewsRegion } from "@/types/article"
@@ -71,6 +73,7 @@ export default function HomePage() {
         onRefresh={handleRefresh}
         onSearchTracked={handleSearchTracked}
       />
+      <HeroSubscribeBanner />
       <main className="container mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* 메인 콘텐츠 */}
@@ -108,6 +111,7 @@ export default function HomePage() {
           </aside>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }
