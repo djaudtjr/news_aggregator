@@ -12,9 +12,30 @@ export function useAuth() {
     // 현재 사용자 정보 가져오기
     const fetchUser = async () => {
       try {
+        // 먼저 세션이 있는지 확인
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabaseBrowser.auth.getSession()
+
+        if (sessionError) {
+          console.warn("[Auth] Session error:", sessionError.message)
+          setUser(null)
+          setLoading(false)
+          return
+        }
+
+        // 세션이 없으면 로그인하지 않은 상태
+        if (!session) {
+          setUser(null)
+          setLoading(false)
+          return
+        }
+
+        // 세션이 있으면 사용자 정보 가져오기
         const {
           data: { user },
-          error,
+          error: userError,
         } = await supabaseBrowser.auth.getUser()
 
         // Refresh token 에러 처리
@@ -33,6 +54,7 @@ export function useAuth() {
               setUser(null)
             }
           }
+          setUser(null)
         } else {
           setUser(user)
         }
@@ -73,10 +95,16 @@ export function useAuth() {
   }, [])
 
   const signInWithGoogle = async () => {
+    // 환경 변수에서 BASE_URL 가져오기
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+    const redirectUrl = `${baseUrl}/auth/callback`
+
+    console.log("[Auth] Sign in redirect URL:", redirectUrl)
+
     const { error } = await supabaseBrowser.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: redirectUrl,
       },
     })
 
