@@ -76,7 +76,7 @@ export function NewsCategories({ activeCategory, onCategoryChange, availableCate
                 variant={activeCategory === category.code ? "default" : "outline"}
                 onClick={() => onCategoryChange(category.code)}
                 disabled={!isAvailable}
-                className="shrink-0"
+                className="shrink-0 rounded-xl transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md"
               >
                 {category.label_ko}
               </Button>

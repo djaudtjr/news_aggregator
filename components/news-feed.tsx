@@ -6,8 +6,11 @@ import { NewsCard } from "@/components/news-card"
 import { NewsCardCompact } from "@/components/news-card-compact"
 import { NewsCardList } from "@/components/news-card-list"
 import { NewsCardSkeleton, NewsCardCompactSkeleton, NewsCardListSkeleton } from "@/components/news-card-skeleton"
+import { EmptyState } from "@/components/empty-state"
+import { Pagination } from "@/components/pagination"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
+import { AlertCircle, Newspaper } from "lucide-react"
 import type { NewsArticle } from "@/types/article"
 import type { LayoutMode } from "@/hooks/useLayoutMode"
 
@@ -70,6 +73,9 @@ export function NewsFeed({
 }: NewsFeedProps) {
   const [allCategories, setAllCategories] = useState<Set<string>>(new Set())
   const [showLoadingMessage, setShowLoadingMessage] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [loadingProgress, setLoadingProgress] = useState(0)
+  const ITEMS_PER_PAGE = 9 // 3x3 그리드
 
   // DB에서 카테고리 목록 가져오기
   useEffect(() => {
@@ -158,49 +164,57 @@ export function NewsFeed({
     }
   }, [availableCategories, onAvailableCategoriesChange])
 
-  // 로딩 2초 후 메시지 표시
+  // 필터 변경 시 페이지 1로 리셋
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [activeCategory, searchQuery, timeRange, activeRegion])
+
+  // 로딩 진행률 시뮬레이션
   useEffect(() => {
     if (loading) {
-      const timer = setTimeout(() => {
+      setLoadingProgress(0)
+      const interval = setInterval(() => {
+        setLoadingProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(interval)
+            return 90
+          }
+          return prev + 10
+        })
+      }, 200)
+
+      const messageTimer = setTimeout(() => {
         setShowLoadingMessage(true)
       }, 2000)
+
       return () => {
-        clearTimeout(timer)
+        clearInterval(interval)
+        clearTimeout(messageTimer)
         setShowLoadingMessage(false)
       }
     } else {
+      setLoadingProgress(100)
+      setTimeout(() => setLoadingProgress(0), 500)
       setShowLoadingMessage(false)
     }
   }, [loading])
 
   if (loading) {
-    // 레이아웃 모드에 따른 스켈레톤 표시
-    const containerClass =
-      layoutMode === "grid"
-        ? "grid gap-6 md:grid-cols-2 lg:grid-cols-3"
-        : layoutMode === "list"
-          ? "grid gap-6 md:grid-cols-1"
-          : "space-y-3"
-
-    const SkeletonComponent =
-      layoutMode === "compact"
-        ? NewsCardCompactSkeleton
-        : layoutMode === "list"
-          ? NewsCardListSkeleton
-          : NewsCardSkeleton
-
     return (
       <div className="space-y-4">
-        {showLoadingMessage && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>뉴스를 불러오는 중입니다</AlertTitle>
-            <AlertDescription>잠시만 기다려주세요...</AlertDescription>
-          </Alert>
-        )}
-        <div className={containerClass}>
+        <div className="bg-card border rounded-lg p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Newspaper className="h-5 w-5 text-primary" />
+            <div>
+              <h3 className="font-semibold">뉴스를 불러오는 중입니다</h3>
+              <p className="text-sm text-muted-foreground">Loading {loadingProgress}%</p>
+            </div>
+          </div>
+          <Progress value={loadingProgress} className="h-2" />
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 9 }).map((_, i) => (
-            <SkeletonComponent key={i} />
+            <NewsCardSkeleton key={i} />
           ))}
         </div>
       </div>
@@ -219,41 +233,49 @@ export function NewsFeed({
 
   if (filteredArticles.length === 0) {
     const isSearchMode = searchQuery.trim().length > 0
-
-    return (
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>{isSearchMode ? "검색 결과 없음" : "뉴스 없음"}</AlertTitle>
-        <AlertDescription>
-          {isSearchMode
-            ? `"${searchQuery}"에 대한 관련 뉴스를 찾을 수 없습니다.`
-            : activeCategory === "all"
-              ? "최신 뉴스를 불러오는 중입니다. 잠시 후 다시 확인해주세요."
-              : `${activeCategory} 카테고리에 뉴스가 없습니다.`}
-        </AlertDescription>
-      </Alert>
-    )
+    return <EmptyState searchQuery={searchQuery} isSearchMode={isSearchMode} />
   }
 
-  // 레이아웃 모드에 따른 컨테이너 클래스
-  const containerClass =
-    layoutMode === "grid"
-      ? "grid gap-6 md:grid-cols-2 lg:grid-cols-3"
-      : layoutMode === "list"
-        ? "grid gap-6 md:grid-cols-1"
-        : "space-y-3"
+  // 페이징 계산
+  const totalPages = Math.ceil(filteredArticles.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const endIndex = startIndex + ITEMS_PER_PAGE
+  const paginatedArticles = filteredArticles.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    // 페이지 변경 시 상단으로 부드럽게 스크롤
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
 
   return (
-    <div className={containerClass}>
-      {filteredArticles.map((article) => {
-        if (layoutMode === "compact") {
-          return <NewsCardCompact key={article.id} article={article} />
-        } else if (layoutMode === "list") {
-          return <NewsCardList key={article.id} article={article} />
-        } else {
-          return <NewsCard key={article.id} article={article} />
-        }
-      })}
+    <div className="space-y-6">
+      {/* 뉴스 통계 */}
+      <div className="flex items-center justify-between bg-card border rounded-lg p-4">
+        <div className="flex items-center gap-2">
+          <Newspaper className="h-5 w-5 text-primary" />
+          <span className="font-semibold">
+            총 {filteredArticles.length.toLocaleString()}개의 뉴스
+          </span>
+        </div>
+        <span className="text-sm text-muted-foreground">
+          Page {currentPage} of {totalPages}
+        </span>
+      </div>
+
+      {/* 뉴스 그리드 (3x3) */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {paginatedArticles.map((article) => (
+          <NewsCard key={article.id} article={article} />
+        ))}
+      </div>
+
+      {/* 페이징 */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
     </div>
   )
 }

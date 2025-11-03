@@ -122,9 +122,9 @@ function NewsCardComponent({ article }: NewsCardProps) {
 
   return (
     <>
-    <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg">
+    <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] rounded-2xl">
       {imageUrl && (
-        <div className="relative h-48 w-full overflow-hidden bg-muted">
+        <div className="relative h-40 w-full overflow-hidden bg-muted">
           <Image
             src={imageUrl}
             alt={article.title}
@@ -140,7 +140,7 @@ function NewsCardComponent({ article }: NewsCardProps) {
           <Button
             variant="secondary"
             size="icon"
-            className={`absolute top-2 right-2 backdrop-blur-sm shadow-md transition-all ${
+            className={`absolute top-2 right-2 backdrop-blur-sm shadow-lg transition-all duration-300 hover:scale-110 rounded-full ${
               isBookmarked(article.id)
                 ? "bg-yellow-400 hover:bg-yellow-500 text-yellow-900"
                 : "bg-background/80 hover:bg-background/90"
@@ -168,10 +168,10 @@ function NewsCardComponent({ article }: NewsCardProps) {
         <CardTitle className="line-clamp-2 text-balance">{article.title}</CardTitle>
       </CardHeader>
       <CardContent className="flex-1">
-        <CardDescription className="line-clamp-3">{article.description}</CardDescription>
+        <CardDescription className="line-clamp-2">{article.description}</CardDescription>
         {/* 요약이 완료되고 펼쳐진 상태일 때만 표시 */}
         {summary && isExpanded && (
-          <div className="mt-4 p-3 bg-muted rounded-lg border">
+          <div className="mt-4 p-4 bg-muted rounded-2xl border shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
@@ -216,13 +216,13 @@ function NewsCardComponent({ article }: NewsCardProps) {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="shrink-0"
+                  className="shrink-0 transition-all duration-300 hover:scale-110 rounded-full shadow-md hover:shadow-lg"
                   onClick={() => setIsModalOpen(true)}
                 >
                   <Maximize2 className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 max-h-96 overflow-y-auto">
+              <PopoverContent className="w-80 max-h-96 overflow-y-auto rounded-2xl shadow-2xl">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-primary" />
@@ -250,7 +250,7 @@ function NewsCardComponent({ article }: NewsCardProps) {
             {/* 요약완료 버튼 - 열고닫기 아이콘 */}
             <Button
               variant="outline"
-              className="flex-1 bg-transparent"
+              className="flex-1 bg-transparent transition-all duration-300 hover:scale-105 rounded-xl"
               onClick={() => setIsExpanded(!isExpanded)}
             >
               <Sparkles className="mr-2 h-4 w-4" />
@@ -266,7 +266,7 @@ function NewsCardComponent({ article }: NewsCardProps) {
           // 요약 전 또는 로딩 중
           <Button
             variant="outline"
-            className="w-full bg-transparent"
+            className="w-full bg-transparent transition-all duration-300 hover:scale-105 rounded-xl shadow-md hover:shadow-lg"
             onClick={handleSummarize}
             disabled={isLoading}
           >
@@ -283,7 +283,7 @@ function NewsCardComponent({ article }: NewsCardProps) {
         )}
 
         {/* Read More 버튼 - 전체 너비 */}
-        <Button variant="default" className="w-full" asChild>
+        <Button variant="default" className="w-full transition-all duration-300 hover:scale-105 rounded-xl shadow-md hover:shadow-lg" asChild>
           <a href={article.link} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>
             <ExternalLink className="mr-2 h-4 w-4" />
             원문 보기
@@ -294,7 +294,7 @@ function NewsCardComponent({ article }: NewsCardProps) {
 
     {/* AI 요약 모달 Dialog */}
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-      <DialogContent className="sm:max-w-3xl max-w-[90vw] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-w-[90vw] max-h-[80vh] overflow-y-auto rounded-2xl shadow-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
@@ -330,7 +330,7 @@ function NewsCardComponent({ article }: NewsCardProps) {
 
           {/* 원문 보기 버튼 */}
           <div className="pt-4 border-t">
-            <Button variant="default" className="w-full" asChild>
+            <Button variant="default" className="w-full transition-all duration-300 hover:scale-105 rounded-xl shadow-md hover:shadow-lg" asChild>
               <a href={article.link} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>
                 <ExternalLink className="mr-2 h-4 w-4" />
                 원문 보기

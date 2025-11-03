@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { LoginModal } from "@/components/auth/login-modal"
 import { useAuth } from "@/hooks/useAuth"
 import Link from "next/link"
@@ -13,13 +14,30 @@ interface NewsHeaderProps {
   searchQuery: string
   onSearchChange: (query: string) => void
   onRefresh: () => void
-  onSearchTracked?: () => void // 검색 통계 기록 후 호출할 콜백
+  onSearchTracked?: () => void
+  activeRegion: string
+  onRegionChange: (region: string) => void
+  timeRange: number
+  onTimeRangeChange: (days: number) => void
 }
 
-export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTracked }: NewsHeaderProps) {
+export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTracked, activeRegion, onRegionChange, timeRange, onTimeRangeChange }: NewsHeaderProps) {
   const [inputValue, setInputValue] = useState(searchQuery)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const { user, signOut } = useAuth()
+
+  const regions = [
+    { value: "all", label: "All Sources" },
+    { value: "domestic", label: "Domestic" },
+    { value: "international", label: "International" },
+  ]
+
+  const timeRanges = [
+    { value: "0.042", label: "1 Hour" },
+    { value: "1", label: "1 Day" },
+    { value: "7", label: "7 Days" },
+    { value: "30", label: "30 Days" },
+  ]
 
   // searchQuery가 외부에서 변경되면 inputValue도 동기화 (예: 새로고침)
   useEffect(() => {
@@ -108,52 +126,74 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
           <h1 className="text-2xl font-bold">Pulse</h1>
         </div>
 
-        <div className="hidden md:flex flex-1 max-w-md mx-8">
-          <div className="relative w-full flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search news... (Press Enter)"
-                className="pl-10"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-              />
-            </div>
-            <Button variant="default" size="icon" onClick={handleSearchClick} title="Search">
-              <Search className="h-4 w-4" />
-            </Button>
+        <div className="hidden md:flex flex-1 max-w-3xl mx-8 gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search news... (Press Enter)"
+              className="pl-10 rounded-xl shadow-sm"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
           </div>
+          <Select value={activeRegion} onValueChange={onRegionChange}>
+            <SelectTrigger className="w-[140px] rounded-xl shadow-sm">
+              <SelectValue placeholder="Source" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl shadow-lg">
+              {regions.map((region) => (
+                <SelectItem key={region.value} value={region.value}>
+                  {region.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={timeRange.toString()} onValueChange={(value) => onTimeRangeChange(parseFloat(value))}>
+            <SelectTrigger className="w-[120px] rounded-xl shadow-sm">
+              <SelectValue placeholder="Period" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl shadow-lg">
+              {timeRanges.map((range) => (
+                <SelectItem key={range.value} value={range.value}>
+                  {range.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="default" size="icon" onClick={handleSearchClick} title="Search" className="rounded-full transition-all duration-300 hover:scale-110 shadow-md hover:shadow-lg">
+            <Search className="h-4 w-4" />
+          </Button>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={handleRefresh} title="Refresh news">
+          <Button variant="ghost" size="icon" onClick={handleRefresh} title="Refresh news" className="rounded-full transition-all duration-300 hover:scale-110">
             <RefreshCw className="h-5 w-5" />
           </Button>
           <ThemeToggle />
           {user ? (
             <>
-              <Button variant="ghost" size="sm" asChild className="gap-2">
+              <Button variant="ghost" size="sm" asChild className="gap-2 rounded-xl transition-all duration-300 hover:scale-105">
                 <Link href="/mypage">
                   <User className="h-4 w-4" />
                   <span className="hidden sm:inline">마이페이지</span>
                 </Link>
               </Button>
-              <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2 rounded-xl transition-all duration-300 hover:scale-105">
                 <LogOut className="h-4 w-4" />
                 <span className="hidden sm:inline">로그아웃</span>
               </Button>
             </>
           ) : (
-            <Button variant="ghost" size="sm" onClick={() => setIsLoginModalOpen(true)} className="gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setIsLoginModalOpen(true)} className="gap-2 rounded-xl transition-all duration-300 hover:scale-105">
               <LogIn className="h-4 w-4" />
               <span className="hidden sm:inline">로그인</span>
             </Button>
           )}
           <Sheet>
             <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="rounded-full transition-all duration-300 hover:scale-110">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
@@ -170,8 +210,9 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
+                    className="rounded-xl shadow-sm"
                   />
-                  <Button variant="default" size="icon" onClick={handleSearchClick} title="Search">
+                  <Button variant="default" size="icon" onClick={handleSearchClick} title="Search" className="rounded-full transition-all duration-300 hover:scale-110 shadow-md hover:shadow-lg">
                     <Search className="h-4 w-4" />
                   </Button>
                 </div>

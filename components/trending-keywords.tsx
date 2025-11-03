@@ -204,7 +204,7 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="rounded-2xl shadow-md">
         <CardHeader>
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
@@ -226,7 +226,7 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
 
   if (!data || data.keywords.length === 0) {
     return (
-      <Card>
+      <Card className="rounded-2xl shadow-md">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -235,11 +235,11 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
             </div>
             <Dialog open={isDateDialogOpen} onOpenChange={setIsDateDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" title="기간 설정">
+                <Button variant="ghost" size="icon" title="기간 설정" className="rounded-full transition-all duration-300 hover:scale-110">
                   <Clock className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
+              <DialogContent className="sm:max-w-[500px] rounded-2xl shadow-2xl">
                 <DialogHeader>
                   <DialogTitle>검색 기간 설정</DialogTitle>
                   <DialogDescription>
@@ -258,7 +258,7 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
                         value={startDateInput}
                         onChange={(e) => setStartDateInput(e.target.value)}
                         max={new Date().toISOString().split('T')[0]}
-                        className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        className="w-full px-3 py-2 border border-input bg-background rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 shadow-sm"
                       />
                     </div>
                     <div className="space-y-2">
@@ -271,13 +271,13 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
                         value={endDateInput}
                         onChange={(e) => setEndDateInput(e.target.value)}
                         max={new Date().toISOString().split('T')[0]}
-                        className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        className="w-full px-3 py-2 border border-input bg-background rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 shadow-sm"
                       />
                     </div>
                   </div>
 
                   {dateError && (
-                    <div className="text-sm text-red-500 bg-red-50 dark:bg-red-950 p-2 rounded-md">
+                    <div className="text-sm text-red-500 bg-red-50 dark:bg-red-950 p-2 rounded-xl">
                       {dateError}
                     </div>
                   )}
@@ -287,13 +287,13 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button onClick={handleApplyCustomDates} className="flex-1">
+                    <Button onClick={handleApplyCustomDates} className="flex-1 rounded-xl transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg">
                       적용
                     </Button>
                     <Button variant="outline" onClick={() => {
                       setIsDateDialogOpen(false)
                       setDateError("")
-                    }}>
+                    }} className="rounded-xl transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md">
                       취소
                     </Button>
                   </div>
@@ -323,14 +323,16 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
 
           {customDateRange && (
             <div className="flex justify-center">
-              <Button variant="outline" onClick={() => handleResetToPreset("24h")}>
+              <Button variant="outline" onClick={() => handleResetToPreset("24h")} className="rounded-xl transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md">
                 검색 기간 초기화
               </Button>
             </div>
           )}
 
           <div className="text-center py-8 text-muted-foreground">
-            검색 데이터가 없습니다
+            <Search className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p className="font-medium">검색 결과가 없습니다</p>
+            <p className="text-sm mt-1">선택한 기간 내 검색 데이터가 없습니다</p>
           </div>
         </CardContent>
       </Card>
@@ -338,7 +340,7 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
   }
 
   return (
-    <Card>
+    <Card className="rounded-2xl shadow-md">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -347,11 +349,11 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
           </div>
           <Dialog open={isDateDialogOpen} onOpenChange={setIsDateDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" title="기간 설정">
+              <Button variant="ghost" size="icon" title="기간 설정" className="rounded-full transition-all duration-300 hover:scale-110">
                 <Clock className="h-4 w-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[500px] rounded-2xl shadow-2xl">
               <DialogHeader>
                 <DialogTitle>검색 기간 설정</DialogTitle>
                 <DialogDescription>
@@ -420,14 +422,7 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
               {format(new Date(data.customDateRange.endDate), "yyyy.MM.dd")}
             </>
           ) : (
-            <>
-              {getTimeRangeLabel(data.timeRange)} 인기 키워드
-              {data.fallbackApplied && data.requestedTimeRange && (
-                <span className="text-xs text-muted-foreground ml-1">
-                  ({getTimeRangeLabel(data.requestedTimeRange)} 데이터 없음)
-                </span>
-              )}
-            </>
+            <>{getTimeRangeLabel(data.timeRange)} 인기 키워드</>
           )}
         </CardDescription>
       </CardHeader>
@@ -441,9 +436,9 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
         </Tabs>
 
         {customDateRange && (
-          <div className="mb-4 flex items-center justify-between p-2 bg-muted rounded-md">
+          <div className="mb-4 flex items-center justify-between p-2 bg-muted rounded-xl">
             <span className="text-sm text-muted-foreground">커스텀 기간 적용 중</span>
-            <Button variant="ghost" size="sm" onClick={() => handleResetToPreset("24h")}>
+            <Button variant="ghost" size="sm" onClick={() => handleResetToPreset("24h")} className="rounded-xl transition-all duration-300 hover:scale-105">
               기본 기간으로 돌아가기
             </Button>
           </div>
@@ -454,11 +449,11 @@ export function TrendingKeywords({ onKeywordClick }: TrendingKeywordsProps) {
             <Button
               key={`${item.keyword}-${index}`}
               variant="ghost"
-              className="w-full justify-start h-auto py-2 px-3 hover:bg-accent"
+              className="w-full justify-start h-auto py-2 px-3 hover:bg-accent rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-sm"
               onClick={() => handleKeywordClick(item.keyword)}
             >
               <div className="flex items-center gap-3 w-full">
-                <Badge variant={item.rank <= 3 ? "default" : "secondary"} className="shrink-0 w-6 h-6 flex items-center justify-center p-0">
+                <Badge variant={item.rank <= 3 ? "default" : "secondary"} className="shrink-0 w-6 h-6 flex items-center justify-center p-0 rounded-full">
                   {item.rank}
                 </Badge>
                 <div className="flex items-center gap-2 flex-1 min-w-0">

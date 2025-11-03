@@ -36,7 +36,7 @@ export function RecentArticles({ onArticleClick }: RecentArticlesProps) {
 
   if (recentArticles.length === 0) {
     return (
-      <Card>
+      <Card className="rounded-2xl shadow-md">
         <CardHeader>
           <div className="flex items-center gap-2">
             <History className="h-5 w-5" />
@@ -49,14 +49,14 @@ export function RecentArticles({ onArticleClick }: RecentArticlesProps) {
   }
 
   return (
-    <Card>
+    <Card className="rounded-2xl shadow-md">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <History className="h-5 w-5 text-primary" />
             <CardTitle>최근 본 기사</CardTitle>
           </div>
-          <Button variant="ghost" size="icon" onClick={handleClearAll} title="전체 삭제">
+          <Button variant="ghost" size="icon" onClick={handleClearAll} title="전체 삭제" className="rounded-full transition-all duration-300 hover:scale-110">
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -67,7 +67,7 @@ export function RecentArticles({ onArticleClick }: RecentArticlesProps) {
           {recentArticles.map((article) => (
             <div
               key={article.id}
-              className="group relative rounded-lg border p-3 hover:bg-accent cursor-pointer transition-colors"
+              className="group relative rounded-xl border p-3 hover:bg-accent cursor-pointer transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
               onClick={() => handleArticleClick(article)}
             >
               <div className="flex gap-3">
@@ -76,7 +76,7 @@ export function RecentArticles({ onArticleClick }: RecentArticlesProps) {
                     <img
                       src={article.imageUrl}
                       alt={article.title}
-                      className="w-16 h-16 object-cover rounded"
+                      className="w-16 h-16 object-cover rounded-xl"
                       onError={(e) => {
                         e.currentTarget.style.display = "none"
                       }}
@@ -94,7 +94,7 @@ export function RecentArticles({ onArticleClick }: RecentArticlesProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-full hover:scale-110"
                   onClick={(e) => handleRemove(e, article.id)}
                   title="삭제"
                 >

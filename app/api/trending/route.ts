@@ -130,51 +130,24 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 폴백 로직: 1h -> 24h -> 7d
-    const timeRanges: Array<{ range: string; hours?: number; days?: number }> = []
+    // 요청된 시간대의 데이터만 조회 (fallback 없음)
+    cutoffDate = new Date(now)
 
     if (requestedTimeRange === "1h") {
-      timeRanges.push(
-        { range: "1h", hours: 1 },
-        { range: "24h", hours: 24 },
-        { range: "7d", days: 7 }
-      )
-    } else if (requestedTimeRange === "24h") {
-      timeRanges.push(
-        { range: "24h", hours: 24 },
-        { range: "7d", days: 7 }
-      )
+      cutoffDate.setHours(now.getHours() - 1)
     } else if (requestedTimeRange === "7d") {
-      timeRanges.push(
-        { range: "7d", days: 7 }
-      )
+      cutoffDate.setDate(now.getDate() - 7)
     } else {
-      // 기본값
-      timeRanges.push({ range: "24h", hours: 24 })
+      // 기본값: 24h
+      cutoffDate.setHours(now.getHours() - 24)
     }
 
-    // 폴백 시도
-    for (const timeRangeConfig of timeRanges) {
-      cutoffDate = new Date(now)
-
-      if (timeRangeConfig.hours !== undefined) {
-        cutoffDate.setHours(now.getHours() - timeRangeConfig.hours)
-      } else if (timeRangeConfig.days !== undefined) {
-        cutoffDate.setDate(now.getDate() - timeRangeConfig.days)
-      }
-
-      try {
-        sortedKeywords = await fetchKeywordsForTimeRange(cutoffDate, limit)
-
-        if (sortedKeywords.length > 0) {
-          actualTimeRange = timeRangeConfig.range
-          break
-        }
-      } catch (error) {
-        console.error(`[Trending] Error fetching ${timeRangeConfig.range}:`, error)
-        // 에러가 발생해도 다음 폴백 시도
-        continue
-      }
+    try {
+      sortedKeywords = await fetchKeywordsForTimeRange(cutoffDate, limit)
+      actualTimeRange = requestedTimeRange
+    } catch (error) {
+      console.error(`[Trending] Error fetching ${requestedTimeRange}:`, error)
+      return NextResponse.json({ error: "Failed to fetch trending keywords" }, { status: 500 })
     }
 
     // 전체 검색 횟수 계산
@@ -192,8 +165,6 @@ export async function GET(request: NextRequest) {
       keywords: trendingKeywords,
       totalSearches,
       timeRange: actualTimeRange,
-      requestedTimeRange,
-      fallbackApplied: actualTimeRange !== requestedTimeRange,
       generatedAt: new Date().toISOString(),
     })
   } catch (error) {

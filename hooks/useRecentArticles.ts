@@ -17,6 +17,7 @@ export interface RecentArticle {
 
 const MAX_RECENT_ARTICLES = 5
 const STORAGE_KEY = "recent_articles"
+const STORAGE_EVENT = "recentArticlesUpdated"
 
 export function useRecentArticles() {
   const [recentArticles, setRecentArticles] = useState<RecentArticle[]>([])
@@ -24,14 +25,25 @@ export function useRecentArticles() {
   // 초기 로드
   useEffect(() => {
     loadRecentArticles()
+
+    // 커스텀 이벤트 리스너 등록 - 다른 컴포넌트에서 업데이트 시 실시간 반영
+    const handleStorageUpdate = () => {
+      loadRecentArticles()
+    }
+
+    window.addEventListener(STORAGE_EVENT, handleStorageUpdate)
+
+    return () => {
+      window.removeEventListener(STORAGE_EVENT, handleStorageUpdate)
+    }
   }, [])
 
-  // 세션 스토리지에서 로드
+  // 로컬 스토리지에서 로드
   const loadRecentArticles = () => {
     if (typeof window === "undefined") return
 
     try {
-      const stored = sessionStorage.getItem(STORAGE_KEY)
+      const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
         const articles = JSON.parse(stored) as RecentArticle[]
         setRecentArticles(articles)
@@ -41,13 +53,16 @@ export function useRecentArticles() {
     }
   }
 
-  // 세션 스토리지에 저장
+  // 로컬 스토리지에 저장
   const saveRecentArticles = (articles: RecentArticle[]) => {
     if (typeof window === "undefined") return
 
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(articles))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(articles))
       setRecentArticles(articles)
+
+      // 커스텀 이벤트 발생 - 다른 컴포넌트에서 실시간으로 감지
+      window.dispatchEvent(new Event(STORAGE_EVENT))
     } catch (error) {
       console.error("Failed to save recent articles:", error)
     }

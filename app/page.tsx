@@ -1,18 +1,14 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { NewsHeader } from "@/components/news-header"
 import { NewsFeed } from "@/components/news-feed"
 import { NewsCategories } from "@/components/news-categories"
-import { TimeRangeFilter } from "@/components/time-range-filter"
-import { RegionFilter } from "@/components/region-filter"
 import { TrendingKeywords } from "@/components/trending-keywords"
 import { RecentArticles } from "@/components/recent-articles"
-import { LayoutSwitcher } from "@/components/layout-switcher"
 import { HeroSubscribeBanner } from "@/components/subscription/hero-subscribe-banner"
 import { Footer } from "@/components/footer"
 import { useNewsFilters } from "@/hooks/useNewsFilters"
-import { useLayoutMode } from "@/hooks/useLayoutMode"
 import type { NewsCategory, NewsRegion } from "@/types/article"
 
 export default function HomePage() {
@@ -28,8 +24,6 @@ export default function HomePage() {
     setTimeRange,
     refresh,
   } = useNewsFilters()
-
-  const { layoutMode, setLayoutMode } = useLayoutMode()
 
   const [availableCategories, setAvailableCategories] = useState<Set<string> | undefined>(undefined)
   const [trendingRefreshKey, setTrendingRefreshKey] = useState(0)
@@ -72,43 +66,40 @@ export default function HomePage() {
         onSearchChange={setSearchQuery}
         onRefresh={handleRefresh}
         onSearchTracked={handleSearchTracked}
+        activeRegion={activeRegion}
+        onRegionChange={handleRegionChange}
+        timeRange={timeRange}
+        onTimeRangeChange={handleTimeRangeChange}
       />
       <HeroSubscribeBanner />
-      <main className="container mx-auto px-4 py-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* 메인 콘텐츠 */}
-          <div className="flex-1 flex flex-col gap-6">
-            <RegionFilter activeRegion={activeRegion} onRegionChange={handleRegionChange} />
-            <NewsCategories
-              activeCategory={activeCategory}
-              onCategoryChange={handleCategoryChange}
-              availableCategories={availableCategories}
-            />
-            <div className="flex items-center justify-between gap-4">
-              <TimeRangeFilter timeRange={timeRange} onTimeRangeChange={handleTimeRangeChange} />
-              <LayoutSwitcher layoutMode={layoutMode} onLayoutChange={setLayoutMode} />
-            </div>
-            <NewsFeed
-              activeCategory={activeCategory}
-              searchQuery={searchQuery}
-              timeRange={timeRange}
-              refreshTrigger={refreshTrigger}
-              activeRegion={activeRegion}
-              layoutMode={layoutMode}
-              onAvailableCategoriesChange={setAvailableCategories}
-            />
-          </div>
+      <main className="max-w-7xl mx-auto px-8 py-6">
+        <div className="flex flex-col gap-6">
+          {/* 카테고리 필터만 유지 */}
+          <NewsCategories
+            activeCategory={activeCategory}
+            onCategoryChange={handleCategoryChange}
+            availableCategories={availableCategories}
+          />
 
-          {/* 사이드바 */}
-          <aside className="w-full lg:w-80 shrink-0">
-            <div className="sticky top-20 space-y-6 max-h-[calc(100vh-6rem)] overflow-y-auto">
-              <TrendingKeywords
-                key={trendingRefreshKey}
-                onKeywordClick={handleTrendingKeywordClick}
-              />
-              <RecentArticles />
-            </div>
-          </aside>
+          {/* 메인 뉴스 그리드 (3x3 고정) */}
+          <NewsFeed
+            activeCategory={activeCategory}
+            searchQuery={searchQuery}
+            timeRange={timeRange}
+            refreshTrigger={refreshTrigger}
+            activeRegion={activeRegion}
+            layoutMode="grid"
+            onAvailableCategoriesChange={setAvailableCategories}
+          />
+
+          {/* 하단 섹션 */}
+          <div className="grid md:grid-cols-2 gap-6 mt-8">
+            <TrendingKeywords
+              key={trendingRefreshKey}
+              onKeywordClick={handleTrendingKeywordClick}
+            />
+            <RecentArticles />
+          </div>
         </div>
       </main>
       <Footer />
