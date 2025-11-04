@@ -4,8 +4,7 @@ import { useState } from "react"
 import { NewsHeader } from "@/components/news-header"
 import { NewsFeed } from "@/components/news-feed"
 import { NewsCategories } from "@/components/news-categories"
-import { TrendingKeywords } from "@/components/trending-keywords"
-import { RecentArticles } from "@/components/recent-articles"
+import { TrendingRecentSplit } from "@/components/trending-recent-split"
 import { HeroSubscribeBanner } from "@/components/subscription/hero-subscribe-banner"
 import { Footer } from "@/components/footer"
 import { useNewsFilters } from "@/hooks/useNewsFilters"
@@ -72,13 +71,20 @@ export default function HomePage() {
         onTimeRangeChange={handleTimeRangeChange}
       />
       <HeroSubscribeBanner />
-      <main className="max-w-7xl mx-auto px-8 py-6">
+
+      {/* 카테고리 필터 - 상단 고정 */}
+      <NewsCategories
+        activeCategory={activeCategory}
+        onCategoryChange={handleCategoryChange}
+        availableCategories={availableCategories}
+      />
+
+      <main className="max-w-7xl mx-auto px-4 md:px-8 py-6">
         <div className="flex flex-col gap-6">
-          {/* 카테고리 필터만 유지 */}
-          <NewsCategories
-            activeCategory={activeCategory}
-            onCategoryChange={handleCategoryChange}
-            availableCategories={availableCategories}
+          {/* 인기 검색어 & 최근 본 기사 - 동시 표시 */}
+          <TrendingRecentSplit
+            key={trendingRefreshKey}
+            onKeywordClick={handleTrendingKeywordClick}
           />
 
           {/* 메인 뉴스 그리드 (3x3 고정) */}
@@ -91,15 +97,6 @@ export default function HomePage() {
             layoutMode="grid"
             onAvailableCategoriesChange={setAvailableCategories}
           />
-
-          {/* 하단 섹션 */}
-          <div className="grid md:grid-cols-2 gap-6 mt-8">
-            <TrendingKeywords
-              key={trendingRefreshKey}
-              onKeywordClick={handleTrendingKeywordClick}
-            />
-            <RecentArticles />
-          </div>
         </div>
       </main>
       <Footer />

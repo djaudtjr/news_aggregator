@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tag } from "lucide-react"
 
 interface Category {
   id: number
@@ -53,38 +54,79 @@ export function NewsCategories({ activeCategory, onCategoryChange, availableCate
     fetchCategories()
   }, [])
 
+  const activeLabel = categories.find(c => c.code === activeCategory)?.label_ko || "전체"
+
   if (isLoading) {
     return (
-      <div className="flex items-start gap-2">
-        <span className="text-sm font-medium text-muted-foreground whitespace-nowrap pt-2">카테고리:</span>
-        <div className="text-sm text-muted-foreground pt-2">로딩 중...</div>
+      <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b py-3 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-sm text-muted-foreground">로딩 중...</div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex items-start gap-2">
-      <span className="text-sm font-medium text-muted-foreground whitespace-nowrap pt-2">카테고리:</span>
-      <ScrollArea className="w-full whitespace-nowrap">
-        <div className="flex gap-2 pb-4">
-          {categories.map((category) => {
-            const isAvailable = !availableCategories || availableCategories.has(category.code)
-
-            return (
-              <Button
-                key={category.code}
-                variant={activeCategory === category.code ? "default" : "outline"}
-                onClick={() => onCategoryChange(category.code)}
-                disabled={!isAvailable}
-                className="shrink-0 rounded-xl transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md"
-              >
-                {category.label_ko}
-              </Button>
-            )
-          })}
+    <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-3">
+        {/* 모바일: 드롭다운 */}
+        <div className="md:hidden">
+          <div className="flex items-center gap-2">
+            <Tag className="h-4 w-4 text-primary shrink-0" />
+            <Select value={activeCategory} onValueChange={onCategoryChange}>
+              <SelectTrigger className="h-9 w-full rounded-lg">
+                <SelectValue placeholder="카테고리 선택">
+                  {activeLabel}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => {
+                  const isAvailable = !availableCategories || availableCategories.has(category.code)
+                  return (
+                    <SelectItem
+                      key={category.code}
+                      value={category.code}
+                      disabled={!isAvailable}
+                    >
+                      {category.label_ko}
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+
+        {/* 데스크탑: 가로 스크롤 */}
+        <div className="hidden md:block">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 shrink-0">
+              <Tag className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold">카테고리</span>
+            </div>
+            <div className="overflow-x-auto -mx-1 px-1 flex-1">
+              <div className="flex gap-2 pb-1">
+                {categories.map((category) => {
+                  const isAvailable = !availableCategories || availableCategories.has(category.code)
+
+                  return (
+                    <Button
+                      key={category.code}
+                      variant={activeCategory === category.code ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => onCategoryChange(category.code)}
+                      disabled={!isAvailable}
+                      className="shrink-0 rounded-full h-8 px-4 transition-all duration-200 hover:scale-105 whitespace-nowrap text-sm"
+                    >
+                      {category.label_ko}
+                    </Button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
