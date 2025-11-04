@@ -62,6 +62,8 @@ export default function MyPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [bookmarksPage, setBookmarksPage] = useState(1)
   const [searchesPage, setSearchesPage] = useState(1)
+  const [activeRegion, setActiveRegion] = useState("all")
+  const [timeRange, setTimeRange] = useState(1)
   const bookmarksPerPage = 5
   const searchesPerPage = 5
 
@@ -425,7 +427,15 @@ export default function MyPage() {
   if (!user) {
     return (
       <div className="min-h-screen bg-background">
-        <NewsHeader searchQuery={searchQuery} onSearchChange={handleSearchChange} onRefresh={handleRefresh} />
+        <NewsHeader
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+          onRefresh={handleRefresh}
+          activeRegion={activeRegion}
+          onRegionChange={setActiveRegion}
+          timeRange={timeRange}
+          onTimeRangeChange={setTimeRange}
+        />
         <main className="container mx-auto px-4 py-6">
           <Alert>
             <AlertCircle className="h-4 w-4" />
@@ -440,7 +450,15 @@ export default function MyPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <NewsHeader searchQuery={searchQuery} onSearchChange={handleSearchChange} onRefresh={handleRefresh} />
+        <NewsHeader
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+          onRefresh={handleRefresh}
+          activeRegion={activeRegion}
+          onRegionChange={setActiveRegion}
+          timeRange={timeRange}
+          onTimeRangeChange={setTimeRange}
+        />
         <main className="container mx-auto px-4 py-6">
           <div className="space-y-6">
             <Skeleton className="h-40 w-full" />
@@ -459,7 +477,15 @@ export default function MyPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <NewsHeader searchQuery={searchQuery} onSearchChange={handleSearchChange} onRefresh={handleRefresh} />
+        <NewsHeader
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+          onRefresh={handleRefresh}
+          activeRegion={activeRegion}
+          onRegionChange={setActiveRegion}
+          timeRange={timeRange}
+          onTimeRangeChange={setTimeRange}
+        />
         <main className="container mx-auto px-4 py-6">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -473,7 +499,15 @@ export default function MyPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <NewsHeader searchQuery={searchQuery} onSearchChange={handleSearchChange} onRefresh={handleRefresh} />
+      <NewsHeader
+        searchQuery={searchQuery}
+        onSearchChange={handleSearchChange}
+        onRefresh={handleRefresh}
+        activeRegion={activeRegion}
+        onRegionChange={setActiveRegion}
+        timeRange={timeRange}
+        onTimeRangeChange={setTimeRange}
+      />
       <main className="container mx-auto px-4 py-4 space-y-4">
         {/* 상단: 프로필 (좌측) + 통계 (우측) */}
         <div className="grid gap-4 md:grid-cols-4">
