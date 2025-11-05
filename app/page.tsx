@@ -4,7 +4,8 @@ import { useState } from "react"
 import { NewsHeader } from "@/components/news-header"
 import { NewsFeed } from "@/components/news-feed"
 import { NewsCategories } from "@/components/news-categories"
-import { TrendingRecentSplit } from "@/components/trending-recent-split"
+import { TrendingKeywordsCompact } from "@/components/trending-keywords-compact"
+import { RecentArticlesSidebar } from "@/components/recent-articles-sidebar"
 import { HeroSubscribeBanner } from "@/components/subscription/hero-subscribe-banner"
 import { Footer } from "@/components/footer"
 import { useNewsFilters } from "@/hooks/useNewsFilters"
@@ -25,15 +26,9 @@ export default function HomePage() {
   } = useNewsFilters()
 
   const [availableCategories, setAvailableCategories] = useState<Set<string> | undefined>(undefined)
-  const [trendingRefreshKey, setTrendingRefreshKey] = useState(0)
 
   const handleTrendingKeywordClick = (keyword: string) => {
     setSearchQuery(keyword)
-  }
-
-  const handleSearchTracked = () => {
-    // 인기 검색어 컴포넌트를 다시 렌더링하여 업데이트된 데이터 가져오기
-    setTrendingRefreshKey(prev => prev + 1)
   }
 
   const handleCategoryChange = (category: string) => {
@@ -64,7 +59,6 @@ export default function HomePage() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onRefresh={handleRefresh}
-        onSearchTracked={handleSearchTracked}
         activeRegion={activeRegion}
         onRegionChange={handleRegionChange}
         timeRange={timeRange}
@@ -72,33 +66,43 @@ export default function HomePage() {
       />
       <HeroSubscribeBanner />
 
-      {/* 카테고리 필터 - 상단 고정 */}
-      <NewsCategories
-        activeCategory={activeCategory}
-        onCategoryChange={handleCategoryChange}
-        availableCategories={availableCategories}
-      />
+      {/* 카테고리 + 인기 검색어 - 같은 행에 배치 */}
+      <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-3">
+          <div className="flex items-start gap-6">
+            {/* 왼쪽: 카테고리 */}
+            <div className="shrink-0">
+              <NewsCategories
+                activeCategory={activeCategory}
+                onCategoryChange={handleCategoryChange}
+                availableCategories={availableCategories}
+              />
+            </div>
+            {/* 구분선 */}
+            <div className="hidden md:block h-[60px] w-px bg-muted-foreground/30 shrink-0" />
+            {/* 오른쪽: 인기 검색어 */}
+            <div className="hidden md:block shrink-0">
+              <TrendingKeywordsCompact onKeywordClick={handleTrendingKeywordClick} />
+            </div>
+          </div>
+        </div>
+      </div>
 
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-6">
-        <div className="flex flex-col gap-6">
-          {/* 인기 검색어 & 최근 본 기사 - 동시 표시 */}
-          <TrendingRecentSplit
-            key={trendingRefreshKey}
-            onKeywordClick={handleTrendingKeywordClick}
-          />
-
-          {/* 메인 뉴스 그리드 (3x3 고정) */}
-          <NewsFeed
-            activeCategory={activeCategory}
-            searchQuery={searchQuery}
-            timeRange={timeRange}
-            refreshTrigger={refreshTrigger}
-            activeRegion={activeRegion}
-            layoutMode="grid"
-            onAvailableCategoriesChange={setAvailableCategories}
-          />
-        </div>
+        <NewsFeed
+          activeCategory={activeCategory}
+          searchQuery={searchQuery}
+          timeRange={timeRange}
+          refreshTrigger={refreshTrigger}
+          activeRegion={activeRegion}
+          layoutMode="grid"
+          onAvailableCategoriesChange={setAvailableCategories}
+        />
       </main>
+
+      {/* 오른쪽 고정 사이드바: 최근 본 기사 */}
+      <RecentArticlesSidebar />
+
       <Footer />
     </div>
   )
