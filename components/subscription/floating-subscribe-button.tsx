@@ -13,7 +13,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useEmailSettings } from "@/hooks/useEmailSettings";
 import { LoginModal } from "@/components/auth/login-modal";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export function FloatingSubscribeButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,6 +21,12 @@ export function FloatingSubscribeButton() {
   const { user } = useAuth();
   const { settings } = useEmailSettings();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // 마이페이지에서는 버튼을 표시하지 않음
+  if (pathname === "/mypage") {
+    return null;
+  }
 
   // 구독 중인지 확인 (enabled가 true일 때만 구독 중으로 간주)
   const isSubscribed = settings?.enabled === true;
