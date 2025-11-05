@@ -41,7 +41,21 @@ function NewsCardListComponent({ article }: NewsCardListProps) {
   const [retryCount, setRetryCount] = useState(0)
 
   const handleSummarize = () => {
+    // AI 요약 생성
     generateSummary(article.title, article.description, article.link, article.id, article.category)
+
+    // 최근 본 기사에 추가
+    addRecentArticle({
+      id: article.id,
+      title: article.title,
+      description: article.description,
+      link: article.link,
+      source: article.source,
+      imageUrl: article.imageUrl,
+      category: article.category,
+      region: article.region,
+      pubDate: article.pubDate,
+    })
   }
 
   const handleBookmark = async () => {
