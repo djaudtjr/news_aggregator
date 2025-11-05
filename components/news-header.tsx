@@ -28,9 +28,9 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
   const { user, signOut } = useAuth()
 
   const regions = [
-    { value: "all", label: "All Sources" },
-    { value: "domestic", label: "Domestic" },
-    { value: "international", label: "International" },
+    { value: "all", label: "전체" },
+    { value: "domestic", label: "국내" },
+    { value: "international", label: "해외" },
   ]
 
   const timeRanges = [
