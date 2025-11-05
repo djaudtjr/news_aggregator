@@ -40,10 +40,11 @@ export function useEmailSettings() {
     }
   }, [user])
 
-  // 초기 로드
+  // user가 로드되면 한 번만 로드 (화면 이동 시에만 실행)
   useEffect(() => {
     fetchSettings()
-  }, [fetchSettings])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]) // user.id가 변경될 때만 실행 (로그인 시 한 번만)
 
   // 설정 저장/업데이트
   const saveSettings = async (newSettings: {

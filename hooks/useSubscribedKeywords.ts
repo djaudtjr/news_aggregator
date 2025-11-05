@@ -43,10 +43,11 @@ export function useSubscribedKeywords() {
     }
   }, [user])
 
-  // 초기 로드
+  // user가 로드되면 한 번만 로드 (화면 이동 시에만 실행)
   useEffect(() => {
     fetchKeywords()
-  }, [fetchKeywords])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]) // user.id가 변경될 때만 실행 (로그인 시 한 번만)
 
   // 키워드 추가
   const addKeyword = async (keyword: string) => {

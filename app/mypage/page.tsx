@@ -126,13 +126,15 @@ export default function MyPage() {
     }
   }, [user])
 
+  // user가 로드되면 한 번만 데이터 로드 (화면 이동 시에만 실행)
   useEffect(() => {
     if (user) {
       fetchMyPageData()
     } else {
       setLoading(false)
     }
-  }, [user, fetchMyPageData]) // user가 변경되면 자동으로 데이터 로드
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]) // user.id가 변경될 때만 실행 (로그인 시 한 번만)
 
   // 추천 키워드 가져오기
   const fetchRecommendations = useCallback(async () => {
@@ -160,13 +162,14 @@ export default function MyPage() {
     }
   }, [user])
 
-  // 키워드 변경시 추천 목록 갱신
+  // user가 로드되면 한 번만 추천 목록 로드 (화면 이동 시에만 실행)
   useEffect(() => {
     console.log("[Recommendations] Effect triggered - user:", !!user, "keywords:", keywords?.length, "loading:", loading)
     if (user) {
       fetchRecommendations()
     }
-  }, [user, fetchRecommendations])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]) // user.id가 변경될 때만 실행 (로그인 시 한 번만)
 
   // 북마크 데이터가 변경되면 페이지 범위 조정
   useEffect(() => {
