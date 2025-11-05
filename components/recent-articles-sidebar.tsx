@@ -1,6 +1,7 @@
 "use client"
 
-import { History, X, Trash2 } from "lucide-react"
+import { useState } from "react"
+import { History, X, Trash2, ChevronRight, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useRecentArticles, type RecentArticle } from "@/hooks/useRecentArticles"
@@ -11,6 +12,7 @@ interface RecentArticlesSidebarProps {
 
 export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarProps) {
   const { recentArticles, removeRecentArticle, clearRecentArticles } = useRecentArticles()
+  const [isExpanded, setIsExpanded] = useState(true)
 
   const handleArticleClick = (article: RecentArticle) => {
     if (onArticleClick) {
@@ -37,8 +39,9 @@ export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarP
         position: 'fixed',
         right: '16px',
         top: '180px',
-        width: '200px',
+        width: isExpanded ? '200px' : '40px',
         zIndex: 9999,
+        transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
       <div
@@ -48,6 +51,7 @@ export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarP
           borderRadius: '8px',
           boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
           padding: '8px',
+          overflow: 'hidden',
         }}
       >
         {/* 헤더 */}
@@ -56,26 +60,64 @@ export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarP
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '8px',
+            marginBottom: isExpanded ? '8px' : '0',
             paddingLeft: '4px',
             paddingRight: '4px',
+            transition: 'margin-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ fontSize: '12px', fontWeight: '600' }}>최근 본 기사</span>
-            {recentArticles.length > 0 && (
-              <Badge variant="secondary" className="h-3 px-1 text-[9px]">
-                {recentArticles.length}
-              </Badge>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, flex: 1 }}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsExpanded(!isExpanded)}
+              title={isExpanded ? "접기" : "펼치기"}
+              className="h-5 w-5 rounded-full hover:bg-accent shrink-0"
+            >
+              {isExpanded ? (
+                <ChevronRight className="h-3.5 w-3.5 transition-transform duration-300" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5 transition-transform duration-300" />
+              )}
+            </Button>
+            {isExpanded && (
+              <>
+                <span
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    opacity: isExpanded ? 1 : 0,
+                    transition: 'opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
+                >
+                  최근 본 기사
+                </span>
+                {recentArticles.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="h-3 px-1 text-[9px]"
+                    style={{
+                      opacity: isExpanded ? 1 : 0,
+                      transition: 'opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    }}
+                  >
+                    {recentArticles.length}
+                  </Badge>
+                )}
+              </>
             )}
           </div>
-          {recentArticles.length > 0 && (
+          {isExpanded && recentArticles.length > 0 && (
             <Button
               variant="ghost"
               size="icon"
               onClick={handleClearAll}
               title="전체 삭제"
-              className="h-5 w-5 rounded-full hover:bg-accent"
+              className="h-5 w-5 rounded-full hover:bg-accent shrink-0"
+              style={{
+                opacity: isExpanded ? 1 : 0,
+                transition: 'opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
             >
               <Trash2 className="h-3 w-3" />
             </Button>
@@ -85,28 +127,32 @@ export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarP
         {/* 기사 목록 */}
         <div
           style={{
-            maxHeight: 'calc(100vh - 220px)',
+            maxHeight: isExpanded ? 'calc(100vh - 220px)' : '0',
             overflowY: 'auto',
+            opacity: isExpanded ? 1 : 0,
+            transition: 'max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         >
-          {recentArticles.length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '24px 0',
-                color: 'var(--muted-foreground)',
-              }}
-            >
-              <History className="h-6 w-6 mx-auto mb-2 opacity-30" />
-              <p style={{ fontSize: '10px' }}>
-                아직 본 기사가
-                <br />
-                없습니다
-              </p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {recentArticles.slice(0, 10).map((article) => (
+          {isExpanded && (
+            <>
+              {recentArticles.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: 'center',
+                    padding: '24px 0',
+                    color: 'var(--muted-foreground)',
+                  }}
+                >
+                  <History className="h-6 w-6 mx-auto mb-2 opacity-30" />
+                  <p style={{ fontSize: '10px' }}>
+                    아직 본 기사가
+                    <br />
+                    없습니다
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {recentArticles.slice(0, 10).map((article, index) => (
                 <div
                   key={article.id}
                   onClick={() => handleArticleClick(article)}
@@ -118,6 +164,7 @@ export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarP
                     cursor: 'pointer',
                     overflow: 'hidden',
                     transition: 'all 0.2s',
+                    animation: isExpanded ? `slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.05}s both` : 'none',
                   }}
                   className="group hover:bg-accent"
                 >
@@ -186,10 +233,26 @@ export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarP
                   </div>
                 </div>
               ))}
-            </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
+
+      {/* 애니메이션 키프레임 */}
+      <style jsx>{`
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateX(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+      `}</style>
     </div>
   )
 }
