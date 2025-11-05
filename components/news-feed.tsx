@@ -30,6 +30,9 @@ interface NewsFeedProps {
   activeRegion: string
   layoutMode: LayoutMode
   onAvailableCategoriesChange?: (categories: Set<string>) => void
+  onTotalCountChange?: (count: number) => void
+  onPageChange?: (page: number) => void
+  onTotalPagesChange?: (totalPages: number) => void
 }
 
 async function fetchNews(searchQuery: string, activeRegion: string): Promise<NewsArticle[]> {
@@ -70,6 +73,9 @@ export function NewsFeed({
   activeRegion,
   layoutMode,
   onAvailableCategoriesChange,
+  onTotalCountChange,
+  onPageChange,
+  onTotalPagesChange,
 }: NewsFeedProps) {
   const [allCategories, setAllCategories] = useState<Set<string>>(new Set())
   const [showLoadingMessage, setShowLoadingMessage] = useState(false)
@@ -164,6 +170,32 @@ export function NewsFeed({
     }
   }, [availableCategories, onAvailableCategoriesChange])
 
+  // 총 뉴스 개수를 상위 컴포넌트에 전달
+  useEffect(() => {
+    if (onTotalCountChange) {
+      onTotalCountChange(filteredArticles.length)
+    }
+  }, [filteredArticles.length, onTotalCountChange])
+
+  // 현재 페이지를 상위 컴포넌트에 전달
+  useEffect(() => {
+    if (onPageChange) {
+      onPageChange(currentPage)
+    }
+  }, [currentPage, onPageChange])
+
+  // 총 페이지 수 계산
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredArticles.length / ITEMS_PER_PAGE)
+  }, [filteredArticles.length, ITEMS_PER_PAGE])
+
+  // 총 페이지 수를 상위 컴포넌트에 전달
+  useEffect(() => {
+    if (onTotalPagesChange) {
+      onTotalPagesChange(totalPages)
+    }
+  }, [totalPages, onTotalPagesChange])
+
   // 필터 변경 시 페이지 1로 리셋
   useEffect(() => {
     setCurrentPage(1)
@@ -237,7 +269,6 @@ export function NewsFeed({
   }
 
   // 페이징 계산
-  const totalPages = Math.ceil(filteredArticles.length / ITEMS_PER_PAGE)
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const endIndex = startIndex + ITEMS_PER_PAGE
   const paginatedArticles = filteredArticles.slice(startIndex, endIndex)
@@ -250,19 +281,6 @@ export function NewsFeed({
 
   return (
     <div className="space-y-6">
-      {/* 뉴스 통계 */}
-      <div className="flex items-center justify-between bg-card border rounded-lg p-4">
-        <div className="flex items-center gap-2">
-          <Newspaper className="h-5 w-5 text-primary" />
-          <span className="font-semibold">
-            총 {filteredArticles.length.toLocaleString()}개의 뉴스
-          </span>
-        </div>
-        <span className="text-sm text-muted-foreground">
-          Page {currentPage} of {totalPages}
-        </span>
-      </div>
-
       {/* 뉴스 그리드 (3x3) */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {paginatedArticles.map((article) => (

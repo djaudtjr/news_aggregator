@@ -38,7 +38,7 @@ export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarP
       style={{
         position: 'fixed',
         right: '16px',
-        top: '180px',
+        top: '253px',
         width: isExpanded ? '200px' : '40px',
         zIndex: 9999,
         transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
