@@ -340,46 +340,19 @@ function generateEmailHtml(keywordNewsArray: KeywordNews[]): string {
     /* Google Fonts - Noto Sans KR */
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
 
-    /* Material Design 3 Color System - Dynamic Color는 제외하고 Core 색상 사용 */
-    :root {
-      /* Light Theme Colors (기본) */
-      --md-sys-color-primary: #006A6A;
-      --md-sys-color-on-primary: #FFFFFF;
-      --md-sys-color-primary-container: #9DF3F3;
-      --md-sys-color-on-primary-container: #002020;
-      --md-sys-color-secondary: #4A6363;
-      --md-sys-color-on-secondary: #FFFFFF;
-      --md-sys-color-secondary-container: #CCE8E8;
-      --md-sys-color-on-secondary-container: #051F1F;
-      --md-sys-color-tertiary: #515D7C;
-      --md-sys-color-on-tertiary: #FFFFFF;
-      --md-sys-color-tertiary-container: #DAE2FF;
-      --md-sys-color-on-tertiary-container: #0D1B37;
-      --md-sys-color-error: #BA1A1A;
-      --md-sys-color-on-error: #FFFFFF;
-      --md-sys-color-error-container: #FFDAD6;
-      --md-sys-color-on-error-container: #410002;
-      --md-sys-color-background: #FAFDFD;
-      --md-sys-color-on-background: #191C1C;
-      --md-sys-color-surface: #FAFDFD;
-      --md-sys-color-on-surface: #191C1C;
-      --md-sys-color-surface-variant: #DAE5E4;
-      --md-sys-color-on-surface-variant: #3F4948;
-      --md-sys-color-outline: #6F7978;
-      --md-sys-color-outline-variant: #BFC8C7;
-      --md-sys-color-shadow: #000000;
-      --md-sys-color-scrim: #000000;
-      --md-sys-color-inverse-surface: #2D3131;
-      --md-sys-color-inverse-on-surface: #EFF1F1;
-      --md-sys-color-inverse-primary: #81D6D5;
-      --md-sys-color-surface-dim: #D9DBDB;
-      --md-sys-color-surface-bright: #FAFDFD;
-      --md-sys-color-surface-container-lowest: #FFFFFF;
-      --md-sys-color-surface-container-low: #F3F6F6;
-      --md-sys-color-surface-container: #F7FAFA;
-      --md-sys-color-surface-container-high: #EDEFEF;
-      --md-sys-color-surface-container-highest: #E2E4E4;
-    }
+    /*
+      Material Design 3 Colors - Hardcoded for email compatibility
+      이메일 클라이언트는 CSS 변수(:root, var())를 지원하지 않으므로 직접 색상값 사용
+
+      Primary: #006A6A / On-Primary: #FFFFFF
+      Secondary: #4A6363 / On-Secondary: #FFFFFF
+      Error: #BA1A1A / Error-Container: #FFDAD6 / On-Error-Container: #410002
+      Surface: #FAFDFD / On-Surface: #191C1C
+      Surface-Variant: #DAE5E4 / On-Surface-Variant: #3F4948
+      Outline: #6F7978 / Outline-Variant: #BFC8C7
+      Surface-Container-Low: #F3F6F6 / Surface-Container-Lowest: #FFFFFF
+      Surface-Container-High: #EDEFEF
+    */
 
     * {
       margin: 0;
@@ -390,10 +363,10 @@ function generateEmailHtml(keywordNewsArray: KeywordNews[]): string {
     body {
       font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       line-height: 1.6;
-      color: var(--md-sys-color-on-surface);
+      color: #191C1C;
       margin: 0;
       padding: 0;
-      background-color: var(--md-sys-color-background);
+      background-color: #FAFDFD;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
@@ -401,7 +374,7 @@ function generateEmailHtml(keywordNewsArray: KeywordNews[]): string {
     .email-container {
       max-width: 680px;
       margin: 0 auto;
-      background-color: var(--md-sys-color-surface);
+      background-color: #FAFDFD;
       border-radius: 12px;
       overflow: hidden;
     }
@@ -417,8 +390,8 @@ function generateEmailHtml(keywordNewsArray: KeywordNews[]): string {
 
     /* 헤더 - Material Design 3 */
     .header {
-      background: linear-gradient(135deg, var(--md-sys-color-primary) 0%, var(--md-sys-color-secondary) 100%);
-      color: var(--md-sys-color-on-primary);
+      background: linear-gradient(135deg, #006A6A 0%, #4A6363 100%);
+      color: #FFFFFF;
       padding: 48px 24px 40px;
       text-align: center;
     }
@@ -440,43 +413,42 @@ function generateEmailHtml(keywordNewsArray: KeywordNews[]): string {
 
     /* 키워드 네비게이션 - Material Design 3 Filter Chips */
     .keyword-nav {
-      background-color: var(--md-sys-color-surface-container-low);
+      background-color: #F3F6F6;
       padding: 24px;
-      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      border-bottom: 1px solid #BFC8C7;
     }
 
     .keyword-nav-title {
       font-size: 12px;
       font-weight: 600;
-      color: var(--md-sys-color-on-surface-variant);
+      color: #3F4948;
       margin-bottom: 16px;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
 
     .keyword-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
+      display: block;
     }
 
     .keyword-badge {
-      display: inline-flex;
-      align-items: center;
+      display: inline-block;
       padding: 10px 18px;
-      background-color: var(--md-sys-color-surface-variant);
-      color: var(--md-sys-color-on-surface-variant);
-      border-radius: 24px;
+      background-color: #DAE5E4;
+      color: #3F4948;
+      border-radius: 24px; /* MD3 Filter Chip */
       font-weight: 600;
       font-size: 14px;
       letter-spacing: 0.1px;
-      border: 1px solid var(--md-sys-color-outline-variant);
-      cursor: default;
+      border: 1px solid #BFC8C7; /* MD3 Filter Chip Style */
+      cursor: default; /* Filter Chip은 일반적으로 선택 가능한 상태가 아닌 태그 역할 */
+      margin-right: 12px;
+      margin-bottom: 12px;
     }
 
     .keyword-badge:hover {
-      background-color: var(--md-sys-color-surface-container-high);
-      border-color: var(--md-sys-color-outline);
+        background-color: #EDEFEF;
+        border-color: #6F7978;
     }
 
     /* 메인 컨텐츠 */
@@ -494,147 +466,153 @@ function generateEmailHtml(keywordNewsArray: KeywordNews[]): string {
     }
 
     .keyword-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      display: block;
+      width: 100%;
       margin-bottom: 24px;
       padding: 16px 20px;
-      background: linear-gradient(135deg, var(--md-sys-color-primary) 0%, var(--md-sys-color-secondary) 100%);
+      background: linear-gradient(135deg, #006A6A 0%, #4A6363 100%);
       border-radius: 16px;
+      overflow: hidden;
     }
 
     .keyword-title {
-      flex: 1;
+      display: inline-block;
       font-size: 24px;
       font-weight: 700;
-      color: var(--md-sys-color-on-primary);
+      color: #FFFFFF;
       margin: 0;
       letter-spacing: -0.5px;
+      vertical-align: middle;
     }
 
     .keyword-count {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      display: inline-block;
       min-width: 36px;
       height: 36px;
       padding: 0 12px;
-      background-color: var(--md-sys-color-on-primary);
-      color: var(--md-sys-color-primary);
+      background-color: #FFFFFF;
+      color: #006A6A;
       border-radius: 20px;
       font-size: 16px;
       font-weight: 700;
       letter-spacing: 0.5px;
+      text-align: center;
+      line-height: 36px;
+      float: right;
+      vertical-align: middle;
     }
 
     /* 뉴스 카드 - Material Design 3 Cards */
     .news-list {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+      display: block;
+      width: 100%;
     }
 
     .news-card {
-      background-color: var(--md-sys-color-surface-container-lowest);
-      border: 1px solid var(--md-sys-color-outline-variant);
-      border-radius: 16px;
+      display: block;
+      width: 100%;
+      background-color: #FFFFFF;
+      border: 1px solid #BFC8C7;
+      border-radius: 16px; /* MD3 Card */
       padding: 24px;
-      transition: box-shadow 0.25s ease;
+      margin-bottom: 20px;
+      box-sizing: border-box;
+      transition: box-shadow 0.25s ease; /* Transform 제거 후 Shadow만 */
+    }
+
+    .news-card:last-child {
+      margin-bottom: 0;
     }
 
     .news-card:hover {
-      box-shadow: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 2px 4px 2px rgba(0, 0, 0, 0.15);
-      border-color: var(--md-sys-color-outline);
+      box-shadow: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 2px 4px 2px rgba(0, 0, 0, 0.15); /* Elevation 3 */
+      border-color: #6F7978; /* 호버 시 테두리 강조 */
     }
 
     /* prefers-reduced-motion: 사용자가 애니메이션을 선호하지 않을 경우 */
     @media (prefers-reduced-motion: reduce) {
-      .news-card {
-        transition: none;
-      }
-      .news-card:hover {
-        /* transform 효과 제거 */
-      }
+        .news-card {
+            transition: none;
+        }
+        .news-card:hover {
+            /* transform 효과 제거 */
+        }
     }
 
     .news-title {
       font-size: 20px;
       font-weight: 700;
-      color: var(--md-sys-color-on-surface);
+      color: #191C1C;
       line-height: 1.4;
       margin: 0 0 16px 0;
       letter-spacing: -0.3px;
     }
 
     .news-title a {
-      color: inherit;
+      color: inherit; /* 부모(.news-title) 색상 상속 */
       text-decoration: none;
       transition: color 0.2s ease;
     }
 
     .news-title a:hover {
-      color: var(--md-sys-color-primary);
+      color: #006A6A;
     }
 
     .news-meta {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 16px;
+      display: block;
       font-size: 14px;
-      color: var(--md-sys-color-on-surface-variant);
+      color: #3F4948;
       margin-bottom: 20px;
       padding-bottom: 16px;
-      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      border-bottom: 1px solid #BFC8C7;
     }
 
     .news-meta-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      display: inline-block;
       font-weight: 500;
       letter-spacing: 0.1px;
       position: relative;
-      padding-left: 10px;
+      padding-left: 10px; /* 구분선을 위한 공간 */
+      padding-right: 6px;
+      margin-right: 10px;
     }
 
     .news-meta-item:not(:first-child)::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 1px;
-      height: 16px;
-      background-color: var(--md-sys-color-outline-variant);
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1px;
+        height: 16px;
+        background-color: #BFC8C7;
     }
 
     .news-summary {
-      color: var(--md-sys-color-on-surface);
+      color: #191C1C;
       font-size: 16px;
       font-weight: 400;
       line-height: 1.7;
       margin-bottom: 20px;
       padding: 20px;
-      background-color: var(--md-sys-color-surface-container-low);
+      background-color: #F3F6F6;
       border-radius: 12px;
-      border-left: 4px solid var(--md-sys-color-primary);
+      border-left: 4px solid #006A6A;
       letter-spacing: 0.15px;
     }
 
     .news-keypoints {
       margin-top: 20px;
       padding: 20px;
-      background-color: var(--md-sys-color-error-container);
+      background-color: #FFDAD6; /* MD3 Error Container Color */
       border-radius: 12px;
-      border-left: 4px solid var(--md-sys-color-error);
+      border-left: 4px solid #BA1A1A; /* MD3 Error Color */
     }
 
     .keypoint-title {
       font-size: 13px;
       font-weight: 700;
-      color: var(--md-sys-color-on-error-container);
+      color: #410002; /* MD3 On Error Container Color */
       margin-bottom: 12px;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -646,7 +624,7 @@ function generateEmailHtml(keywordNewsArray: KeywordNews[]): string {
     .keypoint-list {
       margin: 0;
       padding-left: 24px;
-      color: var(--md-sys-color-on-error-container);
+      color: #410002; /* MD3 On Error Container Color */
       font-size: 15px;
       line-height: 1.7;
       font-weight: 400;
@@ -664,17 +642,17 @@ function generateEmailHtml(keywordNewsArray: KeywordNews[]): string {
     /* 푸터 - Material Design 3 */
     .footer {
       padding: 40px 24px;
-      background-color: var(--md-sys-color-surface-container-low);
+      background-color: #F3F6F6;
       text-align: center;
-      color: var(--md-sys-color-on-surface-variant);
+      color: #3F4948;
       font-size: 14px;
-      border-top: 1px solid var(--md-sys-color-outline-variant);
+      border-top: 1px solid #BFC8C7;
     }
 
     .footer-brand {
       font-weight: 700;
       font-size: 18px;
-      color: var(--md-sys-color-on-surface);
+      color: #191C1C;
       margin-bottom: 12px;
       letter-spacing: 0.1px;
     }
@@ -686,21 +664,21 @@ function generateEmailHtml(keywordNewsArray: KeywordNews[]): string {
     }
 
     .footer a {
-      color: var(--md-sys-color-primary);
+      color: #006A6A;
       text-decoration: none;
       font-weight: 600;
       transition: color 0.2s ease;
     }
 
     .footer a:hover {
-      color: var(--md-sys-color-secondary);
+      color: #4A6363;
       text-decoration: underline;
     }
 
     .footer-divider {
       width: 64px;
       height: 4px;
-      background: linear-gradient(90deg, var(--md-sys-color-primary) 0%, var(--md-sys-color-secondary) 100%);
+      background: linear-gradient(90deg, #006A6A 0%, #4A6363 100%);
       margin: 24px auto;
       border-radius: 2px;
     }
@@ -779,11 +757,11 @@ function generateEmailHtml(keywordNewsArray: KeywordNews[]): string {
       }
 
       .news-meta-item {
-        padding-left: 8px;
+          padding-left: 8px; /* 작은 화면에서 간격 조정 */
       }
 
       .news-meta-item:not(:first-child)::before {
-        height: 14px;
+          height: 14px; /* 작은 화면에서 구분선 높이 조정 */
       }
 
       .news-summary {
