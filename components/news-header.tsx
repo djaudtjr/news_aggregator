@@ -24,6 +24,7 @@ interface NewsHeaderProps {
 export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTracked, activeRegion, onRegionChange, timeRange, onTimeRangeChange }: NewsHeaderProps) {
   const [inputValue, setInputValue] = useState(searchQuery)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [correctedKeyword, setCorrectedKeyword] = useState<string | null>(null)
   const { user, signOut } = useAuth()
 
   const regions = [
@@ -49,13 +50,68 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
   const handleSearch = async (keyword: string) => {
     if (!keyword || keyword.trim().length === 0) {
       onSearchChange("")
+      setCorrectedKeyword(null)
       return
     }
 
-    // 1. 먼저 검색 실행 (사용자에게 빠르게 결과 표시)
-    onSearchChange(keyword)
+    const trimmedKeyword = keyword.trim()
 
-    // 2. 검색 키워드 통계 기록 (백그라운드로 비동기 실행)
+    // 1. 오타 교정 확인
+    try {
+      const spellcheckResponse = await fetch("/api/spellcheck", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          keyword: trimmedKeyword,
+        }),
+      })
+
+      if (spellcheckResponse.ok) {
+        const spellcheckData = await spellcheckResponse.json()
+
+        if (spellcheckData.hasTypo) {
+          // 오타가 있으면 수정된 검색어로 검색
+          const finalKeyword = spellcheckData.corrected
+          setCorrectedKeyword(finalKeyword)
+          setInputValue(finalKeyword) // 입력창도 수정된 검색어로 업데이트
+
+          // 2. 수정된 검색어로 검색 실행
+          onSearchChange(finalKeyword)
+
+          // 3. 검색 키워드 통계 기록 (수정된 검색어로)
+          await fetch("/api/analytics/search-keyword", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userId: user?.id || null,
+              keyword: finalKeyword,
+            }),
+          })
+
+          // 4. 인기 검색어 업데이트 트리거
+          if (onSearchTracked) {
+            setTimeout(() => {
+              onSearchTracked()
+            }, 200)
+          }
+          return
+        }
+      }
+    } catch (error) {
+      console.error("Spellcheck failed, proceeding with original keyword:", error)
+    }
+
+    // 오타가 없거나 spellcheck 실패 시 원본 검색어로 진행
+    setCorrectedKeyword(null)
+
+    // 2. 검색 실행
+    onSearchChange(trimmedKeyword)
+
+    // 3. 검색 키워드 통계 기록 (백그라운드로 비동기 실행)
     try {
       await fetch("/api/analytics/search-keyword", {
         method: "POST",
@@ -64,11 +120,11 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
         },
         body: JSON.stringify({
           userId: user?.id || null,
-          keyword: keyword.trim(),
+          keyword: trimmedKeyword,
         }),
       })
 
-      // 3. 통계 기록 후 인기 검색어 업데이트 트리거
+      // 4. 통계 기록 후 인기 검색어 업데이트 트리거
       if (onSearchTracked) {
         setTimeout(() => {
           onSearchTracked()
@@ -95,6 +151,7 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
     // 1. 검색어 초기화
     setInputValue("")
     onSearchChange("")
+    setCorrectedKeyword(null)
 
     // 2. 새로고침 트리거
     onRefresh()
@@ -105,6 +162,7 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
     // 1. 검색어 초기화
     setInputValue("")
     onSearchChange("")
+    setCorrectedKeyword(null)
 
     // 2. 새로고침 트리거
     onRefresh()
@@ -120,7 +178,8 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+      <div className="container mx-auto px-4">
+        <div className="flex h-16 items-center justify-between">
         <div className="flex items-center gap-2 cursor-pointer" onClick={handleLogoClick}>
           <Radio className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Pulse</h1>
@@ -220,6 +279,16 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
             </SheetContent>
           </Sheet>
         </div>
+        </div>
+        {/* 오타 교정 안내 메시지 */}
+        {correctedKeyword && (
+          <div className="pb-2 pt-1">
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <span>검색어가 수정되었습니다:</span>
+              <span className="font-medium text-primary">{correctedKeyword}</span>
+            </div>
+          </div>
+        )}
       </div>
       <LoginModal open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen} />
     </header>

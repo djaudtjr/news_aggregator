@@ -128,17 +128,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid keyword (no valid characters)" }, { status: 400 })
     }
 
-    // 2. OpenAI로 키워드를 단어별로 분리
-    const keywords = await splitKeywordsByAI(sanitizedKeyword)
+    // 2. 원본 키워드만 저장 (AI 분리 없이)
+    await recordSearchKeyword(effectiveUserId, sanitizedKeyword, "user_input")
 
-    // 3. 각 키워드를 DB에 저장 (원본 형태로 저장)
-    // 첫 번째 키워드(원본)는 'user_input', 나머지 AI 추출 키워드는 'ai_extracted'
-    for (let i = 0; i < keywords.length; i++) {
-      const keywordSource = i === 0 ? "user_input" : "ai_extracted"
-      await recordSearchKeyword(effectiveUserId, keywords[i], keywordSource)
-    }
-
-    return NextResponse.json({ success: true, keywords })
+    return NextResponse.json({ success: true, keyword: sanitizedKeyword })
   } catch (error) {
     console.error("[Analytics] Search keyword tracking error:", error)
     return NextResponse.json({ error: "Failed to track search keyword" }, { status: 500 })
