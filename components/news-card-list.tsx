@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, memo } from "react"
+import { useState, memo, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ExternalLink, Clock, Sparkles, Bookmark, BookmarkCheck } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ko } from "date-fns/locale"
@@ -25,6 +26,18 @@ function NewsCardListComponent({ article }: NewsCardListProps) {
   const { summary, keyPoints, isLoading, fromCache, generateSummary } = useArticleSummary(article.id)
   const { addRecentArticle } = useRecentArticles()
   const { toggleBookmark, isBookmarked } = useBookmarks()
+
+  // Modal 상태 관리
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const previousSummaryRef = useRef<string | null>(null)
+
+  // 요약이 완료되면 자동으로 Modal 열기
+  useEffect(() => {
+    if (summary && !fromCache && previousSummaryRef.current !== summary) {
+      setIsModalOpen(true)
+      previousSummaryRef.current = summary
+    }
+  }, [summary, fromCache])
 
   // URL 유효성 검사
   const isValidUrl = (url: string | undefined): boolean => {
@@ -122,6 +135,7 @@ function NewsCardListComponent({ article }: NewsCardListProps) {
   }
 
   return (
+    <>
     <Card className="flex flex-row overflow-hidden transition-all hover:shadow-lg">
       {imageUrl && (
         <div className="relative w-48 shrink-0 overflow-hidden bg-muted">
@@ -219,6 +233,56 @@ function NewsCardListComponent({ article }: NewsCardListProps) {
         </CardFooter>
       </div>
     </Card>
+
+    {/* AI 요약 모달 Dialog */}
+    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <DialogContent className="sm:max-w-3xl max-w-[90vw] max-h-[80vh] overflow-y-auto rounded-2xl shadow-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <span>AI 요약</span>
+            {fromCache && <Badge variant="secondary">캐시됨</Badge>}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            {article.title}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 mt-4">
+          {/* 요약 내용 */}
+          <div>
+            <h3 className="font-semibold text-sm mb-2">📝 요약</h3>
+            <p className="text-sm leading-relaxed">{summary}</p>
+          </div>
+
+          {/* 핵심 포인트 */}
+          {keyPoints && keyPoints.length > 0 && (
+            <div className="pt-4 border-t">
+              <h3 className="font-semibold text-sm mb-3">💡 핵심 포인트</h3>
+              <ul className="space-y-2">
+                {keyPoints.map((point, index) => (
+                  <li key={index} className="text-sm flex items-start gap-3">
+                    <span className="text-primary font-bold mt-0.5">{index + 1}.</span>
+                    <span className="flex-1">{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* 원문 보기 버튼 */}
+          <div className="pt-4 border-t">
+            <Button variant="default" className="w-full transition-all duration-300 hover:scale-105 rounded-xl shadow-md hover:shadow-lg" asChild>
+              <a href={article.link} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>
+                <ExternalLink className="mr-2 h-4 w-4" />
+                원문 보기
+              </a>
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  </>
   )
 }
 

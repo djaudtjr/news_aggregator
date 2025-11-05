@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, memo } from "react"
+import { useState, memo, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -30,6 +30,16 @@ function NewsCardComponent({ article }: NewsCardProps) {
   // AI 요약 UI 상태 관리
   const [isExpanded, setIsExpanded] = useState(false) // 접힘/펼침 상태
   const [isModalOpen, setIsModalOpen] = useState(false) // 모달 열림/닫힘 상태
+  const previousSummaryRef = useRef<string | null>(null) // 이전 요약 상태 추적
+
+  // 요약이 완료되면 자동으로 Modal 열기
+  useEffect(() => {
+    // 요약이 새로 생성되었을 때만 모달 열기 (캐시에서 가져온 것 제외)
+    if (summary && !fromCache && previousSummaryRef.current !== summary) {
+      setIsModalOpen(true)
+      previousSummaryRef.current = summary
+    }
+  }, [summary, fromCache])
 
   // URL 유효성 검사
   const isValidUrl = (url: string | undefined): boolean => {
