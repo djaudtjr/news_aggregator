@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>뉴스 다이제스트 - Material Design 3</title>
+  <style>
+    /* Google Fonts - Noto Sans KR */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+
+    /* Material Design 3 Color System - Dynamic Color는 제외하고 Core 색상 사용 */
+    :root {
+      /* Light Theme Colors (기본) */
+      --md-sys-color-primary: #006A6A;
+      --md-sys-color-on-primary: #FFFFFF;
+      --md-sys-color-primary-container: #9DF3F3;
+      --md-sys-color-on-primary-container: #002020;
+      --md-sys-color-secondary: #4A6363;
+      --md-sys-color-on-secondary: #FFFFFF;
+      --md-sys-color-secondary-container: #CCE8E8;
+      --md-sys-color-on-secondary-container: #051F1F;
+      --md-sys-color-tertiary: #515D7C;
+      --md-sys-color-on-tertiary: #FFFFFF;
+      --md-sys-color-tertiary-container: #DAE2FF;
+      --md-sys-color-on-tertiary-container: #0D1B37;
+      --md-sys-color-error: #BA1A1A;
+      --md-sys-color-on-error: #FFFFFF;
+      --md-sys-color-error-container: #FFDAD6;
+      --md-sys-color-on-error-container: #410002;
+      --md-sys-color-background: #FAFDFD;
+      --md-sys-color-on-background: #191C1C;
+      --md-sys-color-surface: #FAFDFD;
+      --md-sys-color-on-surface: #191C1C;
+      --md-sys-color-surface-variant: #DAE5E4;
+      --md-sys-color-on-surface-variant: #3F4948;
+      --md-sys-color-outline: #6F7978;
+      --md-sys-color-outline-variant: #BFC8C7;
+      --md-sys-color-shadow: #000000;
+      --md-sys-color-scrim: #000000;
+      --md-sys-color-inverse-surface: #2D3131;
+      --md-sys-color-inverse-on-surface: #EFF1F1;
+      --md-sys-color-inverse-primary: #81D6D5;
+      --md-sys-color-surface-dim: #D9DBDB;
+      --md-sys-color-surface-bright: #FAFDFD;
+      --md-sys-color-surface-container-lowest: #FFFFFF;
+      --md-sys-color-surface-container-low: #F3F6F6;
+      --md-sys-color-surface-container: #F7FAFA;
+      --md-sys-color-surface-container-high: #EDEFEF;
+      --md-sys-color-surface-container-highest: #E2E4E4;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: var(--md-sys-color-on-surface);
+      margin: 0;
+      padding: 0;
+      background-color: var(--md-sys-color-background); /* Surface-variant에서 Background로 변경 */
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .email-container {
+      max-width: 680px;
+      margin: 0 auto;
+      background-color: var(--md-sys-color-surface);
+      border-radius: 12px; /* 컨테이너 전체에 약간의 둥근 모서리 추가 */
+      overflow: hidden; /* 둥근 모서리 내부 요소가 튀어나가지 않도록 함 */
+    }
+
+    /* Material Design 3 Elevation */
+    .elevation-1 {
+      box-shadow: 0px 1px 2px 0px rgba(var(--md-sys-color-shadow), 0.3), 0px 1px 3px 1px rgba(var(--md-sys-color-shadow), 0.15);
+    }
+
+    .elevation-2 {
+      box-shadow: 0px 1px 2px 0px rgba(var(--md-sys-color-shadow), 0.3), 0px 2px 6px 2px rgba(var(--md-sys-color-shadow), 0.15);
+    }
+
+    /* 헤더 - Material Design 3 */
+    .header {
+      background: linear-gradient(135deg, var(--md-sys-color-primary) 0%, var(--md-sys-color-secondary) 100%);
+      color: var(--md-sys-color-on-primary);
+      padding: 48px 24px 40px;
+      text-align: center;
+    }
+
+    .header h1 {
+      margin: 0 0 12px 0;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      line-height: 1.3;
+    }
+
+    .header-info {
+      font-size: 16px;
+      font-weight: 400;
+      opacity: 0.95;
+      letter-spacing: 0.15px;
+    }
+
+    /* 키워드 네비게이션 - Material Design 3 Filter Chips */
+    .keyword-nav {
+      background-color: var(--md-sys-color-surface-container-low);
+      padding: 24px;
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    }
+
+    .keyword-nav-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--md-sys-color-on-surface-variant);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .keyword-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .keyword-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 18px;
+      background-color: var(--md-sys-color-surface-variant);
+      color: var(--md-sys-color-on-surface-variant);
+      border-radius: 24px; /* MD3 Filter Chip */
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 0.1px;
+      border: 1px solid var(--md-sys-color-outline-variant); /* MD3 Filter Chip Style */
+      cursor: default; /* Filter Chip은 일반적으로 선택 가능한 상태가 아닌 태그 역할 */
+    }
+
+    .keyword-badge:hover {
+        background-color: var(--md-sys-color-surface-container-high);
+        border-color: var(--md-sys-color-outline);
+    }
+
+    /* 메인 컨텐츠 */
+    .content {
+      padding: 24px;
+    }
+
+    /* 키워드 섹션 */
+    .keyword-section {
+      margin-bottom: 48px;
+    }
+
+    .keyword-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .keyword-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between; /* 카운트를 오른쪽 끝으로 정렬 */
+      gap: 12px;
+      margin-bottom: 24px;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, var(--md-sys-color-primary) 0%, var(--md-sys-color-secondary) 100%);
+      border-radius: 16px;
+    }
+
+    .keyword-title {
+      flex: 1; /* 제목이 가능한 공간을 차지 */
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--md-sys-color-on-primary);
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+
+    .keyword-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      height: 36px;
+      padding: 0 12px;
+      background-color: var(--md-sys-color-on-primary);
+      color: var(--md-sys-color-primary);
+      border-radius: 20px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    /* 뉴스 카드 - Material Design 3 Cards */
+    .news-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .news-card {
+      background-color: var(--md-sys-color-surface-container-lowest);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: 16px; /* MD3 Card */
+      padding: 24px;
+      transition: box-shadow 0.25s ease; /* Transform 제거 후 Shadow만 */
+    }
+
+    .news-card:hover {
+      box-shadow: 0px 4px 8px 3px rgba(var(--md-sys-color-shadow), 0.15), 0px 2px 4px 2px rgba(var(--md-sys-color-shadow), 0.15); /* Elevation 3 */
+      border-color: var(--md-sys-color-outline); /* 호버 시 테두리 강조 */
+    }
+
+    /* prefers-reduced-motion: 사용자가 애니메이션을 선호하지 않을 경우 */
+    @media (prefers-reduced-motion: reduce) {
+        .news-card {
+            transition: none;
+        }
+        .news-card:hover {
+            /* transform 효과 제거 */
+        }
+    }
+
+    .news-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--md-sys-color-on-surface);
+      line-height: 1.4;
+      margin: 0 0 16px 0;
+      letter-spacing: -0.3px;
+    }
+
+    .news-title a {
+      color: inherit; /* 부모(.news-title) 색상 상속 */
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .news-title a:hover {
+      color: var(--md-sys-color-primary);
+    }
+
+    .news-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 14px;
+      color: var(--md-sys-color-on-surface-variant);
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    }
+
+    .news-meta-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+      letter-spacing: 0.1px;
+      position: relative;
+      padding-left: 10px; /* 구분선을 위한 공간 */
+    }
+
+    .news-meta-item:not(:first-child)::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1px;
+        height: 16px;
+        background-color: var(--md-sys-color-outline-variant);
+    }
+
+    .news-summary {
+      color: var(--md-sys-color-on-surface);
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.7;
+      margin-bottom: 20px;
+      padding: 20px;
+      background-color: var(--md-sys-color-surface-container-low);
+      border-radius: 12px;
+      border-left: 4px solid var(--md-sys-color-primary);
+      letter-spacing: 0.15px;
+    }
+
+    .news-keypoints {
+      margin-top: 20px;
+      padding: 20px;
+      background-color: var(--md-sys-color-error-container); /* MD3 Error Container Color */
+      border-radius: 12px;
+      border-left: 4px solid var(--md-sys-color-error); /* MD3 Error Color */
+    }
+
+    .keypoint-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--md-sys-color-on-error-container); /* MD3 On Error Container Color */
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .keypoint-list {
+      margin: 0;
+      padding-left: 24px;
+      color: var(--md-sys-color-on-error-container); /* MD3 On Error Container Color */
+      font-size: 15px;
+      line-height: 1.7;
+      font-weight: 400;
+    }
+
+    .keypoint-list li {
+      margin-bottom: 8px;
+      letter-spacing: 0.15px;
+    }
+
+    .keypoint-list li:last-child {
+      margin-bottom: 0;
+    }
+
+    /* 푸터 - Material Design 3 */
+    .footer {
+      padding: 40px 24px;
+      background-color: var(--md-sys-color-surface-container-low);
+      text-align: center;
+      color: var(--md-sys-color-on-surface-variant);
+      font-size: 14px;
+      border-top: 1px solid var(--md-sys-color-outline-variant);
+    }
+
+    .footer-brand {
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--md-sys-color-on-surface);
+      margin-bottom: 12px;
+      letter-spacing: 0.1px;
+    }
+
+    .footer-text {
+      margin: 12px 0;
+      line-height: 1.7;
+      letter-spacing: 0.15px;
+    }
+
+    .footer a {
+      color: var(--md-sys-color-primary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    .footer a:hover {
+      color: var(--md-sys-color-secondary);
+      text-decoration: underline;
+    }
+
+    .footer-divider {
+      width: 64px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--md-sys-color-primary) 0%, var(--md-sys-color-secondary) 100%);
+      margin: 24px auto;
+      border-radius: 2px;
+    }
+
+    /* 반응형 모바일 최적화 */
+    @media (max-width: 600px) {
+      .header {
+        padding: 36px 20px 32px;
+      }
+
+      .header h1 {
+        font-size: 26px;
+      }
+
+      .header-info {
+        font-size: 14px;
+      }
+
+      .content {
+        padding: 16px;
+      }
+
+      .keyword-nav {
+        padding: 20px 16px;
+      }
+
+      .keyword-badges {
+        gap: 8px;
+      }
+
+      .keyword-badge {
+        padding: 8px 14px;
+        font-size: 13px;
+      }
+
+      .keyword-section {
+        margin-bottom: 36px;
+      }
+
+      .keyword-header {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        border-radius: 12px;
+      }
+
+      .keyword-title {
+        font-size: 20px;
+      }
+
+      .keyword-count {
+        min-width: 32px;
+        height: 32px;
+        padding: 0 10px;
+        font-size: 14px;
+      }
+
+      .news-list {
+        gap: 16px;
+      }
+
+      .news-card {
+        padding: 20px;
+        border-radius: 12px;
+      }
+
+      .news-title {
+        font-size: 18px;
+        margin-bottom: 14px;
+      }
+
+      .news-meta {
+        gap: 12px;
+        font-size: 13px;
+        margin-bottom: 16px;
+        padding-bottom: 14px;
+      }
+
+      .news-meta-item {
+          padding-left: 8px; /* 작은 화면에서 간격 조정 */
+      }
+
+      .news-meta-item:not(:first-child)::before {
+          height: 14px; /* 작은 화면에서 구분선 높이 조정 */
+      }
+
+      .news-summary {
+        font-size: 15px;
+        padding: 16px;
+        margin-bottom: 16px;
+        border-radius: 10px;
+      }
+
+      .news-keypoints {
+        padding: 16px;
+        margin-top: 16px;
+        border-radius: 10px;
+      }
+
+      .keypoint-title {
+        font-size: 12px;
+        margin-bottom: 10px;
+      }
+
+      .keypoint-list {
+        padding-left: 20px;
+        font-size: 14px;
+      }
+
+      .keypoint-list li {
+        margin-bottom: 6px;
+      }
+
+      .footer {
+        padding: 32px 20px;
+      }
+
+      .footer-brand {
+        font-size: 16px;
+      }
+
+      .footer-text {
+        font-size: 13px;
+      }
+    }
+
+    /* 초소형 모바일 (320px~) */
+    @media (max-width: 400px) {
+      .header h1 {
+        font-size: 22px;
+      }
+
+      .header-info {
+        font-size: 13px;
+      }
+
+      .keyword-title {
+        font-size: 18px;
+      }
+
+      .news-title {
+        font-size: 16px;
+      }
+
+      .news-summary {
+        font-size: 14px;
+        padding: 14px;
+      }
+
+      .keypoint-list {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <!-- 헤더 -->
+    <div class="header">
+      <h1>📰 오늘의 뉴스 다이제스트</h1>
+      <div class="header-info">
+        3개 키워드 · 8개 기사 · AI 요약 제공
+      </div>
+    </div>
+
+    <!-- 키워드 네비게이션 -->
+    <div class="keyword-nav">
+      <div class="keyword-nav-title">구독 중인 키워드</div>
+      <div class="keyword-badges">
+        <span class="keyword-badge">인공지능 (3)</span>
+        <span class="keyword-badge">부동산 (3)</span>
+        <span class="keyword-badge">경제 (2)</span>
+      </div>
+    </div>
+
+    <!-- 메인 컨텐츠 -->
+    <div class="content">
+
+      <!-- 키워드 섹션: 인공지능 -->
+      <div class="keyword-section">
+        <div class="keyword-header">
+          <h2 class="keyword-title">인공지능</h2>
+          <span class="keyword-count">3</span>
+        </div>
+
+        <div class="news-list">
+          <!-- 뉴스 카드 1 -->
+          <div class="news-card elevation-1">
+            <h3 class="news-title">
+              <a href="#" target="_blank">ChatGPT, 한국어 성능 대폭 개선...글로벌 AI 경쟁 가속화</a>
+            </h3>
+
+            <div class="news-meta">
+              <span class="news-meta-item">📌 테크뉴스</span>
+              <span class="news-meta-item">🕐 2025년 1월 15일 오전 9:30</span>
+            </div>
+
+            <div class="news-summary">
+              OpenAI의 ChatGPT가 최신 업데이트를 통해 한국어 처리 능력을 크게 향상시켰습니다. 이번 개선으로 한국어 문맥 이해와 자연스러운 대화가 가능해지면서 국내 AI 시장에서의 경쟁력이 한층 강화될 전망입니다. 특히 비즈니스 환경에서의 활용도가 높아질 것으로 예상됩니다.
+            </div>
+
+            <div class="news-keypoints">
+              <div class="keypoint-title">💡 핵심 포인트</div>
+              <ul class="keypoint-list">
+                <li>한국어 처리 성능 40% 향상</li>
+                <li>국내 기업의 AI 도입 가속화 예상</li>
+                <li>네이버, 카카오 등 국내 기업과 경쟁 심화</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 뉴스 카드 2 -->
+          <div class="news-card elevation-1">
+            <h3 class="news-title">
+              <a href="#" target="_blank">구글, 차세대 AI 칩 개발 완료...성능 10배 향상</a>
+            </h3>
+
+            <div class="news-meta">
+              <span class="news-meta-item">📌 IT조선</span>
+              <span class="news-meta-item">🕐 2025년 1월 15일 오전 8:15</span>
+            </div>
+
+            <div class="news-summary">
+              구글이 자체 개발한 차세대 AI 반도체 칩의 성능이 기존 대비 10배 향상된 것으로 나타났습니다. 이 칩은 대규모 언어모델 학습 시간을 대폭 단축시키고 에너지 효율성도 개선했습니다. 업계에서는 이를 통해 AI 서비스 비용이 크게 낮아질 것으로 전망하고 있습니다.
+            </div>
+
+            <div class="news-keypoints">
+              <div class="keypoint-title">💡 핵심 포인트</div>
+              <ul class="keypoint-list">
+                <li>자체 AI 칩으로 엔비디아 의존도 감소</li>
+                <li>학습 속도 10배, 전력 소비 30% 절감</li>
+                <li>2025년 하반기부터 상용화 예정</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 뉴스 카드 3 -->
+          <div class="news-card elevation-1">
+            <h3 class="news-title">
+              <a href="#" target="_blank">AI 규제법안 국회 통과...기업들 대응책 마련 분주</a>
+            </h3>
+
+            <div class="news-meta">
+              <span class="news-meta-item">📌 연합뉴스</span>
+              <span class="news-meta-item">🕐 2025년 1월 14일 오후 11:20</span>
+            </div>
+
+            <div class="news-summary">
+              인공지능 윤리와 안전성을 강화하는 AI 규제 법안이 국회를 통과했습니다. 법안은 AI 개발 및 활용 시 투명성 확보와 개인정보 보호를 의무화하고 있으며, 위반 시 최대 5억원의 과태료가 부과됩니다. IT 기업들은 법 시행에 대비해 내부 시스템 정비에 나서고 있습니다.
+            </div>
+
+            <div class="news-keypoints">
+              <div class="keypoint-title">💡 핵심 포인트</div>
+              <ul class="keypoint-list">
+                <li>AI 서비스 투명성 및 설명 가능성 의무화</li>
+                <li>2025년 7월 1일부터 시행 예정</li>
+                <li>중소기업에는 6개월 유예기간 부여</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 키워드 섹션: 부동산 -->
+      <div class="keyword-section">
+        <div class="keyword-header">
+          <h2 class="keyword-title">부동산</h2>
+          <span class="keyword-count">3</span>
+        </div>
+
+        <div class="news-list">
+          <div class="news-card elevation-1">
+            <h3 class="news-title">
+              <a href="#" target="_blank">서울 아파트 매매가 3개월 연속 하락...강남 4구도 약세</a>
+            </h3>
+
+            <div class="news-meta">
+              <span class="news-meta-item">📌 매일경제</span>
+              <span class="news-meta-item">🕐 2025년 1월 15일 오전 7:00</span>
+            </div>
+
+            <div class="news-summary">
+              서울 아파트 매매가가 3개월 연속 하락세를 보이고 있습니다. 특히 강남 4구(강남·서초·송파·강동)의 하락폭이 두드러지며, 전문가들은 고금리 장기화와 경기 침체 우려가 영향을 미친 것으로 분석하고 있습니다.
+            </div>
+
+            <div class="news-keypoints">
+              <div class="keypoint-title">💡 핵심 포인트</div>
+              <ul class="keypoint-list">
+                <li>서울 평균 매매가 전월 대비 0.8% 하락</li>
+                <li>강남 4구 하락률 1.2%로 가장 높아</li>
+                <li>전세가율 상승으로 갭투자 수요 감소</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="news-card elevation-1">
+            <h3 class="news-title">
+              <a href="#" target="_blank">정부, 주택 공급 확대 방안 발표...신규 택지 10곳 선정</a>
+            </h3>
+
+            <div class="news-meta">
+              <span class="news-meta-item">📌 한국경제</span>
+              <span class="news-meta-item">🕐 2025년 1월 14일 오후 3:45</span>
+            </div>
+
+            <div class="news-summary">
+              정부가 주택 공급 부족 문제를 해결하기 위해 수도권과 지방 대도시에 신규 택지 10곳을 선정했습니다. 향후 5년간 15만 호 이상의 주택이 공급될 예정이며, 청년과 신혼부부를 위한 공공주택 비중을 30% 이상으로 확대할 계획입니다.
+            </div>
+
+            <div class="news-keypoints">
+              <div class="keypoint-title">💡 핵심 포인트</div>
+              <ul class="keypoint-list">
+                <li>수도권 7곳, 지방 3곳 총 10개 지역 선정</li>
+                <li>5년간 15만 호 공급 목표</li>
+                <li>공공주택 비중 30% 이상 확보</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="news-card elevation-1">
+            <h3 class="news-title">
+              <a href="#" target="_blank">전세사기 피해자 지원법 시행...보증금 최대 90% 보장</a>
+            </h3>
+
+            <div class="news-meta">
+              <span class="news-meta-item">📌 법률신문</span>
+              <span class="news-meta-item">🕐 2025년 1월 14일 오후 1:30</span>
+            </div>
+
+            <div class="news-summary">
+              전세사기 피해자를 보호하기 위한 특별법이 본격 시행됩니다. 피해자는 보증금의 최대 90%까지 지원받을 수 있으며, 법원의 신속한 배당 절차를 통해 피해 회복 기간이 대폭 단축될 전망입니다.
+            </div>
+
+            <div class="news-keypoints">
+              <div class="keypoint-title">💡 핵심 포인트</div>
+              <ul class="keypoint-list">
+                <li>보증금 최대 90% 지원 가능</li>
+                <li>신속 배당 절차로 회복 기간 단축</li>
+                <li>악질 임대인 처벌 강화</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 키워드 섹션: 경제 -->
+      <div class="keyword-section">
+        <div class="keyword-header">
+          <h2 class="keyword-title">경제</h2>
+          <span class="keyword-count">2</span>
+        </div>
+
+        <div class="news-list">
+          <div class="news-card elevation-1">
+            <h3 class="news-title">
+              <a href="#" target="_blank">한국은행, 기준금리 동결...경기 회복 신호 주시</a>
+            </h3>
+
+            <div class="news-meta">
+              <span class="news-meta-item">📌 조선비즈</span>
+              <span class="news-meta-item">🕐 2025년 1월 15일 오전 10:00</span>
+            </div>
+
+            <div class="news-summary">
+              한국은행이 금융통화위원회를 열고 기준금리를 연 3.50%로 동결했습니다. 물가 안정세와 경기 회복 신호를 고려한 결정으로, 향후 금리 인하 시기는 경제 지표를 면밀히 관찰하며 판단할 것으로 보입니다.
+            </div>
+
+            <div class="news-keypoints">
+              <div class="keypoint-title">💡 핵심 포인트</div>
+              <ul class="keypoint-list">
+                <li>기준금리 연 3.50% 동결 결정</li>
+                <li>물가상승률 2.3%로 목표 범위 근접</li>
+                <li>하반기 금리 인하 가능성 시사</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="news-card elevation-1">
+            <h3 class="news-title">
+              <a href="#" target="_blank">반도체 수출 호조...12월 무역수지 80억 달러 흑자</a>
+            </h3>
+
+            <div class="news-meta">
+              <span class="news-meta-item">📌 서울경제</span>
+              <span class="news-meta-item">🕐 2025년 1월 14일 오후 5:20</span>
+            </div>
+
+            <div class="news-summary">
+              12월 무역수지가 80억 달러 흑자를 기록하며 3개월 연속 흑자 행진을 이어갔습니다. 반도체와 석유화학 제품의 수출이 호조를 보였으며, 특히 AI 관련 고성능 반도체 수요 증가가 주요 요인으로 꼽힙니다.
+            </div>
+
+            <div class="news-keypoints">
+              <div class="keypoint-title">💡 핵심 포인트</div>
+              <ul class="keypoint-list">
+                <li>12월 무역수지 80억 달러 흑자</li>
+                <li>반도체 수출 전년 대비 25% 증가</li>
+                <li>3개월 연속 무역수지 흑자 달성</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 푸터 -->
+    <div class="footer">
+      <div class="footer-brand">News Aggregator</div>
+      <div class="footer-divider"></div>
+      <p class="footer-text">
+        구독 키워드를 변경하거나 이메일 설정을 조정하려면<br>
+        <a href="https://news-aggregator-opal-psi.vercel.app/mypage">마이페이지</a>를 방문하세요.
+      </p>
+      <p class="footer-text" style="margin-top: 16px; font-size: 12px; opacity: 0.8;">
+        매일 선택한 시간에 맞춤형 뉴스를 받아보세요
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+
