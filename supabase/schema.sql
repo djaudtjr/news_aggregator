@@ -165,18 +165,14 @@ CREATE TABLE IF NOT EXISTS search_keyword_analytics (
   -- 검색 키워드
   keyword TEXT NOT NULL,
 
-  -- 조회수 (해당 사용자가 이 키워드로 검색한 횟수)
+  -- 검색 횟수 (1시간 내 동일 키워드 검색 시 증가)
   search_count INTEGER DEFAULT 1 NOT NULL,
 
-  -- 키워드 출처 (user_input: 사용자 직접 입력, ai_extracted: AI가 추출한 키워드)
-  keyword_source TEXT NOT NULL DEFAULT 'user_input' CHECK (keyword_source IN ('user_input', 'ai_extracted')),
-
   -- 타임스탬프
+  -- created_at: 키워드 최초 등록 일시 (1시간 기준 시작 시각)
+  -- last_searched_at: 마지막 검색 일시 (업데이트될 때마다 갱신)
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
-  last_searched_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
-
-  -- 제약 조건: user_id + keyword + keyword_source 조합은 유일해야 함
-  CONSTRAINT unique_user_keyword_source UNIQUE (user_id, keyword, keyword_source)
+  last_searched_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
 -- 인덱스 생성
@@ -192,8 +188,12 @@ CREATE INDEX IF NOT EXISTS idx_search_keyword_analytics_last_searched
 CREATE INDEX IF NOT EXISTS idx_search_keyword_analytics_search_count
   ON search_keyword_analytics(search_count DESC);
 
-CREATE INDEX IF NOT EXISTS idx_search_keyword_analytics_keyword_source
-  ON search_keyword_analytics(keyword_source);
+-- created_at 기준으로 1시간 내 키워드를 빠르게 조회하기 위한 인덱스
+CREATE INDEX IF NOT EXISTS idx_search_keyword_analytics_user_created
+  ON search_keyword_analytics(user_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_search_keyword_analytics_created_at
+  ON search_keyword_analytics(created_at DESC);
 
 -- last_searched_at 자동 업데이트 트리거
 CREATE OR REPLACE FUNCTION update_last_searched_at_column()
@@ -229,12 +229,12 @@ CREATE POLICY "Enable delete for users based on user_id" ON search_keyword_analy
   FOR DELETE USING (auth.uid()::text = user_id);
 
 -- 설명
-COMMENT ON TABLE search_keyword_analytics IS '사용자별 검색 키워드 조회 통계';
+COMMENT ON TABLE search_keyword_analytics IS '검색 키워드 통계 (created_at 기준 1시간 단위 그룹핑, 인기검색어 집계용)';
 COMMENT ON COLUMN search_keyword_analytics.user_id IS '사용자 UID (Supabase Auth), 비로그인은 Anonymous';
 COMMENT ON COLUMN search_keyword_analytics.keyword IS '검색한 키워드';
-COMMENT ON COLUMN search_keyword_analytics.search_count IS '해당 사용자가 이 키워드로 검색한 총 횟수';
-COMMENT ON COLUMN search_keyword_analytics.keyword_source IS '키워드 출처 (user_input: 사용자 직접 입력, ai_extracted: AI가 추출한 키워드)';
-COMMENT ON COLUMN search_keyword_analytics.last_searched_at IS '마지막 검색 일시';
+COMMENT ON COLUMN search_keyword_analytics.search_count IS '검색 횟수 (1시간 내 동일 키워드 검색 시 증가)';
+COMMENT ON COLUMN search_keyword_analytics.created_at IS '키워드 최초 등록 일시 (1시간 기준 시작 시각)';
+COMMENT ON COLUMN search_keyword_analytics.last_searched_at IS '마지막 검색 일시 (업데이트될 때마다 갱신)';
 
 
 -- ============================================================================

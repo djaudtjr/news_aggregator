@@ -14,13 +14,14 @@ function normalizeKeywordForGrouping(keyword: string): string {
 
 /**
  * 특정 기간의 검색어 데이터 조회
+ * - created_at 기준으로 조회 (키워드 등록 일시)
+ * - 정규화된 키워드로 그룹핑하여 중복 제거
  */
 async function fetchKeywordsForTimeRange(cutoffDate: Date, limit: number) {
   const { data, error } = await supabase
     .from("search_keyword_analytics")
     .select("keyword, search_count")
-    .eq("keyword_source", "user_input")
-    .gte("last_searched_at", cutoffDate.toISOString())
+    .gte("created_at", cutoffDate.toISOString())
 
   if (error) {
     throw error
@@ -83,9 +84,8 @@ export async function GET(request: NextRequest) {
       const { data, error } = await supabase
         .from("search_keyword_analytics")
         .select("keyword, search_count")
-        .eq("keyword_source", "user_input")
-        .gte("last_searched_at", startDate.toISOString())
-        .lte("last_searched_at", endDate.toISOString())
+        .gte("created_at", startDate.toISOString())
+        .lte("created_at", endDate.toISOString())
 
       if (error) {
         console.error("[Trending] Database error:", error)
