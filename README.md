@@ -25,16 +25,27 @@ A modern, AI-powered news aggregation platform that collects, categorizes, and s
 ### 🔍 Advanced Search & Filtering
 - **Real-time Search**: Search across all news sources
 - **Bilingual Support**: Korean language detection (Papago API integration)
-- **Region Filtering**: Filter by domestic/international news
+- **Region Filtering**: Filter by domestic/international news (전체/국내/해외)
 - **Category Filtering**: World, Politics, Business, Technology, Science, Health, Sports, Entertainment
-- **Time Range**: Filter news by recency (1-48 hours)
+- **Time Range**: Filter news by recency (1 hour to 30 days)
+- **Spell Check**: Automatic typo correction using Naver Papago API
 
 ### 🎨 Modern UI/UX
 - **Dark/Light Mode**: Full theme support with next-themes
 - **Responsive Design**: Mobile-first design with Tailwind CSS
-- **Smooth Animations**: Powered by tailwindcss-animate
+- **Smooth Animations**: Powered by tailwindcss-animate with cubic-bezier easing
 - **Image Fallbacks**: Automatic retry and fallback to source logos
 - **Bulk Actions**: Select multiple articles for batch operations
+- **Recent Articles Sidebar**: Collapsible sidebar with smooth animations
+  - Toggle expand/collapse with icon button
+  - Animated transitions (width, opacity, staggered card appearance)
+  - Displays up to 10 recent articles with thumbnails
+- **News Statistics Box**: Fixed position box showing total news count and pagination
+  - Displays current page and total pages (e.g., "Page 1 / 11")
+  - Aligned with news cards for consistent layout
+- **Layout Stability**: Fixed scrollbar position to prevent layout shifts
+  - No content movement when opening dropdown menus
+  - Forced scrollbar visibility for consistent viewport width
 
 ### 📊 Smart Features
 - **Unique Article IDs**: URL-based hashing for consistent identification

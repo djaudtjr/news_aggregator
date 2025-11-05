@@ -35,19 +35,26 @@ news-aggregator/
 │   ├── auth/                   # 인증 관련 컴포넌트
 │   │   └── login-modal.tsx
 │   ├── ui/                     # shadcn/ui 기본 컴포넌트
+│   ├── subscription/           # 구독 관련 컴포넌트
+│   │   └── hero-subscribe-banner.tsx
 │   ├── layout-switcher.tsx     # 레이아웃 전환
 │   ├── news-card.tsx           # 뉴스 카드 (그리드)
 │   ├── news-card-compact.tsx   # 뉴스 카드 (컴팩트)
 │   ├── news-card-list.tsx      # 뉴스 카드 (리스트)
+│   ├── news-card-skeleton.tsx  # 뉴스 카드 스켈레톤
 │   ├── news-categories.tsx     # 카테고리 필터
 │   ├── news-feed.tsx           # 뉴스 피드
 │   ├── news-header.tsx         # 헤더
-│   ├── recent-articles.tsx     # 최근 본 기사
-│   ├── region-filter.tsx       # 지역 필터
+│   ├── recent-articles-sidebar.tsx  # 최근 본 기사 (접기/펴기)
+│   ├── region-filter.tsx       # 지역 필터 (전체/국내/해외)
 │   ├── theme-provider.tsx      # 테마 제공자
 │   ├── theme-toggle.tsx        # 테마 토글
 │   ├── time-range-filter.tsx   # 시간 범위 필터
-│   └── trending-keywords.tsx   # 인기 검색어
+│   ├── trending-keywords.tsx   # 인기 검색어
+│   ├── trending-keywords-compact.tsx  # 인기 검색어 (컴팩트)
+│   ├── pagination.tsx          # 페이지네이션
+│   ├── empty-state.tsx         # 빈 상태 컴포넌트
+│   └── footer.tsx              # 푸터
 ├── hooks/                      # Custom React Hooks
 │   ├── useArticleSummary.ts    # 기사 요약 훅
 │   ├── useAuth.ts              # 인증 훅
@@ -83,14 +90,18 @@ news-aggregator/
 
 #### app/page.tsx
 - **역할**: 메인 홈페이지 - 뉴스 애그리게이터 UI
-- **주요 컴포넌트**: NewsHeader, NewsFeed, NewsCategories, RegionFilter, TimeRangeFilter, LayoutSwitcher, TrendingKeywords, RecentArticles
+- **주요 컴포넌트**: NewsHeader, NewsFeed, NewsCategories, RegionFilter, TimeRangeFilter, LayoutSwitcher, TrendingKeywords, RecentArticlesSidebar
 - **상태 관리**:
   - useNewsFilters: 카테고리, 지역, 검색어, 시간 범위
   - useLayoutMode: 그리드/리스트/컴팩트 레이아웃
   - availableCategories: 검색 모드에서 사용 가능한 카테고리
+  - totalNewsCount: 총 뉴스 개수
+  - currentPage, totalPages: 페이지 정보
 - **특징**:
   - 사이드바에 인기 검색어 및 최근 본 기사 표시
   - 검색 모드에서 카테고리 필터 동적 활성화/비활성화
+  - 고정 위치 뉴스 통계 박스 (총 뉴스, 페이지 정보)
+  - 레이아웃 시프트 방지 CSS (scrollbar, padding, overflow 제어)
 
 #### app/mypage/page.tsx
 - **역할**: 사용자 마이페이지
@@ -184,6 +195,11 @@ news-aggregator/
   - 카테고리/지역/시간 범위 필터링
   - 레이아웃 모드별 렌더링 (Grid/List/Compact)
   - 사용 가능한 카테고리 계산 및 전달
+  - 페이지네이션 (3x3 그리드, 페이지당 9개)
+  - 콜백을 통한 상위 컴포넌트 알림:
+    - onTotalCountChange: 총 뉴스 개수
+    - onPageChange: 현재 페이지
+    - onTotalPagesChange: 총 페이지 수
 
 #### components/news-card.tsx (Grid)
 - **역할**: 뉴스 카드 (그리드 레이아웃)
@@ -215,13 +231,18 @@ news-aggregator/
   - 순위 및 검색 횟수 표시
   - 클릭 시 해당 키워드로 검색
 
-#### components/recent-articles.tsx
-- **역할**: 최근 본 기사 표시
-- **저장소**: 세션 스토리지 (최대 5개)
+#### components/recent-articles-sidebar.tsx
+- **역할**: 최근 본 기사 표시 (접고 펴기 가능)
+- **저장소**: 세션 스토리지 (최대 10개)
 - **주요 기능**:
   - 기사 썸네일 및 제목 표시
   - 상대적 시간 표시 (예: 5분 전)
   - 개별 삭제 및 전체 삭제
+  - 접기/펴기 토글 버튼 (ChevronRight/ChevronDown 아이콘)
+  - 애니메이션 효과:
+    - 너비 전환: 200px ↔ 40px (cubic-bezier 이징)
+    - 투명도 전환으로 텍스트 부드럽게 숨김
+    - 카드별 순차 등장 애니메이션 (slideIn keyframes)
 
 #### components/layout-switcher.tsx
 - **역할**: 레이아웃 모드 전환
@@ -416,6 +437,34 @@ app/api/cron/send-daily-digest (GET)
 Resend가 scheduledAt 시간에 자동 발송 (KST 6/12/18시)
 ```
 
+## 🎨 CSS 및 스타일링
+
+### app/globals.css
+- **역할**: 전역 스타일 및 테마 변수 정의
+- **주요 기능**:
+  - CSS 변수로 다크/라이트 테마 색상 정의
+  - Tailwind CSS 통합 (`@import 'tailwindcss'`)
+  - 레이아웃 시프트 방지:
+    ```css
+    html {
+      overflow-y: scroll; /* 스크롤바 항상 표시 */
+    }
+    body {
+      overflow: visible !important;
+      padding-right: 0 !important;
+      margin-right: 0 !important;
+    }
+    /* Radix UI의 동적 스타일 변경 방지 */
+    body[style*="overflow"],
+    body[style*="padding-right"],
+    body[style*="margin-right"] {
+      overflow: visible !important;
+      padding-right: 0 !important;
+      margin-right: 0 !important;
+    }
+    ```
+  - Select/Dialog 열 때 콘텐츠 이동 방지
+
 ## 📊 코드 품질 메트릭
 
 ### ✅ 장점
@@ -424,6 +473,7 @@ Resend가 scheduledAt 시간에 자동 발송 (KST 6/12/18시)
 3. **재사용성**: 커스텀 훅으로 로직 추상화
 4. **확장성**: API 라우트 구조화
 5. **성능**: Supabase 캐싱으로 중복 요청 최소화
+6. **UX 안정성**: 레이아웃 시프트 방지로 일관된 사용자 경험
 
 ### ⚠️ 개선 필요
 1. **API 클라이언트 레이어 부재**: 컴포넌트에서 직접 fetch 호출

@@ -68,7 +68,7 @@ graph TD
     HomePage --> TimeRangeFilter
     HomePage --> LayoutSwitcher
     HomePage --> TrendingKeywords
-    HomePage --> RecentArticles
+    HomePage --> RecentArticlesSidebar
     HomePage --> UseNewsFilters
     HomePage --> UseLayoutMode
 
@@ -148,6 +148,8 @@ graph TD
     LayoutSwitcher --> UIComponents
     LoginModal --> UIComponents
     LoginModal --> SupabaseClient
+    RecentArticlesSidebar --> UseRecentArticles
+    RecentArticlesSidebar --> UIComponents
 
     %% Styling
     style HomePage fill:#f9f,stroke:#333,stroke-width:3px
@@ -340,6 +342,13 @@ NewsCategories/RegionFilter/TimeRangeFilter (필터 UI)
 NewsFeed (필터 적용 + availableCategories 계산)
     ↓
 NewsCard (필터링된 데이터 표시)
+    ↓
+HomePage (콜백을 통한 통계 업데이트)
+    - onTotalCountChange: 총 뉴스 개수
+    - onPageChange: 현재 페이지
+    - onTotalPagesChange: 총 페이지 수
+    ↓
+뉴스 통계 박스에 표시
 ```
 
 ### 8. 레이아웃 모드 흐름
