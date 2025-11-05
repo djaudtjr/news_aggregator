@@ -28,7 +28,10 @@ A modern, AI-powered news aggregation platform that collects, categorizes, and s
 - **Region Filtering**: Filter by domestic/international news (전체/국내/해외)
 - **Category Filtering**: World, Politics, Business, Technology, Science, Health, Sports, Entertainment
 - **Time Range**: Filter news by recency (1 hour to 30 days)
-- **Spell Check**: Automatic typo correction using Naver Papago API
+- **Spell Check**: Automatic typo correction using OpenAI GPT-4o-mini
+  - Detects and corrects Korean and English typos
+  - Context-aware corrections
+  - Displays corrected keyword notification
 
 ### 🎨 Modern UI/UX
 - **Dark/Light Mode**: Full theme support with next-themes

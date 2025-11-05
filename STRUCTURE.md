@@ -149,6 +149,16 @@ news-aggregator/
   - 시간 범위별 인기 검색어 (1시간/24시간/7일)
   - 검색 횟수 및 순위 반환
 
+#### app/api/spellcheck/route.ts
+- **역할**: 검색어 오타 교정
+- **AI 모델**: OpenAI GPT-4o-mini
+- **주요 기능**:
+  - 한글 및 영문 오타 감지
+  - 문맥 기반 지능형 교정
+  - 띄어쓰기 오류 교정
+  - TYPO/OK 형식으로 결과 반환
+  - 1-2글자 짧은 단어는 신중하게 판단
+
 #### app/api/analytics/link-click/route.ts
 - **역할**: 링크 클릭 추적
 - **데이터 저장**: Supabase (news_summary_analytics)
@@ -364,6 +374,10 @@ User → app/page.tsx → NewsFeed
 ### 2. 검색
 ```
 User → NewsHeader (검색 입력)
+            ↓
+  SpellcheckAPI (OpenAI 오타 교정)
+            ↓
+      교정된 키워드 알림 표시 (있을 경우)
             ↓
   SearchKeywordAPI (키워드 분석 + OpenAI 분리)
             ↓

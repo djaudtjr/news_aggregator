@@ -282,6 +282,10 @@ SummarizeAPI (AI 요약 + Supabase 저장)
 ```
 NewsHeader (검색 입력)
     ↓
+SpellcheckAPI (OpenAI GPT-4o-mini 오타 교정)
+    ↓
+오타 발견 시 교정된 키워드 알림 표시
+    ↓
 SearchKeywordAPI (키워드 분석 + OpenAI 분리 + Supabase 저장)
     ↓
 SearchAPI (Naver News 검색)
