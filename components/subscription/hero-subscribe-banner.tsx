@@ -23,6 +23,9 @@ export function HeroSubscribeBanner() {
 
   if (!isVisible) return null;
 
+  // 로그인된 사용자에게는 배너를 표시하지 않음
+  if (user) return null;
+
   return (
     <>
       <div className="relative overflow-hidden bg-gradient-to-r from-primary/10 via-primary/5 to-background border-y border-border/50">
