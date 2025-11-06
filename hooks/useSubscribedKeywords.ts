@@ -18,13 +18,17 @@ export function useSubscribedKeywords() {
 
   // 키워드 목록 불러오기
   const fetchKeywords = useCallback(async () => {
+    console.log('[useSubscribedKeywords] fetchKeywords called, user:', user?.id)
+
     if (!user) {
+      console.log('[useSubscribedKeywords] No user, setting keywords to empty array')
       setKeywords([])
       return
     }
 
     try {
       setLoading(true)
+      console.log('[useSubscribedKeywords] Fetching keywords for user:', user.id)
       const { data, error } = await supabase
         .from("subscribed_keywords")
         .select("*")
@@ -32,12 +36,13 @@ export function useSubscribedKeywords() {
         .order("created_at", { ascending: false })
 
       if (error) {
-        console.error("Failed to fetch keywords:", error)
+        console.error("[useSubscribedKeywords] Failed to fetch keywords:", error)
       } else {
+        console.log('[useSubscribedKeywords] Fetched keywords:', data)
         setKeywords(data || [])
       }
     } catch (error) {
-      console.error("Failed to fetch keywords:", error)
+      console.error("[useSubscribedKeywords] Failed to fetch keywords:", error)
     } finally {
       setLoading(false)
     }

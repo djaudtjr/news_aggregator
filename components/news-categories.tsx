@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tag } from "lucide-react"
 
@@ -67,84 +66,29 @@ export function NewsCategories({ activeCategory, onCategoryChange, availableCate
   }
 
   return (
-    <>
-      {/* 모바일: 드롭다운 */}
-      <div className="md:hidden">
-          <div className="flex items-center gap-2">
-            <Tag className="h-4 w-4 text-primary shrink-0" />
-            <Select value={activeCategory} onValueChange={onCategoryChange}>
-              <SelectTrigger className="h-9 w-full rounded-lg">
-                <SelectValue placeholder="카테고리 선택">
-                  {activeLabel}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => {
-                  const isAvailable = !availableCategories || availableCategories.has(category.code)
-                  return (
-                    <SelectItem
-                      key={category.code}
-                      value={category.code}
-                      disabled={!isAvailable}
-                    >
-                      {category.label_ko}
-                    </SelectItem>
-                  )
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-      </div>
-
-      {/* 데스크탑: 두 줄로 표시 */}
-      <div className="hidden md:block">
-          <div className="flex items-start gap-3">
-            <div className="flex items-center gap-2 shrink-0 pt-1">
-              <Tag className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold">카테고리</span>
-            </div>
-            <div className="flex-1">
-              {/* 첫째 줄: 전체, 세계, 정치, 비즈니스, 기술 */}
-              <div className="flex gap-2 mb-2">
-                {categories.slice(0, 5).map((category) => {
-                  const isAvailable = !availableCategories || availableCategories.has(category.code)
-
-                  return (
-                    <Button
-                      key={category.code}
-                      variant={activeCategory === category.code ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => onCategoryChange(category.code)}
-                      disabled={!isAvailable}
-                      className="shrink-0 rounded-full h-8 px-4 transition-all duration-200 hover:scale-105 whitespace-nowrap text-sm"
-                    >
-                      {category.label_ko}
-                    </Button>
-                  )
-                })}
-              </div>
-              {/* 둘째 줄: 과학, 건강, 스포츠, 엔터테인먼트 */}
-              <div className="flex gap-2">
-                {categories.slice(5).map((category) => {
-                  const isAvailable = !availableCategories || availableCategories.has(category.code)
-
-                  return (
-                    <Button
-                      key={category.code}
-                      variant={activeCategory === category.code ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => onCategoryChange(category.code)}
-                      disabled={!isAvailable}
-                      className="shrink-0 rounded-full h-8 px-4 transition-all duration-200 hover:scale-105 whitespace-nowrap text-sm"
-                    >
-                      {category.label_ko}
-                    </Button>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
-      </div>
-    </>
+    <div className="flex items-center gap-2">
+      <Tag className="h-4 w-4 text-primary shrink-0" />
+      <Select value={activeCategory} onValueChange={onCategoryChange}>
+        <SelectTrigger className="h-9 w-auto min-w-[120px] rounded-lg">
+          <SelectValue placeholder="카테고리 선택">
+            {activeLabel}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {categories.map((category) => {
+            const isAvailable = !availableCategories || availableCategories.has(category.code)
+            return (
+              <SelectItem
+                key={category.code}
+                value={category.code}
+                disabled={!isAvailable}
+              >
+                {category.label_ko}
+              </SelectItem>
+            )
+          })}
+        </SelectContent>
+      </Select>
+    </div>
   )
 }

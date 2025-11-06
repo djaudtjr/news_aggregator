@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Newspaper, Search } from "lucide-react"
+import { Newspaper, Search, Star } from "lucide-react"
 import { NewsHeader } from "@/components/news-header"
 import { NewsFeed } from "@/components/news-feed"
 import { NewsCategories } from "@/components/news-categories"
@@ -10,8 +10,10 @@ import { RecentArticlesSidebar } from "@/components/recent-articles-sidebar"
 import { HeroSubscribeBanner } from "@/components/subscription/hero-subscribe-banner"
 import { Footer } from "@/components/footer"
 import { useNewsFilters } from "@/hooks/useNewsFilters"
+import { useSubscribedKeywords } from "@/hooks/useSubscribedKeywords"
 import type { NewsCategory, NewsRegion } from "@/types/article"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 
 export default function HomePage() {
   const {
@@ -27,12 +29,23 @@ export default function HomePage() {
     refresh,
   } = useNewsFilters()
 
+  const { keywords, loading: keywordsLoading } = useSubscribedKeywords()
+
   const [availableCategories, setAvailableCategories] = useState<Set<string> | undefined>(undefined)
   const [totalNewsCount, setTotalNewsCount] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(0)
 
+  // 디버깅: 키워드 로딩 상태 확인
+  console.log('[HomePage] Keywords:', keywords)
+  console.log('[HomePage] Keywords loading:', keywordsLoading)
+  console.log('[HomePage] Keywords length:', keywords?.length)
+
   const handleTrendingKeywordClick = (keyword: string) => {
+    setSearchQuery(keyword)
+  }
+
+  const handleSubscribedKeywordClick = (keyword: string) => {
     setSearchQuery(keyword)
   }
 
@@ -71,11 +84,11 @@ export default function HomePage() {
       />
       <HeroSubscribeBanner />
 
-      {/* 데스크톱: 카테고리 + 인기 검색어 - 같은 행에 배치 */}
+      {/* 데스크톱: 카테고리 + 구독 키워드 + 인기 검색어 */}
       <div className="hidden md:block bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-3">
-          <div className="flex items-start gap-6">
-            {/* 왼쪽: 카테고리 */}
+          <div className="flex items-center gap-4">
+            {/* 카테고리 */}
             <div className="shrink-0">
               <NewsCategories
                 activeCategory={activeCategory}
@@ -83,10 +96,36 @@ export default function HomePage() {
                 availableCategories={availableCategories}
               />
             </div>
+
+            {/* 구독 키워드 */}
+            {keywords && keywords.length > 0 && (
+              <>
+                <div className="h-8 w-px bg-muted-foreground/30 shrink-0" />
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-yellow-500" />
+                  <span className="text-sm font-semibold text-muted-foreground">구독:</span>
+                  <div className="flex gap-2">
+                    {keywords.map((kw) => (
+                      <Button
+                        key={kw.id}
+                        variant={searchQuery === kw.keyword ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handleSubscribedKeywordClick(kw.keyword)}
+                        className="h-8 px-3 rounded-full transition-all duration-200 hover:scale-105"
+                      >
+                        {kw.keyword}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* 구분선 */}
-            <div className="h-[60px] w-px bg-muted-foreground/30 shrink-0" />
-            {/* 오른쪽: 인기 검색어 */}
-            <div className="shrink-0">
+            <div className="h-8 w-px bg-muted-foreground/30 shrink-0" />
+
+            {/* 인기 검색어 */}
+            <div className="flex-1 min-w-0">
               <TrendingKeywordsCompact
                 onKeywordClick={handleTrendingKeywordClick}
                 totalNewsCount={totalNewsCount}
@@ -137,6 +176,27 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
+
+          {/* 구독 키워드 (모바일) */}
+          {keywords && keywords.length > 0 && (
+            <div className="flex items-center gap-2 mt-2 pb-1">
+              <Star className="h-3.5 w-3.5 text-yellow-500 shrink-0" />
+              <span className="text-xs font-semibold text-muted-foreground shrink-0">구독:</span>
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide flex-1">
+                {keywords.map((kw) => (
+                  <Button
+                    key={kw.id}
+                    variant={searchQuery === kw.keyword ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleSubscribedKeywordClick(kw.keyword)}
+                    className="h-7 px-2.5 rounded-full text-xs whitespace-nowrap"
+                  >
+                    {kw.keyword}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
