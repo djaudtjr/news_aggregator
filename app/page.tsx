@@ -154,7 +154,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-2 md:px-8 py-4 md:py-6">
+      <main className="max-w-7xl mx-auto px-3 md:px-8 py-4 md:py-6">
         <NewsFeed
           activeCategory={activeCategory}
           searchQuery={searchQuery}

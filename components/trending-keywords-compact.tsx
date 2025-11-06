@@ -122,28 +122,34 @@ export function TrendingKeywordsCompact({ onKeywordClick, totalNewsCount, curren
 
   return (
     <div className="space-y-2 md:min-w-[400px] w-full">
-      {/* 첫째 줄: 제목 + 기간 선택 (왼쪽) | 뉴스 개수 + 페이지 정보 (오른쪽) */}
-      <div className="flex items-center justify-between gap-2">
-        {/* 왼쪽: 인기검색어 + LIVE + 기간 선택 */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold">🔥 인기검색어</span>
-          <Badge variant="destructive" className="h-4 px-1.5 text-[10px] animate-pulse">LIVE</Badge>
-          <Clock className="h-3.5 w-3.5 text-muted-foreground ml-1" />
-          <span className="text-xs text-muted-foreground">기간:</span>
-          {(["1h", "24h", "7d"] as const).map((range) => (
-            <Button
-              key={range}
-              variant={timeRange === range ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setTimeRange(range)}
-              className="h-6 px-2 text-xs rounded-full"
-            >
-              {getTimeRangeLabel(range)}
-            </Button>
-          ))}
+      {/* 첫째 줄: 제목 + 기간 선택 + 뉴스 개수 */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          {/* 제목 */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold">🔥 인기검색어</span>
+            <Badge variant="destructive" className="h-4 px-1.5 text-[10px] animate-pulse">LIVE</Badge>
+          </div>
+
+          {/* 기간 선택 */}
+          <div className="flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">기간:</span>
+            {(["1h", "24h", "7d"] as const).map((range) => (
+              <Button
+                key={range}
+                variant={timeRange === range ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setTimeRange(range)}
+                className="h-6 px-2 text-xs rounded-full"
+              >
+                {getTimeRangeLabel(range)}
+              </Button>
+            ))}
+          </div>
         </div>
 
-        {/* 오른쪽: 총 뉴스 개수 + 페이지 정보 */}
+        {/* 총 뉴스 개수 - showNewsInfo가 true일 때만 표시 (한 줄) */}
         {showNewsInfo && totalNewsCount !== undefined && (
           <div className={`flex items-center gap-2 text-xs text-muted-foreground ${isMobile ? 'bg-transparent' : 'bg-muted px-3 py-1 rounded-full'}`}>
             <div className="flex items-center gap-1">

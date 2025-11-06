@@ -21,7 +21,7 @@ interface NewsCardProps {
 }
 
 function NewsCardComponent({ article }: NewsCardProps) {
-  const timeAgo = formatDistanceToNow(new Date(article.pubDate), { addSuffix: true })
+  const [timeAgo, setTimeAgo] = useState<string>("")
   const { user } = useAuth()
   const { summary, keyPoints, isLoading, fromCache, loadingProgress, loadingMessage, generateSummary } = useArticleSummary(article.id)
   const { addRecentArticle } = useRecentArticles()
@@ -31,6 +31,11 @@ function NewsCardComponent({ article }: NewsCardProps) {
   const [isExpanded, setIsExpanded] = useState(false) // 접힘/펼침 상태
   const [isModalOpen, setIsModalOpen] = useState(false) // 모달 열림/닫힘 상태
   const previousSummaryRef = useRef<string | null>(null) // 이전 요약 상태 추적
+
+  // 클라이언트에서만 시간 포맷팅 (hydration 에러 방지)
+  useEffect(() => {
+    setTimeAgo(formatDistanceToNow(new Date(article.pubDate), { addSuffix: true }))
+  }, [article.pubDate])
 
   // 요약이 완료되면 자동으로 Modal 열기
   useEffect(() => {
