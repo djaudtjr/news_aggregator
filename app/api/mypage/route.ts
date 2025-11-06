@@ -33,12 +33,11 @@ export async function GET(request: NextRequest) {
     // 링크 클릭 총 횟수
     const totalLinkClicks = summaryStats?.reduce((sum, stat) => sum + (stat.link_click_count || 0), 0) || 0
 
-    // 2. 검색 키워드 통계 - 전체 검색 횟수 (사용자 직접 입력 키워드만)
+    // 2. 검색 키워드 통계 - 전체 검색 횟수
     const { data: allSearchStats, error: allSearchError } = await supabaseServer
       .from("search_keyword_analytics")
       .select("search_count")
       .eq("user_id", userId)
-      .eq("keyword_source", "user_input")
 
     if (allSearchError) {
       console.error("[MyPage] All search stats error:", allSearchError)
@@ -47,12 +46,11 @@ export async function GET(request: NextRequest) {
     // 총 검색 횟수 계산
     const totalSearches = allSearchStats?.reduce((sum, stat) => sum + (stat.search_count || 0), 0) || 0
 
-    // 최근 검색 키워드 (사용자 직접 입력 키워드만, 페이징은 프론트엔드에서 처리)
+    // 최근 검색 키워드 (페이징은 프론트엔드에서 처리)
     const { data: recentSearchStats, error: recentSearchError } = await supabaseServer
       .from("search_keyword_analytics")
       .select("keyword, search_count, last_searched_at")
       .eq("user_id", userId)
-      .eq("keyword_source", "user_input")
       .order("last_searched_at", { ascending: false })
 
     if (recentSearchError) {
