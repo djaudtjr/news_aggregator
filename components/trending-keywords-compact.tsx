@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Clock, Newspaper } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { supabase } from "@/lib/supabase/client"
 import type { RealtimeChannel } from "@supabase/supabase-js"
 
@@ -127,25 +128,41 @@ export function TrendingKeywordsCompact({ onKeywordClick, totalNewsCount, curren
         <div className="flex items-center gap-3">
           {/* 제목 */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold">🔥 인기검색어</span>
-            <Badge variant="destructive" className="h-4 px-1.5 text-[10px] animate-pulse">LIVE</Badge>
+            <span className="text-sm font-semibold"><span className="hidden md:inline">🔥 </span>인기검색어</span>
+            <Badge variant="destructive" className="hidden md:flex h-4 px-1.5 text-[10px] animate-pulse">LIVE</Badge>
           </div>
 
-          {/* 기간 선택 */}
+          {/* 기간 선택 - 모바일: 드롭다운, 데스크톱: 버튼 */}
           <div className="flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">기간:</span>
-            {(["1h", "24h", "7d"] as const).map((range) => (
-              <Button
-                key={range}
-                variant={timeRange === range ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setTimeRange(range)}
-                className="h-6 px-2 text-xs rounded-full"
-              >
-                {getTimeRangeLabel(range)}
-              </Button>
-            ))}
+
+            {/* 모바일: Select 드롭다운 */}
+            <Select value={timeRange} onValueChange={(value) => setTimeRange(value as "1h" | "24h" | "7d")}>
+              <SelectTrigger className="md:hidden h-6 w-[88px] text-xs rounded-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="1h">{getTimeRangeLabel("1h")}</SelectItem>
+                <SelectItem value="24h">{getTimeRangeLabel("24h")}</SelectItem>
+                <SelectItem value="7d">{getTimeRangeLabel("7d")}</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* 데스크톱: 버튼 */}
+            <div className="hidden md:flex items-center gap-1.5">
+              {(["1h", "24h", "7d"] as const).map((range) => (
+                <Button
+                  key={range}
+                  variant={timeRange === range ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setTimeRange(range)}
+                  className="h-6 px-2 text-xs rounded-full"
+                >
+                  {getTimeRangeLabel(range)}
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
 
