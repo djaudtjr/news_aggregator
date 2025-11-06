@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Newspaper } from "lucide-react"
+import { Newspaper, Search } from "lucide-react"
 import { NewsHeader } from "@/components/news-header"
 import { NewsFeed } from "@/components/news-feed"
 import { NewsCategories } from "@/components/news-categories"
@@ -11,6 +11,7 @@ import { HeroSubscribeBanner } from "@/components/subscription/hero-subscribe-ba
 import { Footer } from "@/components/footer"
 import { useNewsFilters } from "@/hooks/useNewsFilters"
 import type { NewsCategory, NewsRegion } from "@/types/article"
+import { Button } from "@/components/ui/button"
 
 export default function HomePage() {
   const {
@@ -98,10 +99,10 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 모바일: 카테고리 | 총 뉴스/페이지 */}
+      {/* 모바일: 카테고리 | 키워드 입력창 */}
       <div className="md:hidden bg-background border-b">
         <div className="max-w-7xl mx-auto px-4 py-2">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
             {/* 왼쪽: 카테고리 */}
             <div className="shrink-0">
               <NewsCategories
@@ -112,28 +113,43 @@ export default function HomePage() {
             </div>
             {/* 구분선 */}
             <div className="h-[40px] w-px bg-muted-foreground/30 shrink-0" />
-            {/* 오른쪽: 총 뉴스/페이지 */}
-            <div className="flex flex-col items-end gap-0.5">
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Newspaper className="h-3 w-3" />
-                <span className="font-medium">{totalNewsCount.toLocaleString()}</span>
-              </div>
-              {currentPage > 0 && totalPages > 0 && (
-                <div className="text-[10px] text-muted-foreground font-medium">
-                  Page {currentPage}/{totalPages}
-                </div>
-              )}
+            {/* 오른쪽: 키워드 입력창 + 검색 버튼 */}
+            <div className="flex-1 flex items-center gap-2 min-w-0">
+              <input
+                type="text"
+                placeholder="키워드 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setSearchQuery(searchQuery)
+                  }
+                }}
+                className="flex-1 h-8 px-3 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0"
+              />
+              <Button
+                variant="default"
+                size="icon"
+                className="h-8 w-8 shrink-0 rounded-md"
+                onClick={() => setSearchQuery(searchQuery)}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 모바일: 인기 검색어 */}
+      {/* 모바일: 인기 검색어 (총 뉴스/페이지 포함) */}
       <div className="md:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <TrendingKeywordsCompact
             onKeywordClick={handleTrendingKeywordClick}
-            showNewsInfo={false}
+            totalNewsCount={totalNewsCount}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            showNewsInfo={true}
+            isMobile={true}
           />
         </div>
       </div>

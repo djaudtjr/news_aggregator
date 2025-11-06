@@ -31,6 +31,7 @@ interface TrendingKeywordsCompactProps {
   currentPage?: number
   totalPages?: number
   showNewsInfo?: boolean // 총 뉴스 개수 표시 여부
+  isMobile?: boolean // 모바일 레이아웃 여부
 }
 
 async function fetchTrendingKeywords(timeRange: string): Promise<TrendingResponse> {
@@ -42,7 +43,7 @@ async function fetchTrendingKeywords(timeRange: string): Promise<TrendingRespons
   return response.json()
 }
 
-export function TrendingKeywordsCompact({ onKeywordClick, totalNewsCount, currentPage, totalPages, showNewsInfo = true }: TrendingKeywordsCompactProps) {
+export function TrendingKeywordsCompact({ onKeywordClick, totalNewsCount, currentPage, totalPages, showNewsInfo = true, isMobile = false }: TrendingKeywordsCompactProps) {
   const [timeRange, setTimeRange] = useState<"1h" | "24h" | "7d">("24h")
 
   const { data, isLoading: loading, refetch } = useQuery({
@@ -127,12 +128,12 @@ export function TrendingKeywordsCompact({ onKeywordClick, totalNewsCount, curren
           <span className="text-sm font-semibold">🔥 인기검색어</span>
           <Badge variant="destructive" className="h-4 px-1.5 text-[10px] animate-pulse">LIVE</Badge>
         </div>
-        {/* 총 뉴스 개수 - showNewsInfo가 true일 때만 표시 (데스크톱 한 줄) */}
+        {/* 총 뉴스 개수 - showNewsInfo가 true일 때만 표시 (한 줄) */}
         {showNewsInfo && totalNewsCount !== undefined && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
+          <div className={`flex items-center gap-2 text-xs text-muted-foreground ${isMobile ? 'bg-transparent' : 'bg-muted px-3 py-1 rounded-full'}`}>
             <div className="flex items-center gap-1">
               <Newspaper className="h-3 w-3" />
-              <span className="font-medium">총 {totalNewsCount.toLocaleString()}</span>
+              <span className="font-medium">{isMobile ? '' : '총 '}{totalNewsCount.toLocaleString()}</span>
             </div>
             {/* 페이지 정보 - 같은 줄에 */}
             {currentPage !== undefined && totalPages !== undefined && totalPages > 0 && (
@@ -162,8 +163,8 @@ export function TrendingKeywordsCompact({ onKeywordClick, totalNewsCount, curren
         ))}
       </div>
 
-      {/* 셋째 줄: 검색어 목록 */}
-      <div className="flex flex-wrap gap-2">
+      {/* 셋째 줄: 검색어 목록 (모바일에서만 최대 2줄) */}
+      <div className="flex flex-wrap gap-2 overflow-hidden max-h-16 md:max-h-none">
         {loading ? (
           Array.from({ length: 7 }).map((_, i) => (
             <div key={i} className="h-7 w-20 bg-muted animate-pulse rounded-full" />

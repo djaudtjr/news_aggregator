@@ -250,7 +250,8 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
               <span className="hidden sm:inline">로그인</span>
             </Button>
           )}
-          <Sheet>
+          {/* 모바일 메뉴바 - 숨김 처리 */}
+          {/* <Sheet>
             <SheetTrigger asChild className="md:hidden">
               <Button variant="ghost" size="icon" className="rounded-full transition-all duration-300 hover:scale-110">
                 <Menu className="h-5 w-5" />
@@ -277,7 +278,7 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
                 </div>
               </div>
             </SheetContent>
-          </Sheet>
+          </Sheet> */}
         </div>
         </div>
         {/* 오타 교정 안내 메시지 */}
