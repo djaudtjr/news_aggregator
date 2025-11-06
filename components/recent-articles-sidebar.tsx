@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { History, X, Trash2, ChevronRight, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +13,33 @@ interface RecentArticlesSidebarProps {
 export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarProps) {
   const { recentArticles, removeRecentArticle, clearRecentArticles } = useRecentArticles()
   const [isExpanded, setIsExpanded] = useState(true)
+  const [isBannerVisible, setIsBannerVisible] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("heroSubscribeBannerVisible")
+      return stored !== null ? stored === "true" : true
+    }
+    return true
+  })
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("heroSubscribeBannerVisible")
+        setIsBannerVisible(stored !== null ? stored === "true" : true)
+      }
+    }
+
+    // localStorage 변경 감지
+    window.addEventListener("storage", handleStorageChange)
+
+    // 같은 탭에서의 변경도 감지하기 위해 주기적으로 체크
+    const interval = setInterval(handleStorageChange, 100)
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      clearInterval(interval)
+    }
+  }, [])
 
   const handleArticleClick = (article: RecentArticle) => {
     if (onArticleClick) {
@@ -38,10 +65,10 @@ export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarP
       style={{
         position: 'fixed',
         right: '16px',
-        top: '253px',
+        top: isBannerVisible ? '290px' : '205px',
         width: isExpanded ? '200px' : '40px',
         zIndex: 9999,
-        transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
       <div

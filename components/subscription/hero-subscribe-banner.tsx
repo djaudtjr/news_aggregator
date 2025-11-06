@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,10 +8,22 @@ import { LoginModal } from "@/components/auth/login-modal";
 import { useRouter } from "next/navigation";
 
 export function HeroSubscribeBanner() {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("heroSubscribeBannerVisible");
+      return stored !== null ? stored === "true" : true;
+    }
+    return true;
+  });
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("heroSubscribeBannerVisible", String(isVisible));
+    }
+  }, [isVisible]);
 
   const handleSubscribe = () => {
     if (!user) {
