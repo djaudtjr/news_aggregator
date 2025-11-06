@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
 
         if (article && article.length > 0) {
           // 불필요한 태그 제거
-          article.find("script, style, aside, nav, footer, iframe, form, button").remove()
+          article.find("script, style, aside, nav, footer, iframe, form, button, noscript").remove()
           article
             .find("div[class*='ad' i], div[class*='banner' i], div[class*='related' i], div[class*='recommend' i]")
             .remove()
@@ -85,7 +85,17 @@ export async function POST(request: NextRequest) {
           const lines = text
             .split("\n")
             .map((line) => line.trim())
-            .filter((line) => line.length > 10)
+            .filter((line) => {
+              // JavaScript 코드 패턴 필터링
+              if (line.includes("function") || line.includes("var ") || line.includes("const ") || line.includes("let ")) {
+                return false
+              }
+              // GnbContainer, ArticleContainer 등 JavaScript 관련 키워드 필터링
+              if (line.includes("Container") || line.includes("render") || line.includes("initialize")) {
+                return false
+              }
+              return line.length > 10
+            })
 
           const fullText = lines.join("\n")
 
@@ -102,11 +112,25 @@ export async function POST(request: NextRequest) {
 
         // 마지막 시도에서도 실패하면 body 전체에서 추출
         if (!content && attempt === maxRetries) {
+          // script, style, 기타 불필요한 태그 제거
+          $("script, style, aside, nav, footer, iframe, form, button, noscript").remove()
+          $("div[class*='ad' i], div[class*='banner' i], div[class*='related' i], div[class*='recommend' i]").remove()
+
           const bodyText = $("body").text()
           const lines = bodyText
             .split("\n")
             .map((line) => line.trim())
-            .filter((line) => line.length > 20)
+            .filter((line) => {
+              // JavaScript 코드 패턴 필터링
+              if (line.includes("function") || line.includes("var ") || line.includes("const ") || line.includes("let ")) {
+                return false
+              }
+              // GnbContainer, ArticleContainer 등 JavaScript 관련 키워드 필터링
+              if (line.includes("Container") || line.includes("render") || line.includes("initialize")) {
+                return false
+              }
+              return line.length > 20
+            })
           const fullText = lines.join("\n")
 
           if (fullText.length >= 100) {
