@@ -146,9 +146,9 @@ function NewsCardComponent({ article }: NewsCardProps) {
 
   return (
     <>
-    <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] rounded-2xl">
+    <Card className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg md:hover:shadow-2xl hover:scale-[1.01] md:hover:scale-[1.02] rounded-xl md:rounded-2xl">
       {imageUrl && (
-        <div className="relative h-40 w-full overflow-hidden bg-muted">
+        <div className="relative h-28 md:h-40 w-full overflow-hidden bg-muted">
           <Image
             src={imageUrl}
             alt={article.title}
@@ -164,7 +164,7 @@ function NewsCardComponent({ article }: NewsCardProps) {
           <Button
             variant="secondary"
             size="icon"
-            className={`absolute top-2 right-2 backdrop-blur-sm shadow-lg transition-all duration-300 hover:scale-110 rounded-full ${
+            className={`absolute top-1.5 right-1.5 md:top-2 md:right-2 h-7 w-7 md:h-9 md:w-9 backdrop-blur-sm shadow-md md:shadow-lg transition-all duration-300 hover:scale-110 rounded-full ${
               isBookmarked(article.id)
                 ? "bg-yellow-400 hover:bg-yellow-500 text-yellow-900"
                 : "bg-background/80 hover:bg-background/90"
@@ -174,51 +174,51 @@ function NewsCardComponent({ article }: NewsCardProps) {
             title={user ? (isBookmarked(article.id) ? "북마크 해제" : "북마크") : "로그인 필요"}
           >
             {isBookmarked(article.id) ? (
-              <BookmarkCheck className="h-4 w-4 fill-current" />
+              <BookmarkCheck className="h-3 w-3 md:h-4 md:w-4 fill-current" />
             ) : (
-              <Bookmark className="h-4 w-4" />
+              <Bookmark className="h-3 w-3 md:h-4 md:w-4" />
             )}
           </Button>
         </div>
       )}
-      <CardHeader>
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <Badge variant="secondary">{article.source}</Badge>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
+      <CardHeader className="p-3 md:p-6 pb-2 md:pb-4">
+        <div className="flex items-center justify-between gap-2 mb-1.5 md:mb-2">
+          <Badge variant="secondary" className="text-[10px] md:text-xs px-1.5 md:px-2.5 py-0 md:py-0.5">{article.source}</Badge>
+          <div className="flex items-center gap-0.5 md:gap-1 text-[10px] md:text-xs text-muted-foreground">
+            <Clock className="h-2.5 w-2.5 md:h-3 md:w-3" />
             <span>{timeAgo}</span>
           </div>
         </div>
-        <CardTitle className="line-clamp-2 text-balance">{article.title}</CardTitle>
+        <CardTitle className="line-clamp-2 text-balance text-sm md:text-base leading-tight md:leading-normal">{article.title}</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1">
-        <CardDescription className="line-clamp-2">{article.description}</CardDescription>
+      <CardContent className="flex-1 p-3 md:p-6 pt-0 md:pt-0">
+        <CardDescription className="line-clamp-2 text-xs md:text-sm leading-snug md:leading-normal">{article.description}</CardDescription>
         {/* 요약이 완료되고 펼쳐진 상태일 때만 표시 */}
         {summary && isExpanded && (
-          <div className="mt-4 p-4 bg-muted rounded-2xl border shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold">
-                  AI 요약 {fromCache && <span className="text-xs text-muted-foreground">(캐시됨)</span>}
+          <div className="mt-2 md:mt-4 p-2.5 md:p-4 bg-muted rounded-xl md:rounded-2xl border shadow-sm">
+            <div className="flex items-center justify-between mb-1.5 md:mb-2">
+              <div className="flex items-center gap-1.5 md:gap-2">
+                <Sparkles className="h-3 w-3 md:h-4 md:w-4 text-primary" />
+                <span className="text-xs md:text-sm font-semibold">
+                  AI 요약 {fromCache && <span className="text-[10px] md:text-xs text-muted-foreground">(캐시됨)</span>}
                 </span>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsExpanded(false)}
-                className="h-6 w-6 shrink-0"
+                className="h-5 w-5 md:h-6 md:w-6 shrink-0"
               >
-                <ChevronUp className="h-4 w-4" />
+                <ChevronUp className="h-3 w-3 md:h-4 md:w-4" />
               </Button>
             </div>
-            <p className="text-sm text-foreground mb-2">{summary}</p>
+            <p className="text-xs md:text-sm text-foreground mb-1.5 md:mb-2">{summary}</p>
             {keyPoints && keyPoints.length > 0 && (
-              <div className="mt-3 pt-3 border-t">
-                <p className="text-xs font-semibold mb-2">핵심 포인트</p>
-                <ul className="space-y-1">
+              <div className="mt-2 md:mt-3 pt-2 md:pt-3 border-t">
+                <p className="text-[10px] md:text-xs font-semibold mb-1.5 md:mb-2">핵심 포인트</p>
+                <ul className="space-y-0.5 md:space-y-1">
                   {keyPoints.map((point, index) => (
-                    <li key={index} className="text-xs text-foreground flex items-start gap-2">
+                    <li key={index} className="text-[10px] md:text-xs text-foreground flex items-start gap-1.5 md:gap-2">
                       <span className="text-primary">•</span>
                       <span>{point}</span>
                     </li>
@@ -229,7 +229,7 @@ function NewsCardComponent({ article }: NewsCardProps) {
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex flex-col gap-2">
+      <CardFooter className="flex flex-col gap-1.5 md:gap-2 p-3 md:p-6 pt-0 md:pt-0">
         {/* AI 요약 버튼 */}
         {summary ? (
           // 요약 완료 상태: Popup 아이콘 + 요약완료 버튼
@@ -240,10 +240,10 @@ function NewsCardComponent({ article }: NewsCardProps) {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="shrink-0 transition-all duration-300 hover:scale-110 rounded-full shadow-md hover:shadow-lg"
+                  className="h-8 w-8 md:h-10 md:w-10 shrink-0 transition-all duration-300 hover:scale-110 rounded-full shadow-sm md:shadow-md hover:shadow-md md:hover:shadow-lg"
                   onClick={() => setIsModalOpen(true)}
                 >
-                  <Maximize2 className="h-4 w-4" />
+                  <Maximize2 className="h-3 w-3 md:h-4 md:w-4" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80 max-h-96 overflow-y-auto rounded-2xl shadow-2xl">
@@ -274,15 +274,15 @@ function NewsCardComponent({ article }: NewsCardProps) {
             {/* 요약완료 버튼 - 열고닫기 아이콘 */}
             <Button
               variant="outline"
-              className="flex-1 bg-transparent transition-all duration-300 hover:scale-105 rounded-xl"
+              className="flex-1 bg-transparent text-xs md:text-sm h-8 md:h-10 transition-all duration-300 hover:scale-105 rounded-xl"
               onClick={() => setIsExpanded(!isExpanded)}
             >
-              <Sparkles className="mr-2 h-4 w-4" />
+              <Sparkles className="mr-1.5 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
               <span>요약 완료</span>
               {isExpanded ? (
-                <ChevronUp className="ml-2 h-4 w-4" />
+                <ChevronUp className="ml-1.5 md:ml-2 h-3 w-3 md:h-4 md:w-4" />
               ) : (
-                <ChevronDown className="ml-2 h-4 w-4" />
+                <ChevronDown className="ml-1.5 md:ml-2 h-3 w-3 md:h-4 md:w-4" />
               )}
             </Button>
           </div>
@@ -290,15 +290,15 @@ function NewsCardComponent({ article }: NewsCardProps) {
           // 요약 전 또는 로딩 중
           <Button
             variant="outline"
-            className="w-full bg-transparent transition-all duration-300 hover:scale-105 rounded-xl shadow-md hover:shadow-lg"
+            className="w-full bg-transparent text-xs md:text-sm h-8 md:h-10 transition-all duration-300 hover:scale-105 rounded-xl shadow-sm md:shadow-md hover:shadow-md md:hover:shadow-lg"
             onClick={handleSummarize}
             disabled={isLoading}
           >
-            <Sparkles className="mr-2 h-4 w-4" />
+            <Sparkles className="mr-1.5 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
             {isLoading ? (
-              <div className="flex flex-col items-center gap-1 w-full">
-                <span>{loadingMessage}</span>
-                <span className="text-xs text-muted-foreground">{loadingProgress}%</span>
+              <div className="flex flex-col items-center gap-0.5 md:gap-1 w-full">
+                <span className="text-xs md:text-sm">{loadingMessage}</span>
+                <span className="text-[10px] md:text-xs text-muted-foreground">{loadingProgress}%</span>
               </div>
             ) : (
               "AI 요약"
@@ -307,9 +307,9 @@ function NewsCardComponent({ article }: NewsCardProps) {
         )}
 
         {/* Read More 버튼 - 전체 너비 */}
-        <Button variant="default" className="w-full transition-all duration-300 hover:scale-105 rounded-xl shadow-md hover:shadow-lg" asChild>
+        <Button variant="default" className="w-full text-xs md:text-sm h-8 md:h-10 transition-all duration-300 hover:scale-105 rounded-xl shadow-sm md:shadow-md hover:shadow-md md:hover:shadow-lg" asChild>
           <a href={article.link} target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>
-            <ExternalLink className="mr-2 h-4 w-4" />
+            <ExternalLink className="mr-1.5 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
             원문 보기
           </a>
         </Button>

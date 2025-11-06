@@ -1,12 +1,13 @@
 "use client"
 import { useState, useEffect } from "react"
-import { Search, Menu, Radio, RefreshCw, LogIn, LogOut, User } from "lucide-react"
+import { Search, Menu, Radio, RefreshCw, LogIn, LogOut, User, HelpCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { LoginModal } from "@/components/auth/login-modal"
+import { UserGuideModal } from "@/components/user-guide-modal"
 import { useAuth } from "@/hooks/useAuth"
 import Link from "next/link"
 
@@ -24,6 +25,7 @@ interface NewsHeaderProps {
 export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTracked, activeRegion, onRegionChange, timeRange, onTimeRangeChange }: NewsHeaderProps) {
   const [inputValue, setInputValue] = useState(searchQuery)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false)
   const [correctedKeyword, setCorrectedKeyword] = useState<string | null>(null)
   const { user, signOut } = useAuth()
 
@@ -230,6 +232,9 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
           <Button variant="ghost" size="icon" onClick={handleRefresh} title="Refresh news" className="rounded-full transition-all duration-300 hover:scale-110">
             <RefreshCw className="h-5 w-5" />
           </Button>
+          <Button variant="ghost" size="icon" onClick={() => setIsGuideModalOpen(true)} title="사용 가이드" className="rounded-full transition-all duration-300 hover:scale-110">
+            <HelpCircle className="h-5 w-5" />
+          </Button>
           <ThemeToggle />
           {user ? (
             <>
@@ -292,6 +297,7 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
         )}
       </div>
       <LoginModal open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen} />
+      <UserGuideModal open={isGuideModalOpen} onOpenChange={setIsGuideModalOpen} />
     </header>
   )
 }

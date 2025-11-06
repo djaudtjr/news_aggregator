@@ -244,7 +244,7 @@ export function NewsFeed({
           </div>
           <Progress value={loadingProgress} className="h-2" />
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 9 }).map((_, i) => (
             <NewsCardSkeleton key={i} />
           ))}
@@ -280,9 +280,9 @@ export function NewsFeed({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* 뉴스 그리드 (3x3) */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
         {paginatedArticles.map((article) => (
           <NewsCard key={article.id} article={article} />
         ))}
