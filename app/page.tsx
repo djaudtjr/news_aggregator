@@ -70,25 +70,8 @@ export default function HomePage() {
       />
       <HeroSubscribeBanner />
 
-      {/* 모바일: 총 뉴스 개수 & 페이지 정보 - 상단에 표시 */}
-      <div className="md:hidden bg-background border-b">
-        <div className="max-w-7xl mx-auto px-4 py-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Newspaper className="h-3.5 w-3.5" />
-              <span className="font-medium">총 {totalNewsCount.toLocaleString()} 뉴스</span>
-            </div>
-            {currentPage > 0 && totalPages > 0 && (
-              <div className="text-xs text-muted-foreground font-medium">
-                Page {currentPage} / {totalPages}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 카테고리 + 인기 검색어 - 같은 행에 배치 */}
-      <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      {/* 데스크톱: 카테고리 + 인기 검색어 - 같은 행에 배치 */}
+      <div className="hidden md:block bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-3">
           <div className="flex items-start gap-6">
             {/* 왼쪽: 카테고리 */}
@@ -100,9 +83,9 @@ export default function HomePage() {
               />
             </div>
             {/* 구분선 */}
-            <div className="hidden md:block h-[60px] w-px bg-muted-foreground/30 shrink-0" />
-            {/* 오른쪽: 인기 검색어 - 모바일에서는 총 뉴스 정보 숨김 */}
-            <div className="hidden md:block shrink-0">
+            <div className="h-[60px] w-px bg-muted-foreground/30 shrink-0" />
+            {/* 오른쪽: 인기 검색어 */}
+            <div className="shrink-0">
               <TrendingKeywordsCompact
                 onKeywordClick={handleTrendingKeywordClick}
                 totalNewsCount={totalNewsCount}
@@ -111,14 +94,47 @@ export default function HomePage() {
                 showNewsInfo={true}
               />
             </div>
-            {/* 모바일: 인기 검색어만 표시 */}
-            <div className="md:hidden flex-1 min-w-0">
-              <TrendingKeywordsCompact
-                onKeywordClick={handleTrendingKeywordClick}
-                showNewsInfo={false}
+          </div>
+        </div>
+      </div>
+
+      {/* 모바일: 카테고리 | 총 뉴스/페이지 */}
+      <div className="md:hidden bg-background border-b">
+        <div className="max-w-7xl mx-auto px-4 py-2">
+          <div className="flex items-center justify-between gap-4">
+            {/* 왼쪽: 카테고리 */}
+            <div className="shrink-0">
+              <NewsCategories
+                activeCategory={activeCategory}
+                onCategoryChange={handleCategoryChange}
+                availableCategories={availableCategories}
               />
             </div>
+            {/* 구분선 */}
+            <div className="h-[40px] w-px bg-muted-foreground/30 shrink-0" />
+            {/* 오른쪽: 총 뉴스/페이지 */}
+            <div className="flex flex-col items-end gap-0.5">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Newspaper className="h-3 w-3" />
+                <span className="font-medium">{totalNewsCount.toLocaleString()}</span>
+              </div>
+              {currentPage > 0 && totalPages > 0 && (
+                <div className="text-[10px] text-muted-foreground font-medium">
+                  Page {currentPage}/{totalPages}
+                </div>
+              )}
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* 모바일: 인기 검색어 */}
+      <div className="md:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <TrendingKeywordsCompact
+            onKeywordClick={handleTrendingKeywordClick}
+            showNewsInfo={false}
+          />
         </div>
       </div>
 

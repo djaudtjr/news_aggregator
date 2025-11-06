@@ -127,18 +127,19 @@ export function TrendingKeywordsCompact({ onKeywordClick, totalNewsCount, curren
           <span className="text-sm font-semibold">🔥 인기검색어</span>
           <Badge variant="destructive" className="h-4 px-1.5 text-[10px] animate-pulse">LIVE</Badge>
         </div>
-        {/* 총 뉴스 개수 - showNewsInfo가 true일 때만 표시 */}
+        {/* 총 뉴스 개수 - showNewsInfo가 true일 때만 표시 (데스크톱 한 줄) */}
         {showNewsInfo && totalNewsCount !== undefined && (
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
+            <div className="flex items-center gap-1">
               <Newspaper className="h-3 w-3" />
-              <span>총 {totalNewsCount.toLocaleString()} 뉴스</span>
+              <span className="font-medium">총 {totalNewsCount.toLocaleString()}</span>
             </div>
-            {/* 페이지 정보 */}
+            {/* 페이지 정보 - 같은 줄에 */}
             {currentPage !== undefined && totalPages !== undefined && totalPages > 0 && (
-              <div className="text-[10px] text-muted-foreground text-center font-medium">
-                Page {currentPage} / {totalPages}
-              </div>
+              <>
+                <span className="text-muted-foreground/50">|</span>
+                <span className="font-medium">Page {currentPage}/{totalPages}</span>
+              </>
             )}
           </div>
         )}
