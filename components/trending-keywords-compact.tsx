@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Clock } from "lucide-react"
+import { Clock, Newspaper } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { supabase } from "@/lib/supabase/client"
@@ -27,6 +27,10 @@ interface TrendingResponse {
 
 interface TrendingKeywordsCompactProps {
   onKeywordClick?: (keyword: string) => void
+  totalNewsCount?: number
+  currentPage?: number
+  totalPages?: number
+  showNewsInfo?: boolean // 총 뉴스 개수 표시 여부
 }
 
 async function fetchTrendingKeywords(timeRange: string): Promise<TrendingResponse> {
@@ -38,7 +42,7 @@ async function fetchTrendingKeywords(timeRange: string): Promise<TrendingRespons
   return response.json()
 }
 
-export function TrendingKeywordsCompact({ onKeywordClick }: TrendingKeywordsCompactProps) {
+export function TrendingKeywordsCompact({ onKeywordClick, totalNewsCount, currentPage, totalPages, showNewsInfo = true }: TrendingKeywordsCompactProps) {
   const [timeRange, setTimeRange] = useState<"1h" | "24h" | "7d">("24h")
 
   const { data, isLoading: loading, refetch } = useQuery({
@@ -116,13 +120,33 @@ export function TrendingKeywordsCompact({ onKeywordClick }: TrendingKeywordsComp
   }
 
   return (
-    <div className="space-y-2 min-w-[400px]">
-      {/* 첫째 줄: 제목과 기간 선택 */}
+    <div className="space-y-2 md:min-w-[400px] w-full">
+      {/* 첫째 줄: 제목과 기간 선택 및 뉴스 개수 */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold">🔥 인기검색어</span>
+          <Badge variant="destructive" className="h-4 px-1.5 text-[10px] animate-pulse">LIVE</Badge>
+        </div>
+        {/* 총 뉴스 개수 - showNewsInfo가 true일 때만 표시 */}
+        {showNewsInfo && totalNewsCount !== undefined && (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+              <Newspaper className="h-3 w-3" />
+              <span>총 {totalNewsCount.toLocaleString()} 뉴스</span>
+            </div>
+            {/* 페이지 정보 */}
+            {currentPage !== undefined && totalPages !== undefined && totalPages > 0 && (
+              <div className="text-[10px] text-muted-foreground text-center font-medium">
+                Page {currentPage} / {totalPages}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      
+      {/* 둘째 줄: 기간 선택 */}
       <div className="flex items-center gap-2">
-        <span className="text-sm font-semibold">🔥 인기검색어</span>
-        <Badge variant="destructive" className="h-4 px-1.5 text-[10px] animate-pulse">LIVE</Badge>
         <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-xs text-muted-foreground">|</span>
         <span className="text-xs text-muted-foreground">기간:</span>
         {(["1h", "24h", "7d"] as const).map((range) => (
           <Button
@@ -137,7 +161,7 @@ export function TrendingKeywordsCompact({ onKeywordClick }: TrendingKeywordsComp
         ))}
       </div>
 
-      {/* 둘째 줄: 검색어 목록 */}
+      {/* 셋째 줄: 검색어 목록 */}
       <div className="flex flex-wrap gap-2">
         {loading ? (
           Array.from({ length: 7 }).map((_, i) => (

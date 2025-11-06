@@ -70,6 +70,23 @@ export default function HomePage() {
       />
       <HeroSubscribeBanner />
 
+      {/* 모바일: 총 뉴스 개수 & 페이지 정보 - 상단에 표시 */}
+      <div className="md:hidden bg-background border-b">
+        <div className="max-w-7xl mx-auto px-4 py-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Newspaper className="h-3.5 w-3.5" />
+              <span className="font-medium">총 {totalNewsCount.toLocaleString()} 뉴스</span>
+            </div>
+            {currentPage > 0 && totalPages > 0 && (
+              <div className="text-xs text-muted-foreground font-medium">
+                Page {currentPage} / {totalPages}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* 카테고리 + 인기 검색어 - 같은 행에 배치 */}
       <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-3">
@@ -84,9 +101,22 @@ export default function HomePage() {
             </div>
             {/* 구분선 */}
             <div className="hidden md:block h-[60px] w-px bg-muted-foreground/30 shrink-0" />
-            {/* 오른쪽: 인기 검색어 */}
+            {/* 오른쪽: 인기 검색어 - 모바일에서는 총 뉴스 정보 숨김 */}
             <div className="hidden md:block shrink-0">
-              <TrendingKeywordsCompact onKeywordClick={handleTrendingKeywordClick} />
+              <TrendingKeywordsCompact
+                onKeywordClick={handleTrendingKeywordClick}
+                totalNewsCount={totalNewsCount}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                showNewsInfo={true}
+              />
+            </div>
+            {/* 모바일: 인기 검색어만 표시 */}
+            <div className="md:hidden flex-1 min-w-0">
+              <TrendingKeywordsCompact
+                onKeywordClick={handleTrendingKeywordClick}
+                showNewsInfo={false}
+              />
             </div>
           </div>
         </div>
@@ -107,63 +137,7 @@ export default function HomePage() {
         />
       </main>
 
-      {/* 오른쪽 고정: 뉴스 개수 박스 + 최근 본 기사 */}
-      <div
-        style={{
-          position: 'fixed',
-          right: '16px',
-          top: '185px',
-          width: '200px',
-          zIndex: 9999,
-        }}
-      >
-        {/* 뉴스 개수 & 페이지 정보 박스 */}
-        <div
-          style={{
-            backgroundColor: 'var(--background)',
-            border: '1px solid var(--border)',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px -1px rgb(0 0 0 / 0.1)',
-            padding: '8px 10px',
-            marginBottom: '8px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-          }}
-        >
-          {/* 총 뉴스 개수 */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Newspaper className="h-3 w-3 text-muted-foreground" />
-              <span style={{ fontSize: '10px', color: 'var(--muted-foreground)', fontWeight: '500' }}>총 뉴스</span>
-            </div>
-            <div
-              style={{
-                fontSize: '13px',
-                fontWeight: '700',
-                color: 'var(--primary)',
-              }}
-            >
-              {totalNewsCount.toLocaleString()}
-            </div>
-          </div>
-          {/* 페이지 정보 */}
-          {totalNewsCount > 0 && totalPages > 0 && (
-            <div
-              style={{
-                fontSize: '10px',
-                color: 'var(--muted-foreground)',
-                textAlign: 'center',
-                paddingTop: '4px',
-                borderTop: '1px solid var(--border)',
-                fontWeight: '500',
-              }}
-            >
-              Page {currentPage} / {totalPages}
-            </div>
-          )}
-        </div>
-      </div>
+
 
       {/* 오른쪽 고정 사이드바: 최근 본 기사 */}
       <RecentArticlesSidebar />
