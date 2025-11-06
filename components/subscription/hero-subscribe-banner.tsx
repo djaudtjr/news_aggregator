@@ -8,17 +8,22 @@ import { LoginModal } from "@/components/auth/login-modal";
 import { useRouter } from "next/navigation";
 
 export function HeroSubscribeBanner() {
-  const [isVisible, setIsVisible] = useState(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("heroSubscribeBannerVisible");
-      return stored !== null ? stored === "true" : true;
-    }
-    return true;
-  });
+  const [isVisible, setIsVisible] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
 
+  // 클라이언트에서만 localStorage 읽기
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("heroSubscribeBannerVisible");
+      if (stored !== null) {
+        setIsVisible(stored === "true");
+      }
+    }
+  }, []);
+
+  // isVisible 변경 시 localStorage에 저장
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("heroSubscribeBannerVisible", String(isVisible));
