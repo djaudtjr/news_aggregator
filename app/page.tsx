@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Newspaper, Search, Star } from "lucide-react"
+import { Newspaper, Search, Star, X } from "lucide-react"
 import { NewsHeader } from "@/components/news-header"
 import { NewsFeed } from "@/components/news-feed"
 import { NewsCategories } from "@/components/news-categories"
@@ -31,6 +31,20 @@ export default function HomePage() {
 
   const { keywords, loading: keywordsLoading } = useSubscribedKeywords()
 
+  // 테스트용: 로그인 없이도 테스트하려면 아래 주석 해제
+  // const testKeywords = [
+  //   { id: 'test1', keyword: 'AI', user_id: 'test', created_at: new Date().toISOString() },
+  //   { id: 'test2', keyword: '삼성', user_id: 'test', created_at: new Date().toISOString() },
+  //   { id: 'test3', keyword: '기술', user_id: 'test', created_at: new Date().toISOString() },
+  // ]
+  // const displayKeywords = keywords?.length > 0 ? keywords : testKeywords
+
+  // 현재 세션에서 숨긴 키워드 ID 목록 (다음 로그인 시 초기화됨)
+  const [hiddenKeywordIds, setHiddenKeywordIds] = useState<Set<string>>(new Set())
+
+  // 숨기지 않은 키워드만 표시
+  const visibleKeywords = keywords?.filter(kw => !hiddenKeywordIds.has(kw.id)) || []
+
   const [availableCategories, setAvailableCategories] = useState<Set<string> | undefined>(undefined)
   const [totalNewsCount, setTotalNewsCount] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
@@ -47,6 +61,10 @@ export default function HomePage() {
 
   const handleSubscribedKeywordClick = (keyword: string) => {
     setSearchQuery(keyword)
+  }
+
+  const handleHideKeyword = (keywordId: string) => {
+    setHiddenKeywordIds(prev => new Set([...prev, keywordId]))
   }
 
   const handleCategoryChange = (category: string) => {
@@ -98,23 +116,34 @@ export default function HomePage() {
             </div>
 
             {/* 즐겨찾기 키워드 */}
-            {keywords && keywords.length > 0 && (
+            {visibleKeywords && visibleKeywords.length > 0 && (
               <>
                 <div className="h-8 w-px bg-muted-foreground/30 shrink-0" />
                 <div className="flex items-center gap-2">
                   <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                   <span className="text-sm font-semibold text-muted-foreground">즐겨찾기:</span>
                   <div className="flex gap-2">
-                    {keywords.map((kw) => (
-                      <Button
-                        key={kw.id}
-                        variant={searchQuery === kw.keyword ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleSubscribedKeywordClick(kw.keyword)}
-                        className="h-8 px-3 rounded-full transition-all duration-200 hover:scale-105"
-                      >
-                        {kw.keyword}
-                      </Button>
+                    {visibleKeywords.map((kw) => (
+                      <div key={kw.id} className="relative group">
+                        <Button
+                          variant={searchQuery === kw.keyword ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleSubscribedKeywordClick(kw.keyword)}
+                          className="h-8 pl-3 pr-8 rounded-full transition-all duration-200 hover:scale-105"
+                        >
+                          {kw.keyword}
+                        </Button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleHideKeyword(kw.id)
+                          }}
+                          className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full flex items-center justify-center hover:bg-muted/80 transition-colors"
+                          title="이번 세션에서 숨기기"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -178,21 +207,32 @@ export default function HomePage() {
           </div>
 
           {/* 즐겨찾기 키워드 (모바일) */}
-          {keywords && keywords.length > 0 && (
+          {visibleKeywords && visibleKeywords.length > 0 && (
             <div className="flex items-center gap-2 mt-2 pb-1">
               <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500 shrink-0" />
               <span className="text-xs font-semibold text-muted-foreground shrink-0">즐겨찾기:</span>
               <div className="flex gap-1.5 overflow-x-auto scrollbar-hide flex-1">
-                {keywords.map((kw) => (
-                  <Button
-                    key={kw.id}
-                    variant={searchQuery === kw.keyword ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleSubscribedKeywordClick(kw.keyword)}
-                    className="h-7 px-2.5 rounded-full text-xs whitespace-nowrap"
-                  >
-                    {kw.keyword}
-                  </Button>
+                {visibleKeywords.map((kw) => (
+                  <div key={kw.id} className="relative group shrink-0">
+                    <Button
+                      variant={searchQuery === kw.keyword ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleSubscribedKeywordClick(kw.keyword)}
+                      className="h-7 pl-2.5 pr-7 rounded-full text-xs whitespace-nowrap"
+                    >
+                      {kw.keyword}
+                    </Button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleHideKeyword(kw.id)
+                      }}
+                      className="absolute right-0.5 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full flex items-center justify-center hover:bg-muted/80 transition-colors"
+                      title="이번 세션에서 숨기기"
+                    >
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -222,7 +262,7 @@ export default function HomePage() {
           refreshTrigger={refreshTrigger}
           activeRegion={activeRegion}
           layoutMode="grid"
-          favoriteKeywords={keywords?.map(kw => kw.keyword) || []}
+          favoriteKeywords={visibleKeywords?.map(kw => kw.keyword) || []}
           onAvailableCategoriesChange={setAvailableCategories}
           onTotalCountChange={setTotalNewsCount}
           onPageChange={setCurrentPage}

@@ -117,46 +117,70 @@ export function NewsFeed({
     retry: 2, // 실패 시 2번만 재시도
   })
 
-  const filteredArticles = articles.filter((article) => {
-    const isSearchMode = searchQuery.trim().length > 0
-
-    // 시간 범위 필터링 (밀리초 단위로 계산)
-    const articleDate = new Date(article.pubDate)
-    const cutoffDate = new Date()
-    const millisecondsInDay = 24 * 60 * 60 * 1000
-    cutoffDate.setTime(cutoffDate.getTime() - timeRange * millisecondsInDay)
-    const matchesTimeRange = articleDate >= cutoffDate
-
-    // 카테고리 필터링 (검색 모드와 일반 모드 모두 적용)
-    // - activeCategory === "all": 모든 기사 표시 (article.category가 "all"인 것도 포함)
-    // - activeCategory가 특정 카테고리: 정확히 매칭되는 것만 표시 (article.category === "all"인 애매한 분류는 제외)
-    const matchesCategory =
-      activeCategory === "all" || (article.category && article.category === activeCategory && article.category !== "all")
-
-    // 지역 필터링 (일반 모드에서만 적용, 검색 모드는 API에서 이미 처리됨)
-    const matchesRegion = isSearchMode || activeRegion === "all" || article.region === activeRegion
-
-    // 즐겨찾기 키워드 필터링 (검색 모드가 아니고, 즐겨찾기 키워드가 있을 때만 적용)
-    const hasFavoriteKeywords = !isSearchMode && favoriteKeywords && favoriteKeywords.length > 0
-    const matchesFavoriteKeywords = !hasFavoriteKeywords || favoriteKeywords.some(keyword => {
-      const lowerKeyword = keyword.toLowerCase()
-      const titleMatch = article.title?.toLowerCase().includes(lowerKeyword)
-      const descriptionMatch = article.description?.toLowerCase().includes(lowerKeyword)
-      return titleMatch || descriptionMatch
-    })
-
-    console.log('[NewsFeed Filter]', {
-      title: article.title?.substring(0, 50),
-      hasFavoriteKeywords,
+  const filteredArticles = useMemo(() => {
+    console.log('[NewsFeed] Starting filter with:', {
+      totalArticles: articles.length,
       favoriteKeywords,
-      matchesFavoriteKeywords,
-      matchesCategory,
-      matchesTimeRange,
-      matchesRegion
+      searchQuery,
+      activeCategory,
+      timeRange
     })
 
-    return matchesCategory && matchesTimeRange && matchesRegion && matchesFavoriteKeywords
-  })
+    const filtered = articles.filter((article) => {
+      const isSearchMode = searchQuery.trim().length > 0
+
+      // 시간 범위 필터링 (밀리초 단위로 계산)
+      const articleDate = new Date(article.pubDate)
+      const cutoffDate = new Date()
+      const millisecondsInDay = 24 * 60 * 60 * 1000
+      cutoffDate.setTime(cutoffDate.getTime() - timeRange * millisecondsInDay)
+      const matchesTimeRange = articleDate >= cutoffDate
+
+      // 카테고리 필터링 (검색 모드와 일반 모드 모두 적용)
+      // - activeCategory === "all": 모든 기사 표시 (article.category가 "all"인 것도 포함)
+      // - activeCategory가 특정 카테고리: 정확히 매칭되는 것만 표시 (article.category === "all"인 애매한 분류는 제외)
+      const matchesCategory =
+        activeCategory === "all" || (article.category && article.category === activeCategory && article.category !== "all")
+
+      // 지역 필터링 (일반 모드에서만 적용, 검색 모드는 API에서 이미 처리됨)
+      const matchesRegion = isSearchMode || activeRegion === "all" || article.region === activeRegion
+
+      // 즐겨찾기 키워드 필터링 (검색 모드가 아니고, 즐겨찾기 키워드가 있을 때만 적용)
+      const hasFavoriteKeywords = !isSearchMode && favoriteKeywords && favoriteKeywords.length > 0
+      let matchesFavoriteKeywords = true
+      let matchedKeyword = ''
+
+      if (hasFavoriteKeywords) {
+        matchesFavoriteKeywords = favoriteKeywords.some(keyword => {
+          const lowerKeyword = keyword.toLowerCase()
+          const titleLower = article.title?.toLowerCase() || ''
+          const descriptionLower = article.description?.toLowerCase() || ''
+
+          const titleMatch = titleLower.includes(lowerKeyword)
+          const descriptionMatch = descriptionLower.includes(lowerKeyword)
+
+          if (titleMatch || descriptionMatch) {
+            matchedKeyword = keyword
+            return true
+          }
+          return false
+        })
+      }
+
+      const passes = matchesCategory && matchesTimeRange && matchesRegion && matchesFavoriteKeywords
+
+      return passes
+    })
+
+    console.log('[NewsFeed] Filter complete:', {
+      totalArticles: articles.length,
+      filteredArticles: filtered.length,
+      favoriteKeywords,
+      searchMode: searchQuery.trim().length > 0
+    })
+
+    return filtered
+  }, [articles, searchQuery, activeCategory, timeRange, activeRegion, favoriteKeywords])
 
   // 검색 모드일 때: 사용 가능한 카테고리 목록 계산
   const availableCategories = useMemo(() => {
