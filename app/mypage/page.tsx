@@ -344,6 +344,32 @@ export default function MyPage() {
       return
     }
 
+    // 설정이 변경되었는지 확인
+    if (emailSettings) {
+      const isChanged =
+        emailForm.email !== emailSettings.email ||
+        emailForm.enabled !== emailSettings.enabled ||
+        emailForm.deliveryHour !== emailSettings.delivery_hour ||
+        JSON.stringify(emailForm.deliveryDays.sort()) !== JSON.stringify(emailSettings.delivery_days.sort())
+
+      if (isChanged) {
+        toast({
+          title: "⚠️ 설정 저장 필요",
+          description: "변경된 설정을 먼저 저장해주세요.",
+          variant: "destructive",
+        })
+        return
+      }
+    } else {
+      // emailSettings가 없으면 첫 설정이므로 저장 필요
+      toast({
+        title: "⚠️ 설정 저장 필요",
+        description: "먼저 설정을 저장해주세요.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setShowTestEmailDialog(true)
   }
 
