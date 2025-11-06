@@ -13,14 +13,9 @@ interface RecentArticlesSidebarProps {
 export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarProps) {
   const { recentArticles, removeRecentArticle, clearRecentArticles } = useRecentArticles()
   const [isExpanded, setIsExpanded] = useState(true)
-  const [isBannerVisible, setIsBannerVisible] = useState(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("heroSubscribeBannerVisible")
-      return stored !== null ? stored === "true" : true
-    }
-    return true
-  })
+  const [isBannerVisible, setIsBannerVisible] = useState(true)
 
+  // 클라이언트에서만 localStorage 읽기 및 변경 감지
   useEffect(() => {
     const handleStorageChange = () => {
       if (typeof window !== "undefined") {
@@ -28,6 +23,9 @@ export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarP
         setIsBannerVisible(stored !== null ? stored === "true" : true)
       }
     }
+
+    // 초기 값 설정
+    handleStorageChange()
 
     // localStorage 변경 감지
     window.addEventListener("storage", handleStorageChange)
