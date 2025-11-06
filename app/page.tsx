@@ -97,13 +97,13 @@ export default function HomePage() {
               />
             </div>
 
-            {/* 구독 키워드 */}
+            {/* 즐겨찾기 키워드 */}
             {keywords && keywords.length > 0 && (
               <>
                 <div className="h-8 w-px bg-muted-foreground/30 shrink-0" />
                 <div className="flex items-center gap-2">
-                  <Star className="h-4 w-4 text-yellow-500" />
-                  <span className="text-sm font-semibold text-muted-foreground">구독:</span>
+                  <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                  <span className="text-sm font-semibold text-muted-foreground">즐겨찾기:</span>
                   <div className="flex gap-2">
                     {keywords.map((kw) => (
                       <Button
@@ -177,11 +177,11 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 구독 키워드 (모바일) */}
+          {/* 즐겨찾기 키워드 (모바일) */}
           {keywords && keywords.length > 0 && (
             <div className="flex items-center gap-2 mt-2 pb-1">
-              <Star className="h-3.5 w-3.5 text-yellow-500 shrink-0" />
-              <span className="text-xs font-semibold text-muted-foreground shrink-0">구독:</span>
+              <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500 shrink-0" />
+              <span className="text-xs font-semibold text-muted-foreground shrink-0">즐겨찾기:</span>
               <div className="flex gap-1.5 overflow-x-auto scrollbar-hide flex-1">
                 {keywords.map((kw) => (
                   <Button
@@ -222,6 +222,7 @@ export default function HomePage() {
           refreshTrigger={refreshTrigger}
           activeRegion={activeRegion}
           layoutMode="grid"
+          favoriteKeywords={keywords?.map(kw => kw.keyword) || []}
           onAvailableCategoriesChange={setAvailableCategories}
           onTotalCountChange={setTotalNewsCount}
           onPageChange={setCurrentPage}

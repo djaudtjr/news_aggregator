@@ -29,6 +29,7 @@ interface NewsFeedProps {
   refreshTrigger: number
   activeRegion: string
   layoutMode: LayoutMode
+  favoriteKeywords?: string[]
   onAvailableCategoriesChange?: (categories: Set<string>) => void
   onTotalCountChange?: (count: number) => void
   onPageChange?: (page: number) => void
@@ -72,6 +73,7 @@ export function NewsFeed({
   refreshTrigger,
   activeRegion,
   layoutMode,
+  favoriteKeywords = [],
   onAvailableCategoriesChange,
   onTotalCountChange,
   onPageChange,
@@ -134,7 +136,26 @@ export function NewsFeed({
     // 지역 필터링 (일반 모드에서만 적용, 검색 모드는 API에서 이미 처리됨)
     const matchesRegion = isSearchMode || activeRegion === "all" || article.region === activeRegion
 
-    return matchesCategory && matchesTimeRange && matchesRegion
+    // 즐겨찾기 키워드 필터링 (검색 모드가 아니고, 즐겨찾기 키워드가 있을 때만 적용)
+    const hasFavoriteKeywords = !isSearchMode && favoriteKeywords && favoriteKeywords.length > 0
+    const matchesFavoriteKeywords = !hasFavoriteKeywords || favoriteKeywords.some(keyword => {
+      const lowerKeyword = keyword.toLowerCase()
+      const titleMatch = article.title?.toLowerCase().includes(lowerKeyword)
+      const descriptionMatch = article.description?.toLowerCase().includes(lowerKeyword)
+      return titleMatch || descriptionMatch
+    })
+
+    console.log('[NewsFeed Filter]', {
+      title: article.title?.substring(0, 50),
+      hasFavoriteKeywords,
+      favoriteKeywords,
+      matchesFavoriteKeywords,
+      matchesCategory,
+      matchesTimeRange,
+      matchesRegion
+    })
+
+    return matchesCategory && matchesTimeRange && matchesRegion && matchesFavoriteKeywords
   })
 
   // 검색 모드일 때: 사용 가능한 카테고리 목록 계산
