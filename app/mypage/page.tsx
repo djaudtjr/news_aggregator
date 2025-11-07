@@ -1018,7 +1018,7 @@ export default function MyPage() {
                     disabled={sendingTestEmail || !emailForm.email || keywords.length === 0 || !!emailError}
                     className="flex-[1] h-9 text-sm"
                   >
-                    {sendingTestEmail ? "전송 중..." : "테스트"}
+                    {sendingTestEmail ? "전송 중..." : "메일보내기"}
                   </Button>
                 </div>
 
