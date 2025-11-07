@@ -22,9 +22,22 @@ interface NewsHeaderProps {
   onTimeRangeChange: (days: number) => void
   hasUnsavedChanges?: boolean
   onLogoutAttempt?: () => void
+  hideSearchBar?: boolean
 }
 
-export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTracked, activeRegion, onRegionChange, timeRange, onTimeRangeChange, hasUnsavedChanges, onLogoutAttempt }: NewsHeaderProps) {
+export function NewsHeader({
+  searchQuery,
+  onSearchChange,
+  onRefresh,
+  onSearchTracked,
+  activeRegion,
+  onRegionChange,
+  timeRange,
+  onTimeRangeChange,
+  hasUnsavedChanges,
+  onLogoutAttempt,
+  hideSearchBar = false,
+}: NewsHeaderProps) {
   const [inputValue, setInputValue] = useState(searchQuery)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false)
@@ -195,46 +208,48 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
           <h1 className="text-2xl font-bold">Pulse</h1>
         </div>
 
-        <div className="hidden md:flex flex-1 max-w-3xl mx-8 gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search news... (Press Enter)"
-              className="pl-10 rounded-xl shadow-sm"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
+        {!hideSearchBar && (
+          <div className="hidden md:flex flex-1 max-w-3xl mx-8 gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search news... (Press Enter)"
+                className="pl-10 rounded-xl shadow-sm"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
+            <Select value={activeRegion} onValueChange={onRegionChange}>
+              <SelectTrigger className="w-[140px] rounded-xl shadow-sm">
+                <SelectValue placeholder="Source" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl shadow-lg">
+                {regions.map((region) => (
+                  <SelectItem key={region.value} value={region.value}>
+                    {region.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={timeRange.toString()} onValueChange={(value) => onTimeRangeChange(parseFloat(value))}>
+              <SelectTrigger className="w-[120px] rounded-xl shadow-sm">
+                <SelectValue placeholder="Period" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl shadow-lg">
+                {timeRanges.map((range) => (
+                  <SelectItem key={range.value} value={range.value}>
+                    {range.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="default" size="icon" onClick={handleSearchClick} title="Search" className="rounded-full transition-all duration-300 hover:scale-110 shadow-md hover:shadow-lg">
+              <Search className="h-4 w-4" />
+            </Button>
           </div>
-          <Select value={activeRegion} onValueChange={onRegionChange}>
-            <SelectTrigger className="w-[140px] rounded-xl shadow-sm">
-              <SelectValue placeholder="Source" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl shadow-lg">
-              {regions.map((region) => (
-                <SelectItem key={region.value} value={region.value}>
-                  {region.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={timeRange.toString()} onValueChange={(value) => onTimeRangeChange(parseFloat(value))}>
-            <SelectTrigger className="w-[120px] rounded-xl shadow-sm">
-              <SelectValue placeholder="Period" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl shadow-lg">
-              {timeRanges.map((range) => (
-                <SelectItem key={range.value} value={range.value}>
-                  {range.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="default" size="icon" onClick={handleSearchClick} title="Search" className="rounded-full transition-all duration-300 hover:scale-110 shadow-md hover:shadow-lg">
-            <Search className="h-4 w-4" />
-          </Button>
-        </div>
+        )}
 
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={handleRefresh} title="Refresh news" className="rounded-full transition-all duration-300 hover:scale-110">
@@ -295,7 +310,7 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
         </div>
         </div>
         {/* 오타 교정 안내 메시지 */}
-        {correctedKeyword && (
+        {!hideSearchBar && correctedKeyword && (
           <div className="pb-2 pt-1">
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <span>검색어가 수정되었습니다:</span>

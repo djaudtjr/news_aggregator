@@ -539,6 +539,7 @@ export default function MyPage() {
           onTimeRangeChange={setTimeRange}
           hasUnsavedChanges={hasUnsavedEmailChanges}
           onLogoutAttempt={handleLogoutAttempt}
+          hideSearchBar
         />
         <main className="container mx-auto px-4 py-6">
           <Alert>
@@ -564,6 +565,7 @@ export default function MyPage() {
           onTimeRangeChange={setTimeRange}
           hasUnsavedChanges={hasUnsavedEmailChanges}
           onLogoutAttempt={handleLogoutAttempt}
+          hideSearchBar
         />
         <main className="container mx-auto px-4 py-6">
           <div className="space-y-6">
@@ -593,6 +595,7 @@ export default function MyPage() {
           onTimeRangeChange={setTimeRange}
           hasUnsavedChanges={hasUnsavedEmailChanges}
           onLogoutAttempt={handleLogoutAttempt}
+          hideSearchBar
         />
         <main className="container mx-auto px-4 py-6">
           <Alert variant="destructive">
@@ -617,6 +620,7 @@ export default function MyPage() {
         onTimeRangeChange={setTimeRange}
         hasUnsavedChanges={hasUnsavedEmailChanges}
         onLogoutAttempt={handleLogoutAttempt}
+        hideSearchBar
       />
       <main className="container mx-auto px-4 py-4 space-y-4">
         {/* 상단: 프로필 (좌측) + 통계 (우측) */}
