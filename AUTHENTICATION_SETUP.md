@@ -1,102 +1,69 @@
 # 인증 설정 가이드
 
-## 구글 로그인 설정
+## 🔑 개요
 
-이 프로젝트는 Supabase Auth를 사용하여 구글 로그인을 제공합니다.
+이 프로젝트는 Supabase Auth를 사용하여 간편하고 안전한 Google OAuth 로그인을 구현합니다. 사용자는 Google 계정으로 로그인하고, 북마크 및 이메일 구독과 같은 개인화된 기능을 사용할 수 있습니다.
 
-### 1. Supabase 프로젝트 설정
+## ⚙️ 설정 절차
 
-1. [Supabase 대시보드](https://app.supabase.com/)에 로그인합니다.
-2. 프로젝트를 선택하거나 새 프로젝트를 생성합니다.
+### 1. Supabase 프로젝트 준비
 
-### 2. 환경 변수 설정
+1.  [Supabase 대시보드](https://app.supabase.com/)에서 프로젝트를 선택합니다.
+2.  `Authentication` > `Providers` 메뉴로 이동하여 `Google` 제공업체를 활성화합니다.
 
-1. Supabase 대시보드에서 `Settings` > `API`로 이동합니다.
-2. 다음 값들을 복사합니다:
-   - `Project URL`
-   - `anon` `public` 키
+### 2. Google Cloud Console 설정
 
-3. `.env.local` 파일을 열고 다음과 같이 설정합니다:
+1.  [Google Cloud Console](https://console.cloud.google.com/)에서 OAuth 클라이언트 ID를 생성합니다.
+2.  `Authorized redirect URIs`에 Supabase 프로젝트의 콜백 URL을 추가해야 합니다. 이 URL은 Supabase 대시보드의 Google 제공업체 설정 페이지에서 찾을 수 있으며, 일반적으로 아래와 같은 형식입니다.
+    ```
+    https://<YOUR-PROJECT-ID>.supabase.co/auth/v1/callback
+    ```
+3.  생성된 `Client ID`와 `Client Secret`을 복사합니다.
 
-```bash
-NEXT_PUBLIC_SUPABASE_URL=your_project_url_here
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+### 3. Supabase에 Google 정보 입력
+
+1.  다시 Supabase 대시보드의 Google 제공업체 설정으로 돌아옵니다.
+2.  Google Cloud Console에서 복사한 `Client ID`와 `Client Secret`을 붙여넣고 저장합니다.
+
+### 4. 환경 변수 설정
+
+프로젝트 루트에 `.env.local` 파일을 생성하고 Supabase 프로젝트의 API 정보를 입력합니다. 이 정보는 Supabase 대시보드의 `Settings` > `API`에서 찾을 수 있습니다.
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-### 3. Google OAuth 설정
+### 5. Supabase URL 설정
 
-1. [Google Cloud Console](https://console.cloud.google.com/)에 로그인합니다.
-2. 새 프로젝트를 만들거나 기존 프로젝트를 선택합니다.
-3. `APIs & Services` > `Credentials`로 이동합니다.
-4. `Create Credentials` > `OAuth client ID`를 선택합니다.
-5. Application type으로 `Web application`을 선택합니다.
-6. Authorized redirect URIs에 다음을 추가합니다:
-   ```
-   https://[YOUR_PROJECT_ID].supabase.co/auth/v1/callback
-   ```
-7. Client ID와 Client Secret을 복사합니다.
+- Supabase 대시보드의 `Authentication` > `URL Configuration`에서 `Site URL`을 개발 환경인 `http://localhost:3000`으로 설정합니다.
+- 배포 후에는 실제 프로덕션 도메인을 추가해야 합니다.
 
-### 4. Supabase에 Google Provider 설정
-
-1. Supabase 대시보드에서 `Authentication` > `Providers`로 이동합니다.
-2. Google provider를 찾아서 활성화합니다.
-3. Google Cloud Console에서 복사한 Client ID와 Client Secret을 입력합니다.
-4. `Save`를 클릭합니다.
-
-### 5. Redirect URL 설정
-
-Supabase 대시보드의 `Authentication` > `URL Configuration`에서:
-- Site URL: `http://localhost:3000` (개발 환경)
-- Redirect URLs에 다음을 추가:
-  - `http://localhost:3000/auth/callback`
-  - 프로덕션 URL (배포 후)
-
-### 6. 로컬에서 테스트
-
-```bash
-npm run dev
-```
-
-브라우저에서 `http://localhost:3000`을 열고 우측 상단의 "로그인" 버튼을 클릭하여 테스트합니다.
-
-## 구현된 기능
-
-- ✅ 구글 로그인
-- ✅ 로그아웃
-- ✅ 로그인 상태 관리
-- ✅ 로그인/로그아웃 버튼 자동 전환
-- ✅ OAuth 콜백 처리
-
-## 파일 구조
+## 📁 관련 파일 구조
 
 ```
-lib/supabase/
-  ├── browser-client.ts     # 브라우저용 Supabase 클라이언트
-  └── client.ts             # 서버용 Supabase 클라이언트
-
-hooks/
-  └── useAuth.ts            # 인증 상태 관리 Hook
-
-components/
-  └── auth/
-      └── login-modal.tsx   # 로그인 모달 컴포넌트
-
 app/
-  └── auth/
-      └── callback/
-          └── route.ts      # OAuth 콜백 핸들러
+└── auth/
+    └── callback/
+        └── route.ts      # Google OAuth 인증 후 콜백을 처리하는 라우트
+hooks/
+└── useAuth.ts            # useUser 훅을 감싸 인증 상태 및 프로필 정보를 제공
+lib/
+└── supabase/
+    ├── browser-client.ts # 브라우저 환경용 Supabase 클라이언트
+    ├── server-client.ts  # 서버 환경용 Supabase 클라이언트
+    └── server.ts         # (사용되지 않음, 레거시)
+components/
+└── auth/
+    └── login-modal.tsx   # 로그인 버튼 및 모달 UI
 ```
 
-## 문제 해결
+## 🔄 인증 흐름
 
-### "Supabase credentials not configured" 경고가 나타나는 경우
-
-`.env.local` 파일에 올바른 환경 변수가 설정되어 있는지 확인하세요.
-
-### 로그인 후 리다이렉트가 작동하지 않는 경우
-
-Supabase 대시보드의 Redirect URLs 설정을 확인하세요.
-
-### Google OAuth 오류가 발생하는 경우
-
-Google Cloud Console의 Authorized redirect URIs 설정을 확인하세요.
+1.  사용자가 `login-modal.tsx`의 로그인 버튼을 클릭합니다.
+2.  `useAuth` 훅의 `signInWithGoogle` 함수가 호출되어 Supabase의 Google 로그인 페이지로 리디렉션됩니다.
+3.  사용자가 Google 계정으로 인증을 완료하면, Google은 Supabase의 콜백 URL로 리디렉션합니다.
+4.  Supabase는 인증을 처리하고, `app/auth/callback/route.ts`에 설정된 애플리케이션의 콜백 핸들러로 다시 리디렉션합니다.
+5.  콜백 핸들러는 세션을 생성하고 사용자를 홈페이지로 리디렉션합니다.
+6.  `useAuth` 훅은 세션 변경을 감지하고 사용자 정보를 업데이트하여, UI가 로그인 상태를 반영하도록 합니다.

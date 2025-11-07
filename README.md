@@ -94,10 +94,10 @@ A modern, AI-powered news aggregation platform that collects, categorizes, and s
 ## Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 15.2.4 (App Router)
+- **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript 5
-- **Styling**: Tailwind CSS 4.1.9
-- **UI Components**: Radix UI primitives
+- **Styling**: Tailwind CSS 4
+- **UI Components**: Radix UI primitives (via shadcn/ui)
 - **Icons**: Lucide React
 - **Date Formatting**: date-fns
 
@@ -108,7 +108,7 @@ A modern, AI-powered news aggregation platform that collects, categorizes, and s
 - **AI**: OpenAI API (GPT-4o-mini)
 - **Database**: Supabase (PostgreSQL with Realtime)
 - **Translation**: Naver Cloud Papago API
-- **Email**: Gmail SMTP (nodemailer)
+- **Email**: Gmail SMTP (Nodemailer)
 - **Cron**: Vercel Cron Jobs
 
 ### Development
@@ -127,32 +127,26 @@ news-aggregator/
 │   │   ├── search/        # Search with translation support
 │   │   ├── crawl/         # Full article content crawler
 │   │   ├── summarize/     # AI summarization with caching
-│   │   └── test-translate/ # Translation testing endpoint
+│   │   ├── cron/          # Cron job handlers
+│   │   └── ... (auth, bookmarks, etc.)
 │   ├── layout.tsx         # Root layout with theme provider
 │   └── page.tsx           # Main page component
 ├── components/
-│   ├── ui/                # Radix UI component wrappers
+│   ├── ui/                # Radix UI component wrappers (shadcn/ui)
 │   ├── news-header.tsx    # Header with search and actions
 │   ├── news-feed.tsx      # News grid with infinite scroll
 │   ├── news-card.tsx      # Individual article card
-│   ├── news-categories.tsx # Category filter tabs
-│   ├── region-filter.tsx  # Domestic/International toggle
-│   ├── time-range-filter.tsx # Time range slider
-│   ├── bulk-actions.tsx   # Bulk selection actions
-│   └── theme-toggle.tsx   # Dark/light mode switcher
+│   └── ... (filters, sidebars, etc.)
 ├── lib/
 │   ├── news/
 │   │   ├── feeds.ts       # RSS feed configuration
 │   │   ├── rss-fetcher.ts # RSS feed parser
-│   │   ├── naver-news-fetcher.ts # Naver News API client
-│   │   ├── categorizer.ts # AI-based categorization
-│   │   └── image-extractor.ts # Image URL extraction
-│   ├── utils/
-│   │   ├── language-utils.ts # Korean detection & translation
-│   │   ├── news-logos.ts  # Source logo mappings
-│   │   └── hash.ts        # URL-based ID generation
+│   │   └── naver-news-fetcher.ts # Naver News API client
+│   ├── email/
+│   │   └── gmail.ts       # Nodemailer Gmail transport
 │   └── supabase/
-│       └── client.ts      # Supabase client configuration
+│       ├── client.ts      # Client-side Supabase client
+│       └── server.ts      # Server-side Supabase client
 ├── hooks/
 │   ├── useNewsFilters.ts  # Filter state management
 │   └── useArticleSummary.ts # AI summary hook
@@ -160,420 +154,105 @@ news-aggregator/
 │   └── article.ts         # TypeScript interfaces
 ├── supabase/
 │   └── schema.sql         # Database schema
-└── .env.local             # Environment variables (not in repo)
+└── .env.local.example     # Environment variable template
 ```
 
 ## Installation
 
 ### Prerequisites
-- Node.js 18+ or compatible runtime
-- pnpm (recommended) or npm
-- Supabase account (with Realtime enabled)
+- Node.js 18+
+- pnpm (recommended)
+- Supabase account
 - OpenAI API key
 - Naver Cloud Platform account (for Papago API)
 - Naver Developers account (for News API)
-- Gmail account with App Password (for email delivery)
+- Gmail account with App Password
 
 ### Setup
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd news-aggregator
-   ```
+1.  **Clone the repository**
+    ```bash
+    git clone <repository-url>
+    cd news-aggregator
+    ```
 
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   ```
+2.  **Install dependencies**
+    ```bash
+    pnpm install
+    ```
 
-3. **Configure environment variables**
-   Create a `.env.local` file in the root directory:
-   ```env
-   # Supabase
-   NEXT_SUPABASE_URL=your_supabase_project_url
-   NEXT_SUPABASE_ANON_KEY=your_supabase_anon_key
+3.  **Configure environment variables**
+    Create a `.env.local` file from the `.env.local.example` template and fill in the values.
+    ```env
+    # Supabase
+    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+    SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-   # OpenAI
-   OPENAI_API_KEY=your_openai_api_key
+    # OpenAI
+    OPENAI_API_KEY=your_openai_api_key
 
-   # Naver Cloud Platform (Papago Translation)
-   NAVER_CLOUD_CLIENT_ID=your_ncp_client_id
-   NAVER_CLOUD_CLIENT_SECRET=your_ncp_client_secret
+    # Naver Cloud Platform (Papago Translation)
+    NAVER_CLOUD_CLIENT_ID=your_ncp_client_id
+    NAVER_CLOUD_CLIENT_SECRET=your_ncp_client_secret
 
-   # Naver Developers (News API)
-   NAVER_CLIENT_ID=your_naver_client_id
-   NAVER_CLIENT_SECRET=your_naver_client_secret
+    # Naver Developers (News API)
+    NAVER_CLIENT_ID=your_naver_client_id
+    NAVER_CLIENT_SECRET=your_naver_client_secret
 
-   # Gmail SMTP (Email Delivery)
-   GMAIL_USERNAME=your_gmail_address@gmail.com
-   GMAIL_APP_PASSWORD=your_16_digit_app_password
+    # Gmail SMTP (Email Delivery)
+    GMAIL_USERNAME=your_gmail_address@gmail.com
+    GMAIL_APP_PASSWORD=your_16_digit_app_password
 
-   # Base URL
-   NEXT_PUBLIC_BASE_URL=http://localhost:3000
+    # Base URL
+    NEXT_PUBLIC_BASE_URL=http://localhost:3000
 
-   # (Optional) Cron Job Security
-   CRON_SECRET=your_random_secret
-   ```
+    # Cron Job Security
+    CRON_SECRET=your_random_secret
+    ```
 
-   **Gmail App Password Setup**:
-   1. Go to [Google Account Security](https://myaccount.google.com/security)
-   2. Enable 2-Step Verification
-   3. Go to "App passwords" section
-   4. Generate new app password for "Mail"
-   5. Copy the 16-digit password (without spaces)
-   6. Use it as `GMAIL_APP_PASSWORD`
+4.  **Set up Supabase database**
+    - In your Supabase project, go to the `SQL Editor`.
+    - Copy the entire content of `supabase/schema.sql` and run it.
+    - This will create the necessary tables and policies.
 
-4. **Set up Supabase database**
+5.  **Run the development server**
+    ```bash
+    pnpm dev
+    ```
 
-   a. Run the SQL schema in your Supabase SQL Editor:
-   ```bash
-   # Copy contents from supabase/schema.sql and execute in Supabase
-   ```
-
-   b. Enable Realtime for `search_keyword_analytics` table:
-   ```sql
-   -- In Supabase SQL Editor
-   CREATE PUBLICATION supabase_realtime FOR TABLE search_keyword_analytics;
-
-   ALTER TABLE search_keyword_analytics ENABLE ROW LEVEL SECURITY;
-
-   CREATE POLICY "Allow public read access"
-   ON search_keyword_analytics FOR SELECT TO public USING (true);
-
-   CREATE POLICY "Allow authenticated write"
-   ON search_keyword_analytics FOR INSERT TO authenticated WITH CHECK (true);
-   ```
-
-   c. Or use Supabase Dashboard:
-   - Go to Database → Replication
-   - Find `search_keyword_analytics` table
-   - Click "Enable" toggle
-
-5. **Run the development server**
-   ```bash
-   pnpm dev
-   ```
-
-6. **Open the application**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+6.  **Open the application**
+    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## API Endpoints
 
-### GET /api/news
-Fetches aggregated news from all sources (RSS + Naver News).
+A brief overview of the main API endpoints located in `app/api/`:
 
-**Query Parameters:**
-- `t` (optional): Timestamp for cache busting
-
-**Response:**
-```json
-{
-  "articles": [...],
-  "stats": {
-    "total": 105,
-    "naver": 25,
-    "rss": 100,
-    "duplicatesRemoved": 20
-  }
-}
-```
-
-### GET /api/search
-Search news with automatic Korean-to-English translation.
-
-**Query Parameters:**
-- `q`: Search query
-- `region`: "all" | "domestic" | "international"
-- `t` (optional): Timestamp
-
-**Response:**
-```json
-{
-  "articles": [...],
-  "query": "AI",
-  "region": "all",
-  "isKorean": false,
-  "translated": false
-}
-```
-
-### POST /api/crawl
-Crawls full article content from a URL.
-
-**Request Body:**
-```json
-{
-  "url": "https://example.com/article"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "content": "Full article text...",
-  "wordCount": 1250,
-  "url": "https://example.com/article"
-}
-```
-
-### POST /api/summarize
-Generates AI summary with database caching.
-
-**Request Body:**
-```json
-{
-  "title": "Article title",
-  "description": "Article description",
-  "link": "https://example.com/article",
-  "newsId": "news-abc123",
-  "apiKey": "optional_openai_key"
-}
-```
-
-**Response:**
-```json
-{
-  "summary": "AI-generated summary...",
-  "keyPoints": ["Point 1", "Point 2", "Point 3"],
-  "fromCache": false,
-  "viewCount": 1
-}
-```
-
-### POST /api/email/send-digest
-Sends email digest (immediate or scheduled).
-
-**Request Body:**
-```json
-{
-  "userId": "user-uuid",
-  "scheduledDeliveryHour": 12  // Optional: 6, 12, or 18 for scheduled delivery
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "newsCount": 8,
-  "emailId": "email-id",
-  "scheduledAt": "2025-10-26T12:00:00Z"  // Only present if scheduled
-}
-```
-
-### GET /api/cron/send-daily-digest
-Processes scheduled email delivery for all subscribers (Cron only).
-
-**Execution Schedule:**
-- KST 5AM, 11AM, 5PM (UTC 8PM, 2AM, 8AM)
-- Filters subscribers by delivery hour (1 hour ahead)
-- Uses Resend scheduled sending API
-
-**Response:**
-```json
-{
-  "message": "Daily digest scheduled email job completed",
-  "currentDay": 1,
-  "currentHour": 5,
-  "targetDeliveryHour": 6,
-  "processedCount": 25,
-  "successCount": 24,
-  "failedCount": 1,
-  "results": [...]
-}
-```
+- **`GET /api/news`**: Fetches and aggregates news from all configured RSS and Naver News sources.
+- **`GET /api/search`**: Performs a search query against the news articles. Handles Korean-to-English translation for international searches.
+- **`POST /api/crawl`**: Scrapes the full content of a given article URL.
+- **`POST /api/summarize`**: Generates an AI summary for an article, caching the result in the database.
+- **`GET /api/cron/send-daily-digest`**: A cron job endpoint to send out daily email digests to subscribers. Triggered by Vercel Cron.
+- **`/api/auth/**`**: Handles user authentication callbacks.
+- **`/api/bookmarks`**: Manages user bookmarks.
+- **`/api/subscriptions/**`**: Manages user keyword subscriptions and email settings.
 
 ## Database Schema
 
-### news_summaries Table
-```sql
-CREATE TABLE news_summaries (
-  news_id TEXT PRIMARY KEY,           -- Unique article ID (URL hash)
-  news_url TEXT NOT NULL,             -- Original article URL
-  news_title TEXT,                    -- Article title
-  summary TEXT NOT NULL,              -- AI-generated summary
-  key_points TEXT[],                  -- Array of key points
-  created_at TIMESTAMP WITH TIME ZONE,
-  updated_at TIMESTAMP WITH TIME ZONE,
-  view_count INTEGER DEFAULT 0        -- Number of views
-);
-```
+The core database schema is defined in `supabase/schema.sql`. Here are the main tables:
 
-### email_subscription_settings Table
-```sql
-CREATE TABLE email_subscription_settings (
-  user_id UUID PRIMARY KEY,
-  enabled BOOLEAN DEFAULT false,
-  email TEXT NOT NULL,
-  delivery_days INTEGER[] DEFAULT '{1,2,3,4,5}',  -- 0=Sun, 1=Mon, ..., 6=Sat
-  delivery_hour INTEGER DEFAULT 6 CHECK (delivery_hour IN (6, 12, 18)),
-  last_sent_at TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE,
-  updated_at TIMESTAMP WITH TIME ZONE
-);
-```
-
-### subscribed_keywords Table
-```sql
-CREATE TABLE subscribed_keywords (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id),
-  keyword TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE,
-  UNIQUE(user_id, keyword)
-);
-```
-
-### email_delivery_logs Table
-```sql
-CREATE TABLE email_delivery_logs (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id),
-  email TEXT NOT NULL,
-  status TEXT CHECK (status IN ('success', 'failed', 'pending')),
-  news_count INTEGER DEFAULT 0,
-  error_message TEXT,
-  sent_at TIMESTAMP WITH TIME ZONE
-);
-```
-
-## Key Features Implementation
-
-### AI Summarization Flow
-1. User clicks "AI 요약" button on news card
-2. System checks Supabase for existing summary by `news_id`
-3. If cached: Return summary and increment view count
-4. If not cached:
-   - Crawl full article content using Cheerio
-   - Send to OpenAI GPT-4o-mini for summarization
-   - Parse response into summary + key points
-   - Save to Supabase for future use
-5. Display summary with cache indicator
-
-### Article Deduplication
-- Uses URL-based hashing to generate unique IDs
-- Compares articles across Naver News and RSS sources
-- Removes duplicates based on matching IDs
-- Logs deduplication statistics
-
-### Image Fallback Strategy
-1. Try loading article's original image
-2. On first error: Retry with `?retry=1` parameter
-3. On second error: Fall back to news source logo
-4. Logos stored in `lib/utils/news-logos.ts`
-
-### Bilingual Search
-1. Detect if query is Korean using regex
-2. If Korean: Search Naver News directly
-3. Attempt translation to English via Papago API
-4. Search international sources with translated query
-5. Combine results from both searches
-
-### Scheduled Email Delivery System
-1. **Cron Job Execution** (KST 5AM, 11AM, 5PM):
-   - Calculate target delivery hour: `currentHour + 1`
-   - Query enabled subscribers from database
-   - Filter by matching `delivery_days` and `delivery_hour`
-
-2. **News Collection** (for each subscriber):
-   - Fetch subscribed keywords
-   - Search news from last 24 hours matching keywords
-   - Deduplicate and sort by recency
-   - Select top 10 articles
-
-3. **Scheduled Sending**:
-   - Generate HTML email template
-   - Convert KST delivery time to UTC ISO 8601 format
-   - Call Resend API with `scheduledAt` parameter
-   - Log delivery attempt to database
-
-4. **Automatic Delivery**:
-   - Resend automatically sends emails at scheduled time
-   - Actual delivery: KST 6AM, 12PM, 6PM
-
-## Development
-
-### Run development server
-```bash
-pnpm dev
-```
-
-### Build for production
-```bash
-pnpm build
-```
-
-### Start production server
-```bash
-pnpm start
-```
-
-### Lint code
-```bash
-pnpm lint
-```
-
-## Environment Setup
-
-### Supabase
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Go to Settings > API to get your URL and anon key
-3. Run the SQL from `supabase/schema.sql` in SQL Editor
-4. Enable Row Level Security (already configured in schema)
-
-### OpenAI
-1. Sign up at [platform.openai.com](https://platform.openai.com)
-2. Create an API key
-3. Add billing information (GPT-4o-mini is cost-effective)
-
-### Naver Cloud Platform
-1. Register at [ncloud.com](https://ncloud.com)
-2. Create a Papago NMT API application
-3. Get Client ID and Client Secret
-
-### Naver Developers
-1. Register at [developers.naver.com](https://developers.naver.com)
-2. Create a News Search API application
-3. Get Client ID and Client Secret
-
-### Gmail
-1. Use an existing Gmail account or create a new one
-2. Enable 2-Step Verification in Google Account Security
-3. Generate an App Password for "Mail" application
-4. Copy the 16-digit password (remove spaces)
-5. Add to `.env.local` as `GMAIL_APP_PASSWORD`
-
-**Note**: Gmail has a daily sending limit of ~500 emails for regular accounts. For high-volume sending, consider Google Workspace or alternative services.
+- **`news_summaries`**: Caches AI-generated summaries and key points for articles to reduce costs and latency.
+- **`user_profiles`**: Stores public user data like username and avatar.
+- **`email_subscription_settings`**: Manages user preferences for email digests, including delivery days and time.
+- **`subscribed_keywords`**: Stores the keywords each user is subscribed to.
+- **`bookmarks`**: Associates users with their bookmarked articles.
+- **`search_keyword_analytics`**: Logs search queries for trending keyword analysis.
+- **`email_delivery_logs`**: Logs the status of sent email digests.
 
 ## Contributing
 
-Contributions are welcome! Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+Contributions are welcome! Please open an issue to discuss any changes.
 
 ## License
 
 This project is private and proprietary.
-
-## Acknowledgments
-
-- Built with [Next.js](https://nextjs.org/)
-- UI components from [Radix UI](https://www.radix-ui.com/)
-- Styling with [Tailwind CSS](https://tailwindcss.com/)
-- AI powered by [OpenAI](https://openai.com/)
-- Database by [Supabase](https://supabase.com/)
-- News sources: BBC, The Guardian, NY Times, CNN, TechCrunch, MIT Tech Review, 연합뉴스, SBS, Naver
-
-## Support
-
-For issues, questions, or suggestions, please open an issue in the repository.
-
----
-
-**Made with ❤️ using Next.js and AI**
