@@ -20,9 +20,11 @@ interface NewsHeaderProps {
   onRegionChange: (region: string) => void
   timeRange: number
   onTimeRangeChange: (days: number) => void
+  hasUnsavedChanges?: boolean
+  onLogoutAttempt?: () => void
 }
 
-export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTracked, activeRegion, onRegionChange, timeRange, onTimeRangeChange }: NewsHeaderProps) {
+export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTracked, activeRegion, onRegionChange, timeRange, onTimeRangeChange, hasUnsavedChanges, onLogoutAttempt }: NewsHeaderProps) {
   const [inputValue, setInputValue] = useState(searchQuery)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false)
@@ -171,6 +173,12 @@ export function NewsHeader({ searchQuery, onSearchChange, onRefresh, onSearchTra
   }
 
   const handleLogout = async () => {
+    // 저장하지 않은 변경사항이 있으면 경고 다이얼로그 표시
+    if (hasUnsavedChanges && onLogoutAttempt) {
+      onLogoutAttempt()
+      return
+    }
+
     try {
       await signOut()
     } catch (error) {

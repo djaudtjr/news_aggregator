@@ -30,6 +30,7 @@ interface NewsFeedProps {
   activeRegion: string
   layoutMode: LayoutMode
   favoriteKeywords?: string[]
+  readyToFetch?: boolean
   onAvailableCategoriesChange?: (categories: Set<string>) => void
   onTotalCountChange?: (count: number) => void
   onPageChange?: (page: number) => void
@@ -149,6 +150,7 @@ export function NewsFeed({
   activeRegion,
   layoutMode,
   favoriteKeywords = [],
+  readyToFetch = true,
   onAvailableCategoriesChange,
   onTotalCountChange,
   onPageChange,
@@ -185,6 +187,7 @@ export function NewsFeed({
   const { data: articles = [], isLoading: loading, error } = useQuery({
     queryKey: ['news', searchQuery, activeRegion, refreshTrigger, favoriteKeywords],
     queryFn: () => fetchNews(searchQuery, activeRegion, favoriteKeywords),
+    enabled: readyToFetch, // 즐겨찾기 데이터 로드 완료 후에만 fetch
     staleTime: 5 * 60 * 1000, // 5분간 fresh 상태 유지
     gcTime: 10 * 60 * 1000, // 10분간 캐시 유지
     refetchOnWindowFocus: false, // 윈도우 포커스 시 재요청 방지

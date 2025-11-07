@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { NewsHeader } from "@/components/news-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -53,7 +53,7 @@ interface MyPageData {
 }
 
 export default function MyPage() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
   const [data, setData] = useState<MyPageData | null>(null)
@@ -110,6 +110,18 @@ export default function MyPage() {
       setEmailForm((prev) => ({ ...prev, favoriteNewsEnabled: false }))
     }
   }, [keywords.length])
+
+  // 이메일 설정 변경사항 확인 (favoriteNewsEnabled는 즉시 저장되므로 제외)
+  const hasUnsavedEmailChanges = useMemo(() => {
+    if (!emailSettings) return false
+
+    return (
+      emailForm.email !== emailSettings.email ||
+      emailForm.enabled !== emailSettings.enabled ||
+      emailForm.deliveryHour !== emailSettings.delivery_hour ||
+      JSON.stringify([...emailForm.deliveryDays].sort()) !== JSON.stringify([...emailSettings.delivery_days].sort())
+    )
+  }, [emailForm, emailSettings])
 
   const fetchMyPageData = useCallback(async () => {
     if (!user) return
@@ -180,6 +192,21 @@ export default function MyPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]) // user.id가 변경될 때만 실행 (로그인 시 한 번만)
 
+  // 브라우저 뒤로가기/새로고침 시 경고
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedEmailChanges) {
+        e.preventDefault()
+        e.returnValue = '저장하지 않은 변경사항이 있습니다. 페이지를 벗어나시겠습니까?'
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [hasUnsavedEmailChanges])
+
   // 북마크 데이터가 변경되면 페이지 범위 조정
   useEffect(() => {
     if (data?.recentBookmarks) {
@@ -209,7 +236,37 @@ export default function MyPage() {
 
   const handleRefresh = () => {
     // 새로고침 버튼이나 로고 클릭 시 메인 페이지로 이동
+    // 저장하지 않은 변경사항이 있으면 경고
+    if (hasUnsavedEmailChanges) {
+      setPendingAction('home')
+      setShowUnsavedChangesDialog(true)
+      return
+    }
     router.push('/')
+  }
+
+  // 변경사항 무시하고 이동
+  const handleContinueWithoutSaving = async () => {
+    setShowUnsavedChangesDialog(false)
+    if (pendingAction === 'home') {
+      router.push('/')
+    } else if (pendingAction === 'logout') {
+      // 로그아웃 진행
+      try {
+        await signOut()
+      } catch (error) {
+        console.error('Logout failed:', error)
+      }
+    }
+    setPendingAction(null)
+  }
+
+  // 로그아웃 시도 시 호출
+  const handleLogoutAttempt = () => {
+    if (hasUnsavedEmailChanges) {
+      setPendingAction('logout')
+      setShowUnsavedChangesDialog(true)
+    }
   }
 
   // 모든 북마크 삭제
@@ -327,6 +384,10 @@ export default function MyPage() {
   // 테스트 이메일 전송 핸들러
   const [sendingTestEmail, setSendingTestEmail] = useState(false)
   const [showTestEmailDialog, setShowTestEmailDialog] = useState(false)
+
+  // 저장하지 않은 변경사항 감지
+  const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false)
+  const [pendingAction, setPendingAction] = useState<'home' | 'logout' | null>(null)
 
   const handleTestEmailClick = () => {
     if (!user) {
@@ -476,6 +537,8 @@ export default function MyPage() {
           onRegionChange={setActiveRegion}
           timeRange={timeRange}
           onTimeRangeChange={setTimeRange}
+          hasUnsavedChanges={hasUnsavedEmailChanges}
+          onLogoutAttempt={handleLogoutAttempt}
         />
         <main className="container mx-auto px-4 py-6">
           <Alert>
@@ -499,6 +562,8 @@ export default function MyPage() {
           onRegionChange={setActiveRegion}
           timeRange={timeRange}
           onTimeRangeChange={setTimeRange}
+          hasUnsavedChanges={hasUnsavedEmailChanges}
+          onLogoutAttempt={handleLogoutAttempt}
         />
         <main className="container mx-auto px-4 py-6">
           <div className="space-y-6">
@@ -526,6 +591,8 @@ export default function MyPage() {
           onRegionChange={setActiveRegion}
           timeRange={timeRange}
           onTimeRangeChange={setTimeRange}
+          hasUnsavedChanges={hasUnsavedEmailChanges}
+          onLogoutAttempt={handleLogoutAttempt}
         />
         <main className="container mx-auto px-4 py-6">
           <Alert variant="destructive">
@@ -548,6 +615,8 @@ export default function MyPage() {
         onRegionChange={setActiveRegion}
         timeRange={timeRange}
         onTimeRangeChange={setTimeRange}
+        hasUnsavedChanges={hasUnsavedEmailChanges}
+        onLogoutAttempt={handleLogoutAttempt}
       />
       <main className="container mx-auto px-4 py-4 space-y-4">
         {/* 상단: 프로필 (좌측) + 통계 (우측) */}
@@ -1156,6 +1225,34 @@ export default function MyPage() {
             >
               <Send className="h-4 w-4 mr-2" />
               발송하기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 저장하지 않은 변경사항 경고 다이얼로그 */}
+      <AlertDialog open={showUnsavedChangesDialog} onOpenChange={setShowUnsavedChangesDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-600" />
+              저장하지 않은 변경사항
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              뉴스 구독 정보를 변경했지만 저장하지 않았습니다.
+              <br />
+              저장하지 않고 페이지를 벗어나시겠습니까?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingAction(null)}>
+              취소
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleContinueWithoutSaving}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              계속
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -388,6 +388,7 @@ export default function HomePage() {
           activeRegion={activeRegion}
           layoutMode="grid"
           favoriteKeywords={Array.from(selectedKeywords)}
+          readyToFetch={!isFavoriteLoading}
           onAvailableCategoriesChange={setAvailableCategories}
           onTotalCountChange={setTotalNewsCount}
           onPageChange={setCurrentPage}

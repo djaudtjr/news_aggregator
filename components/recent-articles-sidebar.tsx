@@ -5,6 +5,7 @@ import { History, X, Trash2, ChevronRight, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useRecentArticles, type RecentArticle } from "@/hooks/useRecentArticles"
+import { useAuth } from "@/hooks/useAuth"
 
 interface RecentArticlesSidebarProps {
   onArticleClick?: (article: RecentArticle) => void
@@ -12,6 +13,7 @@ interface RecentArticlesSidebarProps {
 
 export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarProps) {
   const { recentArticles, removeRecentArticle, clearRecentArticles } = useRecentArticles()
+  const { user } = useAuth()
   const [isExpanded, setIsExpanded] = useState(true)
   const [isBannerVisible, setIsBannerVisible] = useState(true)
 
@@ -39,6 +41,25 @@ export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarP
     }
   }, [])
 
+  // top 위치 계산 (뉴스 카드의 top 라인과 일치)
+  const calculateTopPosition = () => {
+    // Header: 64px (h-16)
+    // CategoryBar: 80px (py-2 8px * 2 + h-16 64px)
+    // MainPadding: 24px (md:py-6)
+    // Banner: 88px (py-4 16px * 2 + content ~56px)
+
+    const headerHeight = 64
+    const categoryBarHeight = 80
+    const mainPaddingTop = 24
+    const bannerHeight = 88
+
+    // 배너가 표시되는 조건: 로그인하지 않았고 배너가 visible 상태
+    const showBanner = !user && isBannerVisible
+
+    const baseTop = headerHeight + categoryBarHeight + mainPaddingTop
+    return showBanner ? baseTop + bannerHeight : baseTop
+  }
+
   const handleArticleClick = (article: RecentArticle) => {
     if (onArticleClick) {
       onArticleClick(article)
@@ -63,7 +84,7 @@ export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarP
       style={{
         position: 'fixed',
         right: '16px',
-        top: isBannerVisible ? '290px' : '205px',
+        top: `${calculateTopPosition()}px`,
         width: isExpanded ? '200px' : '40px',
         zIndex: 9999,
         transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
