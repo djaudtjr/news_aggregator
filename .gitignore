@@ -28,3 +28,4 @@ next-env.d.ts
 .clauderc
 DEV_GUIDE.md
 /.claude
+GEMINI.md
