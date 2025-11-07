@@ -9,9 +9,12 @@ import { useAuth } from "@/hooks/useAuth"
 
 interface RecentArticlesSidebarProps {
   onArticleClick?: (article: RecentArticle) => void
+  totalNewsCount?: number
+  currentPage?: number
+  totalPages?: number
 }
 
-export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarProps) {
+export function RecentArticlesSidebar({ onArticleClick, totalNewsCount, currentPage, totalPages }: RecentArticlesSidebarProps) {
   const { recentArticles, removeRecentArticle, clearRecentArticles } = useRecentArticles()
   const { user } = useAuth()
   const [isExpanded, setIsExpanded] = useState(true)
@@ -79,6 +82,13 @@ export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarP
     }
   }
 
+  const shouldShowPaginationInfo =
+    typeof totalNewsCount === "number" &&
+    totalNewsCount > 0 &&
+    typeof currentPage === "number" &&
+    typeof totalPages === "number" &&
+    totalPages > 0
+
   return (
     <div
       style={{
@@ -101,6 +111,30 @@ export function RecentArticlesSidebar({ onArticleClick }: RecentArticlesSidebarP
         }}
       >
         {/* 헤더 */}
+        {shouldShowPaginationInfo && isExpanded && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              marginBottom: '8px',
+              padding: '6px 8px',
+              borderRadius: '8px',
+              backgroundColor: 'var(--muted)',
+              color: 'var(--muted-foreground)',
+            }}
+          >
+            <span style={{ fontSize: '11px', fontWeight: 600 }}>
+              총 {totalNewsCount?.toLocaleString()}건
+            </span>
+            <span style={{ fontSize: '11px', opacity: 0.6 }}>|</span>
+            <span style={{ fontSize: '11px', fontWeight: 600 }}>
+              Page {currentPage}/{totalPages}
+            </span>
+          </div>
+        )}
+
         <div
           style={{
             display: 'flex',

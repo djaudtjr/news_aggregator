@@ -266,10 +266,7 @@ export default function HomePage() {
             <div className="flex-1 min-w-0">
               <TrendingKeywordsCompact
                 onKeywordClick={handleTrendingKeywordClick}
-                totalNewsCount={totalNewsCount}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                showNewsInfo={true}
+                showNewsInfo={false}
               />
             </div>
           </div>
@@ -370,10 +367,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 py-3">
           <TrendingKeywordsCompact
             onKeywordClick={handleTrendingKeywordClick}
-            totalNewsCount={totalNewsCount}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            showNewsInfo={true}
+            showNewsInfo={false}
             isMobile={true}
           />
         </div>
@@ -400,7 +394,11 @@ export default function HomePage() {
 
       {/* 오른쪽 고정 사이드바: 최근 본 기사 (데스크톱만) */}
       <div className="hidden md:block">
-        <RecentArticlesSidebar />
+        <RecentArticlesSidebar
+          totalNewsCount={totalNewsCount}
+          currentPage={currentPage}
+          totalPages={totalPages}
+        />
       </div>
 
       <Footer />
