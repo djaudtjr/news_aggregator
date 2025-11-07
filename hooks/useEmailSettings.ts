@@ -9,6 +9,7 @@ export interface EmailSettings {
   email: string
   delivery_days: number[] // 0=일, 1=월, ..., 6=토
   delivery_hour: number // 6, 12, 18 중 선택
+  favorite_news_enabled: boolean // 즐겨찾기 뉴스 조회 활성화 여부
   last_sent_at: string | null
   created_at: string
   updated_at: string
@@ -52,6 +53,7 @@ export function useEmailSettings() {
     enabled: boolean
     deliveryDays: number[]
     deliveryHour: number
+    favoriteNewsEnabled?: boolean
   }) => {
     if (!user) {
       console.warn("User not logged in")

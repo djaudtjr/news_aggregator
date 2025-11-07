@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, email, enabled, deliveryDays, deliveryHour } = body
+    const { userId, email, enabled, deliveryDays, deliveryHour, favoriteNewsEnabled } = body
 
     if (!userId || !email) {
       return NextResponse.json({ error: "User ID and email are required" }, { status: 400 })
@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
       enabled: enabled ?? false,
       delivery_days: deliveryDays ?? [1, 2, 3, 4, 5], // 기본값: 월~금
       delivery_hour: deliveryHour ?? 6, // 기본값: 오전 6시
+      favorite_news_enabled: favoriteNewsEnabled ?? true, // 기본값: true (활성화)
     }
 
     // UPSERT: 존재하면 업데이트, 없으면 생성

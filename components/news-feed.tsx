@@ -36,16 +36,91 @@ interface NewsFeedProps {
   onTotalPagesChange?: (totalPages: number) => void
 }
 
-async function fetchNews(searchQuery: string, activeRegion: string): Promise<NewsArticle[]> {
-  // 검색어가 있으면 검색 API 사용, 없으면 전체 뉴스 API 사용
-  const url = searchQuery.trim()
-    ? `/api/search?q=${encodeURIComponent(searchQuery)}&region=${activeRegion}`
-    : `/api/news`
+async function fetchNews(searchQuery: string, activeRegion: string, favoriteKeywords: string[]): Promise<NewsArticle[]> {
+  // 검색어가 있으면 검색 API 사용
+  if (searchQuery.trim()) {
+    const url = `/api/search?q=${encodeURIComponent(searchQuery)}&region=${activeRegion}`
+    console.log("[NewsFeed] Fetching news from:", url)
 
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+    try {
+      const response = await fetch(url, { signal: controller.signal })
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        throw new Error(`서버 응답 오류: ${response.status}`)
+      }
+      const data = await response.json()
+      console.log("[NewsFeed] Fetched articles:", data.articles?.length || 0)
+      return data.articles || []
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        throw new Error("요청 시간이 초과되었습니다. 다시 시도해주세요.")
+      }
+      throw fetchError
+    }
+  }
+
+  // 즐겨찾기 키워드가 있으면 각 키워드별로 개별 검색
+  if (favoriteKeywords.length > 0) {
+    console.log("[NewsFeed] Fetching news for favorite keywords:", favoriteKeywords)
+
+    try {
+      // 각 키워드별로 병렬 검색
+      const searchPromises = favoriteKeywords.map(async (keyword) => {
+        const url = `/api/search?q=${encodeURIComponent(keyword)}&region=${activeRegion}`
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+        try {
+          const response = await fetch(url, { signal: controller.signal })
+          clearTimeout(timeoutId)
+
+          if (!response.ok) {
+            console.error(`Failed to fetch for keyword: ${keyword}`)
+            return []
+          }
+          const data = await response.json()
+          return data.articles || []
+        } catch (error) {
+          clearTimeout(timeoutId)
+          console.error(`Error fetching for keyword: ${keyword}`, error)
+          return []
+        }
+      })
+
+      const results = await Promise.all(searchPromises)
+
+      // 모든 결과 합치기
+      const allArticles = results.flat()
+
+      // 중복 제거 (같은 id의 기사)
+      const uniqueArticles = Array.from(
+        new Map(allArticles.map(article => [article.id, article])).values()
+      )
+
+      // 최신 순으로 정렬
+      uniqueArticles.sort((a, b) => {
+        return new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+      })
+
+      console.log("[NewsFeed] Total articles from favorite keywords:", uniqueArticles.length)
+      return uniqueArticles
+    } catch (error) {
+      console.error("[NewsFeed] Error fetching favorite keywords:", error)
+      return []
+    }
+  }
+
+  // 검색어도 없고 즐겨찾기도 없으면 전체 뉴스
+  const url = `/api/news`
   console.log("[NewsFeed] Fetching news from:", url)
 
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 10000) // 10초 타임아웃
+  const timeoutId = setTimeout(() => controller.abort(), 10000)
 
   try {
     const response = await fetch(url, { signal: controller.signal })
@@ -108,8 +183,8 @@ export function NewsFeed({
 
   // React Query로 데이터 fetching
   const { data: articles = [], isLoading: loading, error } = useQuery({
-    queryKey: ['news', searchQuery, activeRegion, refreshTrigger],
-    queryFn: () => fetchNews(searchQuery, activeRegion),
+    queryKey: ['news', searchQuery, activeRegion, refreshTrigger, favoriteKeywords],
+    queryFn: () => fetchNews(searchQuery, activeRegion, favoriteKeywords),
     staleTime: 5 * 60 * 1000, // 5분간 fresh 상태 유지
     gcTime: 10 * 60 * 1000, // 10분간 캐시 유지
     refetchOnWindowFocus: false, // 윈도우 포커스 시 재요청 방지
@@ -127,7 +202,7 @@ export function NewsFeed({
     })
 
     const filtered = articles.filter((article) => {
-      const isSearchMode = searchQuery.trim().length > 0
+      const isSearchMode = searchQuery.trim().length > 0 || favoriteKeywords.length > 0
 
       // 시간 범위 필터링 (밀리초 단위로 계산)
       const articleDate = new Date(article.pubDate)
@@ -145,29 +220,7 @@ export function NewsFeed({
       // 지역 필터링 (일반 모드에서만 적용, 검색 모드는 API에서 이미 처리됨)
       const matchesRegion = isSearchMode || activeRegion === "all" || article.region === activeRegion
 
-      // 즐겨찾기 키워드 필터링 (검색 모드가 아니고, 즐겨찾기 키워드가 있을 때만 적용)
-      const hasFavoriteKeywords = !isSearchMode && favoriteKeywords && favoriteKeywords.length > 0
-      let matchesFavoriteKeywords = true
-      let matchedKeyword = ''
-
-      if (hasFavoriteKeywords) {
-        matchesFavoriteKeywords = favoriteKeywords.some(keyword => {
-          const lowerKeyword = keyword.toLowerCase()
-          const titleLower = article.title?.toLowerCase() || ''
-          const descriptionLower = article.description?.toLowerCase() || ''
-
-          const titleMatch = titleLower.includes(lowerKeyword)
-          const descriptionMatch = descriptionLower.includes(lowerKeyword)
-
-          if (titleMatch || descriptionMatch) {
-            matchedKeyword = keyword
-            return true
-          }
-          return false
-        })
-      }
-
-      const passes = matchesCategory && matchesTimeRange && matchesRegion && matchesFavoriteKeywords
+      const passes = matchesCategory && matchesTimeRange && matchesRegion
 
       return passes
     })
@@ -176,7 +229,7 @@ export function NewsFeed({
       totalArticles: articles.length,
       filteredArticles: filtered.length,
       favoriteKeywords,
-      searchMode: searchQuery.trim().length > 0
+      searchMode: searchQuery.trim().length > 0 || favoriteKeywords.length > 0
     })
 
     return filtered
@@ -184,7 +237,7 @@ export function NewsFeed({
 
   // 검색 모드일 때: 사용 가능한 카테고리 목록 계산
   const availableCategories = useMemo(() => {
-    if (searchQuery.trim().length > 0) {
+    if (searchQuery.trim().length > 0 || favoriteKeywords.length > 0) {
       const categories = new Set<string>(["all"]) // "all"은 항상 활성화
       articles.forEach((article) => {
         if (article.category && article.category !== "all") {
@@ -196,7 +249,7 @@ export function NewsFeed({
       // 일반 모드에서는 DB에서 가져온 모든 카테고리 활성화
       return allCategories
     }
-  }, [articles, searchQuery, allCategories])
+  }, [articles, searchQuery, favoriteKeywords, allCategories])
 
   // 카테고리 변경을 상위 컴포넌트에 전달 (무한 루프 방지)
   const prevCategoriesRef = useRef<Set<string> | undefined>(undefined)
@@ -309,8 +362,9 @@ export function NewsFeed({
   }
 
   if (filteredArticles.length === 0) {
-    const isSearchMode = searchQuery.trim().length > 0
-    return <EmptyState searchQuery={searchQuery} isSearchMode={isSearchMode} />
+    const isSearchMode = searchQuery.trim().length > 0 || favoriteKeywords.length > 0
+    const displayQuery = searchQuery.trim() || (favoriteKeywords.length > 0 ? favoriteKeywords.join(', ') : '')
+    return <EmptyState searchQuery={displayQuery} isSearchMode={isSearchMode} />
   }
 
   // 페이징 계산

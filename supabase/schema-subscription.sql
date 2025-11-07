@@ -55,6 +55,9 @@ CREATE TABLE IF NOT EXISTS email_subscription_settings (
   -- 발송 시간 (KST 기준, 6, 18 중 선택)
   delivery_hour INTEGER DEFAULT 6 NOT NULL CHECK (delivery_hour IN (6, 18)),
 
+  -- 즐겨찾기 뉴스 조회 기능 활성화 여부 (메인 페이지에서 구독 키워드로만 뉴스 조회)
+  favorite_news_enabled BOOLEAN DEFAULT true NOT NULL,
+
   -- 마지막 발송 일시
   last_sent_at TIMESTAMP WITH TIME ZONE,
 
@@ -100,6 +103,7 @@ COMMENT ON COLUMN email_subscription_settings.enabled IS '이메일 발송 활�
 COMMENT ON COLUMN email_subscription_settings.email IS '수신 이메일 주소';
 COMMENT ON COLUMN email_subscription_settings.delivery_days IS '발송 요일 배열 (0=일, 1=월, ..., 6=토)';
 COMMENT ON COLUMN email_subscription_settings.delivery_hour IS '발송 시간 (KST 기준 6, 18 중 선택)';
+COMMENT ON COLUMN email_subscription_settings.favorite_news_enabled IS '즐겨찾기 뉴스 조회 활성화 여부 (메인 페이지에서 구독 키워드로만 뉴스 조회)';
 COMMENT ON COLUMN email_subscription_settings.last_sent_at IS '마지막 이메일 발송 일시';
 
 

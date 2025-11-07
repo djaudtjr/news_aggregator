@@ -198,12 +198,12 @@ export function TrendingKeywordsCompact({ onKeywordClick, totalNewsCount, curren
               key={`${item.keyword}-${index}`}
               variant="outline"
               size="sm"
-              className="h-7 px-3 rounded-full hover:scale-105 transition-all duration-200 group"
+              className="h-6 px-2.5 rounded-full hover:scale-105 transition-all duration-200 group"
               onClick={() => handleKeywordClick(item.keyword)}
             >
               <Badge
                 variant={item.rank <= 3 ? "default" : "secondary"}
-                className="h-4 w-4 flex items-center justify-center p-0 rounded-full text-[10px] mr-1"
+                className="h-3.5 w-3.5 flex items-center justify-center p-0 rounded-full text-[9px] mr-1"
               >
                 {item.rank}
               </Badge>

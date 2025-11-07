@@ -67,9 +67,9 @@ export function NewsCategories({ activeCategory, onCategoryChange, availableCate
 
   return (
     <div className="flex items-center gap-2">
-      <Tag className="h-4 w-4 text-primary shrink-0" />
+      <Tag className="h-3.5 w-3.5 text-primary shrink-0" />
       <Select value={activeCategory} onValueChange={onCategoryChange}>
-        <SelectTrigger className="h-9 w-auto min-w-[120px] rounded-lg">
+        <SelectTrigger className="h-7 w-auto min-w-[100px] rounded-lg text-xs">
           <SelectValue placeholder="카테고리 선택">
             {activeLabel}
           </SelectValue>

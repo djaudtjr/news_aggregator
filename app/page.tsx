@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Newspaper, Search, Star, X } from "lucide-react"
 import { NewsHeader } from "@/components/news-header"
 import { NewsFeed } from "@/components/news-feed"
@@ -11,9 +11,18 @@ import { HeroSubscribeBanner } from "@/components/subscription/hero-subscribe-ba
 import { Footer } from "@/components/footer"
 import { useNewsFilters } from "@/hooks/useNewsFilters"
 import { useSubscribedKeywords } from "@/hooks/useSubscribedKeywords"
+import { useEmailSettings } from "@/hooks/useEmailSettings"
+import { useAuth } from "@/hooks/useAuth"
+import { useToast } from "@/hooks/use-toast"
 import type { NewsCategory, NewsRegion } from "@/types/article"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export default function HomePage() {
   const {
@@ -30,20 +39,36 @@ export default function HomePage() {
   } = useNewsFilters()
 
   const { keywords, loading: keywordsLoading } = useSubscribedKeywords()
+  const { settings: emailSettings, saveSettings, loading: emailSettingsLoading } = useEmailSettings()
+  const { user } = useAuth()
+  const { toast } = useToast()
 
-  // 테스트용: 로그인 없이도 테스트하려면 아래 주석 해제
-  // const testKeywords = [
-  //   { id: 'test1', keyword: 'AI', user_id: 'test', created_at: new Date().toISOString() },
-  //   { id: 'test2', keyword: '삼성', user_id: 'test', created_at: new Date().toISOString() },
-  //   { id: 'test3', keyword: '기술', user_id: 'test', created_at: new Date().toISOString() },
-  // ]
-  // const displayKeywords = keywords?.length > 0 ? keywords : testKeywords
+  // 즐겨찾기 관련 데이터 로딩 중인지 확인
+  const isFavoriteLoading = keywordsLoading || emailSettingsLoading
 
-  // 현재 세션에서 숨긴 키워드 ID 목록 (다음 로그인 시 초기화됨)
-  const [hiddenKeywordIds, setHiddenKeywordIds] = useState<Set<string>>(new Set())
+  // 즐겨찾기 뉴스 조회 활성화 상태 (이메일 설정에서 가져옴)
+  const [favoriteNewsEnabled, setFavoriteNewsEnabled] = useState<boolean>(
+    emailSettings?.favorite_news_enabled ?? true
+  )
 
-  // 숨기지 않은 키워드만 표시
-  const visibleKeywords = keywords?.filter(kw => !hiddenKeywordIds.has(kw.id)) || []
+  // emailSettings 변경 시 로컬 상태 동기화
+  useEffect(() => {
+    if (emailSettings) {
+      setFavoriteNewsEnabled(emailSettings.favorite_news_enabled)
+    }
+  }, [emailSettings])
+
+  // 선택된 키워드들 (멀티 선택 가능)
+  const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set())
+
+  // 즐겨찾기 ON 상태이고 구독 키워드가 있으면 모든 키워드를 자동으로 선택
+  useEffect(() => {
+    if (favoriteNewsEnabled && keywords && keywords.length > 0) {
+      setSelectedKeywords(new Set(keywords.map(kw => kw.keyword)))
+    } else {
+      setSelectedKeywords(new Set())
+    }
+  }, [favoriteNewsEnabled, keywords])
 
   const [availableCategories, setAvailableCategories] = useState<Set<string> | undefined>(undefined)
   const [totalNewsCount, setTotalNewsCount] = useState(0)
@@ -56,15 +81,74 @@ export default function HomePage() {
   console.log('[HomePage] Keywords length:', keywords?.length)
 
   const handleTrendingKeywordClick = (keyword: string) => {
+    // 인기검색어 클릭 시 즐겨찾기 전체 해제하고 검색어 설정
+    setSelectedKeywords(new Set())
     setSearchQuery(keyword)
   }
 
   const handleSubscribedKeywordClick = (keyword: string) => {
-    setSearchQuery(keyword)
+    // 키워드 토글 (선택/비선택)
+    setSelectedKeywords(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(keyword)) {
+        newSet.delete(keyword)
+      } else {
+        newSet.add(keyword)
+      }
+      return newSet
+    })
   }
 
-  const handleHideKeyword = (keywordId: string) => {
-    setHiddenKeywordIds(prev => new Set([...prev, keywordId]))
+  // 별 아이콘 토글 핸들러
+  const handleToggleFavoriteNews = async () => {
+    if (!user) {
+      toast({
+        title: "⚠️ 로그인 필요",
+        description: "로그인이 필요합니다.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!keywords || keywords.length === 0) {
+      toast({
+        title: "⚠️ 키워드 없음",
+        description: "구독 키워드를 먼저 추가해주세요.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const newValue = !favoriteNewsEnabled
+
+    // 낙관적 업데이트
+    setFavoriteNewsEnabled(newValue)
+
+    // DB 업데이트
+    const success = await saveSettings({
+      email: emailSettings?.email || user.email || "",
+      enabled: emailSettings?.enabled ?? false,
+      deliveryDays: emailSettings?.delivery_days || [1, 2, 3, 4, 5],
+      deliveryHour: emailSettings?.delivery_hour || 6,
+      favoriteNewsEnabled: newValue,
+    })
+
+    if (success) {
+      toast({
+        title: newValue ? "✅ 나의 뉴스 ON" : "✅ 나의 뉴스 OFF",
+        description: newValue
+          ? "구독 키워드로만 뉴스가 조회됩니다."
+          : "전체 뉴스가 조회됩니다.",
+      })
+    } else {
+      // 실패 시 원래 상태로 되돌리기
+      setFavoriteNewsEnabled(!newValue)
+      toast({
+        title: "❌ 저장 실패",
+        description: "설정 저장에 실패했습니다. 다시 시도해주세요.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleCategoryChange = (category: string) => {
@@ -102,11 +186,11 @@ export default function HomePage() {
       />
       <HeroSubscribeBanner />
 
-      {/* 데스크톱: 카테고리 + 구독 키워드 + 인기 검색어 */}
+      {/* 데스크톱: 카테고리 + 구독 키워드 (2줄) + 인기 검색어 */}
       <div className="hidden md:block bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-3">
-          <div className="flex items-center gap-4">
-            {/* 카테고리 */}
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-2">
+          <div className="flex items-start gap-3">
+            {/* 왼쪽: 카테고리 */}
             <div className="shrink-0">
               <NewsCategories
                 activeCategory={activeCategory}
@@ -115,45 +199,70 @@ export default function HomePage() {
               />
             </div>
 
-            {/* 즐겨찾기 키워드 */}
-            {visibleKeywords && visibleKeywords.length > 0 && (
-              <>
-                <div className="h-8 w-px bg-muted-foreground/30 shrink-0" />
-                <div className="flex items-center gap-2">
-                  <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                  <span className="text-sm font-semibold text-muted-foreground">즐겨찾기:</span>
-                  <div className="flex gap-2">
-                    {visibleKeywords.map((kw) => (
-                      <div key={kw.id} className="relative group">
-                        <Button
-                          variant={searchQuery === kw.keyword ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handleSubscribedKeywordClick(kw.keyword)}
-                          className="h-8 pl-3 pr-8 rounded-full transition-all duration-200 hover:scale-105"
-                        >
-                          {kw.keyword}
-                        </Button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleHideKeyword(kw.id)
-                          }}
-                          className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full flex items-center justify-center hover:bg-muted/80 transition-colors"
-                          title="이번 세션에서 숨기기"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+            {/* 구분선 */}
+            <div className="h-16 w-px bg-muted-foreground/30 shrink-0" />
+
+            {/* 중앙: 즐겨찾기 키워드 (2줄) */}
+            {isFavoriteLoading ? (
+              // 로딩 중 스켈레톤
+              <div className="w-auto shrink-0">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="h-3.5 w-3.5 bg-muted rounded animate-pulse" />
+                  <div className="h-3.5 w-16 bg-muted rounded animate-pulse" />
                 </div>
-              </>
-            )}
+                <div className="flex gap-1.5">
+                  <div className="h-6 w-16 bg-muted rounded-full animate-pulse" />
+                  <div className="h-6 w-20 bg-muted rounded-full animate-pulse" />
+                  <div className="h-6 w-14 bg-muted rounded-full animate-pulse" />
+                </div>
+              </div>
+            ) : keywords && keywords.length > 0 ? (
+              <div className="w-auto shrink-0">
+                {/* 첫 번째 줄: 별 아이콘 + "즐겨찾기" */}
+                <div className="flex items-center gap-2 mb-1.5">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={handleToggleFavoriteNews}
+                          className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+                        >
+                          <Star
+                            className={`h-3.5 w-3.5 ${favoriteNewsEnabled ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground'}`}
+                          />
+                          <span className="text-sm font-semibold text-muted-foreground">즐겨찾기</span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">{favoriteNewsEnabled ? '나의 뉴스 On (클릭하여 Off)' : '나의 뉴스 Off (클릭하여 On)'}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                {/* 두 번째 줄: 키워드 버튼들 */}
+                <div className="flex gap-1.5 flex-wrap">
+                  {keywords.map((kw) => (
+                    <Button
+                      key={kw.id}
+                      variant={selectedKeywords.has(kw.keyword) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleSubscribedKeywordClick(kw.keyword)}
+                      disabled={!favoriteNewsEnabled}
+                      className="h-6 px-2.5 rounded-full text-xs transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {kw.keyword}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             {/* 구분선 */}
-            <div className="h-8 w-px bg-muted-foreground/30 shrink-0" />
+            {(isFavoriteLoading || (keywords && keywords.length > 0)) && (
+              <div className="h-16 w-px bg-muted-foreground/20 shrink-0" />
+            )}
 
-            {/* 인기 검색어 */}
+            {/* 오른쪽: 인기 검색어 */}
             <div className="flex-1 min-w-0">
               <TrendingKeywordsCompact
                 onKeywordClick={handleTrendingKeywordClick}
@@ -206,37 +315,53 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 즐겨찾기 키워드 (모바일) */}
-          {visibleKeywords && visibleKeywords.length > 0 && (
-            <div className="flex items-center gap-2 mt-2 pb-1">
-              <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500 shrink-0" />
-              <span className="text-xs font-semibold text-muted-foreground shrink-0">즐겨찾기:</span>
-              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide flex-1">
-                {visibleKeywords.map((kw) => (
-                  <div key={kw.id} className="relative group shrink-0">
-                    <Button
-                      variant={searchQuery === kw.keyword ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleSubscribedKeywordClick(kw.keyword)}
-                      className="h-7 pl-2.5 pr-7 rounded-full text-xs whitespace-nowrap"
-                    >
-                      {kw.keyword}
-                    </Button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleHideKeyword(kw.id)
-                      }}
-                      className="absolute right-0.5 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full flex items-center justify-center hover:bg-muted/80 transition-colors"
-                      title="이번 세션에서 숨기기"
-                    >
-                      <X className="h-2.5 w-2.5" />
-                    </button>
-                  </div>
+          {/* 즐겨찾기 키워드 (모바일, 2줄) */}
+          {isFavoriteLoading ? (
+            // 로딩 중 스켈레톤
+            <div className="mt-2 pb-1 space-y-1">
+              <div className="flex items-center gap-1.5">
+                <div className="h-3 w-3 bg-muted rounded animate-pulse" />
+                <div className="h-3.5 w-14 bg-muted rounded animate-pulse" />
+                <div className="h-3 w-20 bg-muted rounded animate-pulse" />
+              </div>
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+                <div className="h-6 w-14 bg-muted rounded-full animate-pulse shrink-0" />
+                <div className="h-6 w-16 bg-muted rounded-full animate-pulse shrink-0" />
+                <div className="h-6 w-12 bg-muted rounded-full animate-pulse shrink-0" />
+              </div>
+            </div>
+          ) : keywords && keywords.length > 0 ? (
+            <div className="mt-2 pb-1 space-y-1">
+              {/* 첫 번째 줄: 별 아이콘 + "즐겨찾기" */}
+              <button
+                onClick={handleToggleFavoriteNews}
+                className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+              >
+                <Star
+                  className={`h-3 w-3 ${favoriteNewsEnabled ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground'}`}
+                />
+                <span className="text-sm font-semibold text-muted-foreground">즐겨찾기</span>
+                <span className="text-[10px] text-muted-foreground">
+                  ({favoriteNewsEnabled ? '나의 뉴스 On' : '나의 뉴스 Off'})
+                </span>
+              </button>
+              {/* 두 번째 줄: 키워드 버튼들 */}
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+                {keywords.map((kw) => (
+                  <Button
+                    key={kw.id}
+                    variant={selectedKeywords.has(kw.keyword) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleSubscribedKeywordClick(kw.keyword)}
+                    disabled={!favoriteNewsEnabled}
+                    className="h-6 px-2.5 rounded-full text-xs whitespace-nowrap shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {kw.keyword}
+                  </Button>
                 ))}
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -262,7 +387,7 @@ export default function HomePage() {
           refreshTrigger={refreshTrigger}
           activeRegion={activeRegion}
           layoutMode="grid"
-          favoriteKeywords={visibleKeywords?.map(kw => kw.keyword) || []}
+          favoriteKeywords={Array.from(selectedKeywords)}
           onAvailableCategoriesChange={setAvailableCategories}
           onTotalCountChange={setTotalNewsCount}
           onPageChange={setCurrentPage}

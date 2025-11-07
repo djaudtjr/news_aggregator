@@ -86,6 +86,7 @@ export default function MyPage() {
     enabled: false,
     deliveryDays: [1, 2, 3, 4, 5], // 월~금
     deliveryHour: 6, // 기본값: 6시
+    favoriteNewsEnabled: true, // 기본값: true (활성화)
   })
 
   // 이메일 설정 초기화
@@ -96,11 +97,19 @@ export default function MyPage() {
         enabled: emailSettings.enabled,
         deliveryDays: emailSettings.delivery_days,
         deliveryHour: emailSettings.delivery_hour,
+        favoriteNewsEnabled: emailSettings.favorite_news_enabled ?? true,
       })
     } else if (user?.email) {
       setEmailForm((prev) => ({ ...prev, email: user.email! }))
     }
   }, [emailSettings, user])
+
+  // 키워드가 없으면 나의 뉴스 조회 자동 OFF
+  useEffect(() => {
+    if (keywords.length === 0) {
+      setEmailForm((prev) => ({ ...prev, favoriteNewsEnabled: false }))
+    }
+  }, [keywords.length])
 
   const fetchMyPageData = useCallback(async () => {
     if (!user) return
@@ -272,6 +281,9 @@ export default function MyPage() {
     for (const kw of keywords) {
       await removeKeyword(kw.id)
     }
+
+    // 키워드가 없으면 나의 뉴스 조회 OFF
+    setEmailForm((prev) => ({ ...prev, favoriteNewsEnabled: false }))
   }
 
   // 이메일 설정 저장 핸들러
@@ -622,9 +634,52 @@ export default function MyPage() {
             <CardContent className="space-y-3">
               {/* 구독 키워드 섹션 */}
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">1</Badge>
-                  <h3 className="font-semibold text-sm">구독 키워드</h3>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">1</Badge>
+                    <h3 className="font-semibold text-sm">구독 키워드</h3>
+                  </div>
+                  {/* 나의 뉴스 조회 스위치 */}
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="favorite-news-enabled" className="text-xs font-medium cursor-pointer">
+                      나의 뉴스 조회
+                    </Label>
+                    <Switch
+                      id="favorite-news-enabled"
+                      checked={emailForm.favoriteNewsEnabled}
+                      onCheckedChange={async (checked) => {
+                        // 낙관적 업데이트
+                        setEmailForm((prev) => ({ ...prev, favoriteNewsEnabled: checked }))
+
+                        // DB에 즉시 저장
+                        const success = await saveSettings({
+                          email: emailForm.email,
+                          enabled: emailForm.enabled,
+                          deliveryDays: emailForm.deliveryDays,
+                          deliveryHour: emailForm.deliveryHour,
+                          favoriteNewsEnabled: checked,
+                        })
+
+                        if (success) {
+                          toast({
+                            title: checked ? "✅ 나의 뉴스 ON" : "✅ 나의 뉴스 OFF",
+                            description: checked
+                              ? "구독 키워드로만 뉴스가 조회됩니다."
+                              : "전체 뉴스가 조회됩니다.",
+                          })
+                        } else {
+                          // 실패 시 원래 상태로 되돌리기
+                          setEmailForm((prev) => ({ ...prev, favoriteNewsEnabled: !checked }))
+                          toast({
+                            title: "❌ 저장 실패",
+                            description: "설정 저장에 실패했습니다. 다시 시도해주세요.",
+                            variant: "destructive",
+                          })
+                        }
+                      }}
+                      disabled={keywords.length === 0}
+                    />
+                  </div>
                 </div>
 
                 {/* 키워드 추가 폼 */}
