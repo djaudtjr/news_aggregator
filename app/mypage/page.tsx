@@ -89,6 +89,20 @@ export default function MyPage() {
     favoriteNewsEnabled: true, // 기본값: true (활성화)
   })
 
+  // 이메일 유효성 검증 상태
+  const [emailError, setEmailError] = useState<string>("")
+
+  // 이메일 형식 검증 함수
+  const validateEmail = (email: string): boolean => {
+    if (!email || email.trim() === "") {
+      return false
+    }
+    // RFC 5322 표준에 가까운 정규식 + 최상위 도메인(TLD) 필수
+    // 예: user@example.com (O), user@example (X)
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/
+    return emailRegex.test(email.trim())
+  }
+
   // 이메일 설정 초기화
   useEffect(() => {
     if (emailSettings) {
@@ -343,8 +357,33 @@ export default function MyPage() {
     setEmailForm((prev) => ({ ...prev, favoriteNewsEnabled: false }))
   }
 
+  // 이메일 입력 핸들러 (실시간 검증)
+  const handleEmailChange = (email: string) => {
+    setEmailForm((prev) => ({ ...prev, email }))
+
+    // 실시간 검증
+    if (email.trim() === "") {
+      setEmailError("이메일 주소를 입력해주세요.")
+    } else if (!validateEmail(email)) {
+      setEmailError("올바른 이메일 형식이 아닙니다. (예: example@email.com)")
+    } else {
+      setEmailError("")
+    }
+  }
+
   // 이메일 설정 저장 핸들러
   const handleSaveEmailSettings = async () => {
+    // 최종 이메일 검증
+    if (!validateEmail(emailForm.email)) {
+      toast({
+        title: "❌ 이메일 오류",
+        description: "올바른 이메일 주소를 입력해주세요.",
+        variant: "destructive",
+      })
+      setEmailError("올바른 이메일 형식이 아닙니다. (예: example@email.com)")
+      return
+    }
+
     // 구독 키워드가 없으면 이메일 알림 자동 off
     if (keywords.length === 0) {
       const updatedForm = { ...emailForm, enabled: false }
@@ -414,6 +453,17 @@ export default function MyPage() {
         description: "이메일 주소를 입력해주세요.",
         variant: "destructive",
       })
+      return
+    }
+
+    // 이메일 형식 검증
+    if (!validateEmail(emailForm.email)) {
+      toast({
+        title: "❌ 이메일 오류",
+        description: "올바른 이메일 주소를 입력해주세요.",
+        variant: "destructive",
+      })
+      setEmailError("올바른 이메일 형식이 아닙니다. (예: example@email.com)")
       return
     }
 
@@ -871,25 +921,34 @@ export default function MyPage() {
                 </div>
 
                 {/* 이메일 주소 & 이메일 활성화 토글 */}
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 flex items-center gap-2">
-                    <Label htmlFor="email-address" className="whitespace-nowrap">수신 이메일</Label>
-                    <Input
-                      id="email-address"
-                      type="email"
-                      value={emailForm.email}
-                      onChange={(e) => setEmailForm((prev) => ({ ...prev, email: e.target.value }))}
-                      disabled={!emailForm.enabled}
-                      className="flex-1"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="email-enabled" className="whitespace-nowrap">이메일 알림</Label>
-                    <Switch
-                      id="email-enabled"
-                      checked={emailForm.enabled}
-                      onCheckedChange={(checked) => setEmailForm((prev) => ({ ...prev, enabled: checked }))}
-                    />
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="email-address" className="whitespace-nowrap">수신 이메일</Label>
+                        <Input
+                          id="email-address"
+                          type="email"
+                          value={emailForm.email}
+                          onChange={(e) => handleEmailChange(e.target.value)}
+                          disabled={!emailForm.enabled}
+                          className={`flex-1 ${emailError && emailForm.enabled ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                          placeholder="example@email.com"
+                        />
+                      </div>
+                      {/* 이메일 에러 메시지 */}
+                      {emailError && emailForm.enabled && (
+                        <p className="text-xs text-red-500 pl-[88px]">{emailError}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="email-enabled" className="whitespace-nowrap">이메일 알림</Label>
+                      <Switch
+                        id="email-enabled"
+                        checked={emailForm.enabled}
+                        onCheckedChange={(checked) => setEmailForm((prev) => ({ ...prev, enabled: checked }))}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -946,13 +1005,17 @@ export default function MyPage() {
 
                 {/* 저장 및 테스트 버튼 */}
                 <div className="flex gap-2">
-                  <Button onClick={handleSaveEmailSettings} className="flex-[2] h-9 text-sm">
+                  <Button
+                    onClick={handleSaveEmailSettings}
+                    className="flex-[2] h-9 text-sm"
+                    disabled={!!emailError || !emailForm.email.trim()}
+                  >
                     설정 저장
                   </Button>
                   <Button
                     onClick={handleTestEmailClick}
                     variant="outline"
-                    disabled={sendingTestEmail || !emailForm.email || keywords.length === 0}
+                    disabled={sendingTestEmail || !emailForm.email || keywords.length === 0 || !!emailError}
                     className="flex-[1] h-9 text-sm"
                   >
                     {sendingTestEmail ? "전송 중..." : "테스트"}
