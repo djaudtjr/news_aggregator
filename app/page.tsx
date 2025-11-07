@@ -272,8 +272,10 @@ export default function HomePage() {
 
 
 
-      {/* 오른쪽 고정 사이드바: 최근 본 기사 */}
-      <RecentArticlesSidebar />
+      {/* 오른쪽 고정 사이드바: 최근 본 기사 (데스크톱만) */}
+      <div className="hidden md:block">
+        <RecentArticlesSidebar />
+      </div>
 
       <Footer />
     </div>
