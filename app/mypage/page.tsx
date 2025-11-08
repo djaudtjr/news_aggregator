@@ -1072,7 +1072,7 @@ export default function MyPage() {
 
         {/* 하단: 북마크한 기사 (전체 너비) */}
         <Card className="w-full">
-          <CardHeader className="p-4 sm:p-6">
+          <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bookmark className="h-5 w-5 text-primary" />
@@ -1090,10 +1090,10 @@ export default function MyPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6">
+          <CardContent className="px-3 sm:px-4 pb-2 sm:pb-4 pt-0">
             {data?.recentBookmarks && data.recentBookmarks.length > 0 ? (
               <>
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 gap-2 sm:gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {data.recentBookmarks
                     .slice((bookmarksPage - 1) * bookmarksPerPage, bookmarksPage * bookmarksPerPage)
                     .map((bookmark) => (
@@ -1102,14 +1102,14 @@ export default function MyPage() {
                         href={bookmark.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block p-2 rounded-lg border hover:bg-accent transition-colors"
+                        className="flex h-full flex-col rounded-lg border p-2 hover:bg-accent transition-colors"
                       >
-                        <div className="font-medium line-clamp-2">{bookmark.title}</div>
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="font-medium line-clamp-2 flex-1">{bookmark.title}</div>
+                        <div className="flex items-center gap-2 mt-1.5">
                           {bookmark.source && <Badge variant="secondary">{bookmark.source}</Badge>}
                           {bookmark.category && <Badge variant="outline">{bookmark.category}</Badge>}
                         </div>
-                        <div className="text-xs text-muted-foreground mt-2">
+                        <div className="text-xs text-muted-foreground mt-1.5">
                           {formatDistanceToNow(new Date(bookmark.created_at), { addSuffix: true, locale: ko })}
                         </div>
                       </a>
