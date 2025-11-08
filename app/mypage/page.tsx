@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +30,7 @@ import { useSubscribedKeywords } from "@/hooks/useSubscribedKeywords"
 import { useEmailSettings } from "@/hooks/useEmailSettings"
 import { useToast } from "@/hooks/use-toast"
 import { KeywordTrendsChart } from "@/components/keyword-trends-chart"
+import { cn } from "@/lib/utils"
 
 interface MyPageData {
   stats: {
@@ -65,6 +67,8 @@ export default function MyPage() {
   const [activeRegion, setActiveRegion] = useState("all")
   const [timeRange, setTimeRange] = useState(1)
   const bookmarksPerPage = 5
+  const maxSelectableBookmarks = 10
+  const [selectedBookmarkIds, setSelectedBookmarkIds] = useState<string[]>([])
 
   // 구독 키워드 관련
   const { keywords, addKeyword, removeKeyword } = useSubscribedKeywords()
@@ -90,6 +94,7 @@ export default function MyPage() {
 
   // 이메일 유효성 검증 상태
   const [emailError, setEmailError] = useState<string>("")
+  const [sendingBookmarksEmail, setSendingBookmarksEmail] = useState(false)
 
   // 이메일 형식 검증 함수
   const validateEmail = (email: string): boolean => {
@@ -230,6 +235,17 @@ export default function MyPage() {
     }
   }, [data?.recentBookmarks, bookmarksPage, bookmarksPerPage])
 
+  useEffect(() => {
+    if (!data?.recentBookmarks) {
+      setSelectedBookmarkIds([])
+      return
+    }
+
+    setSelectedBookmarkIds((prev) =>
+      prev.filter((id) => data.recentBookmarks.some((bookmark) => bookmark.id === id))
+    )
+  }, [data?.recentBookmarks])
+
   const handleSearchChange = (query: string) => {
     setSearchQuery(query)
     if (query.trim()) {
@@ -246,6 +262,25 @@ export default function MyPage() {
       return
     }
     router.push('/')
+  }
+
+  const handleToggleBookmarkSelection = (bookmarkId: string) => {
+    setSelectedBookmarkIds((prev) => {
+      if (prev.includes(bookmarkId)) {
+        return prev.filter((id) => id !== bookmarkId)
+      }
+
+      if (prev.length >= maxSelectableBookmarks) {
+        toast({
+          title: "⚠️ 선택 한도 초과",
+          description: `북마크는 최대 ${maxSelectableBookmarks}개까지 선택할 수 있습니다.`,
+          variant: "destructive",
+        })
+        return prev
+      }
+
+      return [...prev, bookmarkId]
+    })
   }
 
   // 변경사항 무시하고 이동
@@ -284,6 +319,7 @@ export default function MyPage() {
 
       if (response.ok) {
         await fetchMyPageData() // 데이터 새로고침
+        setSelectedBookmarkIds([])
         toast({
           title: "✅ 북마크 삭제 완료",
           description: "모든 북마크가 삭제되었습니다.",
@@ -302,6 +338,76 @@ export default function MyPage() {
         description: "북마크 삭제 중 오류가 발생했습니다.",
         variant: "destructive",
       })
+    }
+  }
+
+  const handleSendBookmarksEmail = async () => {
+    if (!user) {
+      toast({
+        title: "⚠️ 로그인 필요",
+        description: "로그인 후 다시 시도해주세요.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (selectedBookmarkIds.length === 0) {
+      toast({
+        title: "⚠️ 북마크 선택",
+        description: "메일로 발송할 기사를 선택해주세요.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!emailForm.email || !validateEmail(emailForm.email)) {
+      const errorMessage = emailForm.email
+        ? "올바른 이메일 주소를 입력해주세요."
+        : "이메일 주소를 입력해주세요."
+
+      toast({
+        title: "❌ 이메일 오류",
+        description: errorMessage,
+        variant: "destructive",
+      })
+      setEmailError(errorMessage)
+      return
+    }
+
+    try {
+      setSendingBookmarksEmail(true)
+      const response = await fetch("/api/email/send-bookmarks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          email: emailForm.email,
+          bookmarkIds: selectedBookmarkIds,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result?.error || "메일 발송에 실패했습니다.")
+      }
+
+      toast({
+        title: "✅ 메일 발송 완료",
+        description: `선택한 ${result?.sentCount ?? selectedBookmarkIds.length}개의 기사 요약본을 이메일로 발송했습니다.`,
+      })
+      setSelectedBookmarkIds([])
+    } catch (error) {
+      console.error("[Bookmarks Email] Failed to send email:", error)
+      toast({
+        title: "❌ 메일 발송 실패",
+        description: error instanceof Error ? error.message : "메일 발송 중 오류가 발생했습니다.",
+        variant: "destructive",
+      })
+    } finally {
+      setSendingBookmarksEmail(false)
     }
   }
 
@@ -1073,46 +1179,95 @@ export default function MyPage() {
         {/* 하단: 북마크한 기사 (전체 너비) */}
         <Card className="w-full">
           <CardHeader className="p-3 sm:p-4 pb-1 sm:pb-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
                 <Bookmark className="h-5 w-5 text-primary" />
                 <CardTitle>북마크한 기사</CardTitle>
               </div>
-              <div className="flex items-center gap-2">
-                {data?.recentBookmarks && data.recentBookmarks.length > 0 && (
-                  <>
+              <div className="flex flex-col items-end gap-2 text-right">
+                <div className="flex items-center gap-1 text-[11px] sm:text-xs text-muted-foreground">
+                  <Mail className="h-4 w-4 text-primary" />
+                  <span className="font-medium">선택한 기사를 메일로 발송</span>
+                  <span className="text-[10px] text-muted-foreground">(최대 {maxSelectableBookmarks}개)</span>
+                </div>
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {data?.recentBookmarks && data.recentBookmarks.length > 0 && (
                     <Badge variant="secondary">{data.recentBookmarks.length}개</Badge>
+                  )}
+                  <Badge variant="outline">
+                    {selectedBookmarkIds.length}/{maxSelectableBookmarks} 선택
+                  </Badge>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleSendBookmarksEmail}
+                    disabled={
+                      sendingBookmarksEmail ||
+                      selectedBookmarkIds.length === 0 ||
+                      !emailForm.email ||
+                      !!emailError
+                    }
+                    className="flex items-center gap-1"
+                  >
+                    {sendingBookmarksEmail ? (
+                      <>
+                        <Send className="h-3.5 w-3.5 animate-pulse" />
+                        발송 중...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-3.5 w-3.5" />
+                        메일 발송
+                      </>
+                    )}
+                  </Button>
+                  {data?.recentBookmarks && data.recentBookmarks.length > 0 && (
                     <Button variant="ghost" size="sm" onClick={handleClearAllBookmarks}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  </>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </CardHeader>
           <CardContent className="px-3 sm:px-4 pb-2 sm:pb-4 pt-0">
             {data?.recentBookmarks && data.recentBookmarks.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 gap-2 sm:gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {data.recentBookmarks
                     .slice((bookmarksPage - 1) * bookmarksPerPage, bookmarksPage * bookmarksPerPage)
                     .map((bookmark) => (
-                      <a
+                      <div
                         key={bookmark.id}
-                        href={bookmark.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex h-full flex-col rounded-lg border p-2 hover:bg-accent transition-colors"
+                        className={cn(
+                          "relative flex h-full flex-col rounded-lg border p-2 transition-colors hover:bg-accent",
+                          selectedBookmarkIds.includes(bookmark.id) && "border-primary ring-2 ring-primary/30"
+                        )}
                       >
-                        <div className="font-medium line-clamp-2 flex-1">{bookmark.title}</div>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          {bookmark.source && <Badge variant="secondary">{bookmark.source}</Badge>}
-                          {bookmark.category && <Badge variant="outline">{bookmark.category}</Badge>}
+                        <div className="absolute right-2 top-2 z-10 rounded-md bg-background/80 p-1 backdrop-blur">
+                          <Checkbox
+                            checked={selectedBookmarkIds.includes(bookmark.id)}
+                            onCheckedChange={() => handleToggleBookmarkSelection(bookmark.id)}
+                            className="h-4 w-4"
+                            aria-label={`${bookmark.title} 선택`}
+                          />
                         </div>
-                        <div className="text-xs text-muted-foreground mt-1.5">
-                          {formatDistanceToNow(new Date(bookmark.created_at), { addSuffix: true, locale: ko })}
-                        </div>
-                      </a>
+                        <a
+                          href={bookmark.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex h-full flex-col"
+                        >
+                          <div className="font-medium line-clamp-2 flex-1 pr-4">{bookmark.title}</div>
+                          <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                            {bookmark.source && <Badge variant="secondary">{bookmark.source}</Badge>}
+                            {bookmark.category && <Badge variant="outline">{bookmark.category}</Badge>}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1.5">
+                            {formatDistanceToNow(new Date(bookmark.created_at), { addSuffix: true, locale: ko })}
+                          </div>
+                        </a>
+                      </div>
                     ))}
                 </div>
 
