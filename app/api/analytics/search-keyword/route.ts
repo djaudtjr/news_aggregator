@@ -5,8 +5,8 @@ import { supabase } from "@/lib/supabase/client"
  * 한글, 영문, 숫자, 공백만 남기고 나머지 문자 제거
  */
 function sanitizeKeyword(keyword: string): string {
-  // 한글(ㄱ-ㅎ, ㅏ-ㅣ, 가-힣), 영문(a-zA-Z), 숫자(0-9), 공백만 유지
-  return keyword.replace(/[^ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9\s]/g, "").trim()
+  // 한글/영문/숫자만 남기고 모든 공백 제거
+  return keyword.replace(/[^ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9\s]/g, "").replace(/\s+/g, "").trim()
 }
 
 /**
