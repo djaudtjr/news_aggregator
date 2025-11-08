@@ -674,23 +674,23 @@ export default function MyPage() {
       />
       <main className="container mx-auto px-3 sm:px-4 py-2 sm:py-4 space-y-3 sm:space-y-4">
         {/* 상단: 프로필 (좌측) + 통계 (우측) */}
-        <div className="grid gap-2 md:gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-4 gap-2 md:gap-3">
           {/* 프로필 섹션 */}
-          <Card className="w-full md:col-span-1">
-            <CardHeader className="pb-1 pt-1 px-2 sm:px-6">
-              <div className="flex flex-row md:flex-col items-center gap-2 md:gap-0">
+          <Card className="w-full col-span-1 md:col-span-1 py-2 gap-2 sm:py-3 sm:gap-3">
+            <CardHeader className="pb-0 pt-0 px-2 sm:px-4 flex items-center justify-center h-full">
+              <div className="flex flex-row items-center gap-1.5 sm:gap-2 md:gap-3 justify-center w-full">
                 {user.user_metadata?.avatar_url ? (
                   <img
                     src={user.user_metadata.avatar_url}
                     alt={user.user_metadata?.full_name || "User"}
-                    className="h-6 w-6 md:h-10 md:w-10 rounded-full"
+                    className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 rounded-full"
                   />
                 ) : (
-                  <div className="h-6 w-6 md:h-10 md:w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-3 w-3 md:h-5 md:w-5 text-primary" />
+                  <div className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-primary" />
                   </div>
                 )}
-                <div className="text-left md:text-center leading-tight">
+                <div className="text-left leading-tight">
                   <CardTitle className="text-xs md:text-sm mb-0">{user.user_metadata?.full_name || "사용자"}</CardTitle>
                   <CardDescription className="text-[10px] md:text-xs leading-tight hidden md:block">{user.email}</CardDescription>
                 </div>
@@ -699,40 +699,38 @@ export default function MyPage() {
           </Card>
 
           {/* 통계 카드 (AI요약, 기사조회, 검색) */}
-          <div className="md:col-span-3 grid gap-2 grid-cols-3">
-            <Card className="w-full">
-              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-0 pb-0 pt-1 px-1.5 sm:px-6">
-                <CardTitle className="text-[9px] sm:text-xs font-medium">AI 요약</CardTitle>
-                <FileText className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-muted-foreground hidden sm:block" />
-              </CardHeader>
-              <CardContent className="pt-0 pb-1 px-1.5 sm:px-6">
-                <div className="text-sm sm:text-xl font-bold leading-none mb-0">{data?.stats.totalSummaryRequests || 0}</div>
-                <p className="text-[8px] sm:text-[10px] text-muted-foreground leading-tight hidden sm:block">총 요청 횟수</p>
-              </CardContent>
-            </Card>
+          <Card className="w-full col-span-1 py-3 gap-2">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-0 pb-0 pt-0 px-2 sm:px-4">
+              <CardTitle className="text-[9px] sm:text-xs font-medium">AI 요약</CardTitle>
+              <FileText className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-muted-foreground hidden sm:block" />
+            </CardHeader>
+            <CardContent className="pt-0 pb-1 px-2 sm:px-4">
+              <div className="text-sm sm:text-xl font-bold leading-none mb-0">{data?.stats.totalSummaryRequests || 0}</div>
+              <p className="text-[8px] sm:text-[10px] text-muted-foreground leading-tight hidden sm:block">총 요청 횟수</p>
+            </CardContent>
+          </Card>
 
-            <Card className="w-full">
-              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-0 pb-0 pt-1 px-1.5 sm:px-6">
-                <CardTitle className="text-[9px] sm:text-xs font-medium">기사 조회</CardTitle>
-                <LinkIcon className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-muted-foreground hidden sm:block" />
-              </CardHeader>
-              <CardContent className="pt-0 pb-1 px-1.5 sm:px-6">
-                <div className="text-sm sm:text-xl font-bold leading-none mb-0">{data?.stats.totalLinkClicks || 0}</div>
-                <p className="text-[8px] sm:text-[10px] text-muted-foreground leading-tight hidden sm:block">총 클릭 횟수</p>
-              </CardContent>
-            </Card>
+          <Card className="w-full col-span-1 py-3 gap-2">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-0 pb-0 pt-0 px-2 sm:px-4">
+              <CardTitle className="text-[9px] sm:text-xs font-medium">기사 조회</CardTitle>
+              <LinkIcon className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-muted-foreground hidden sm:block" />
+            </CardHeader>
+            <CardContent className="pt-0 pb-1 px-2 sm:px-4">
+              <div className="text-sm sm:text-xl font-bold leading-none mb-0">{data?.stats.totalLinkClicks || 0}</div>
+              <p className="text-[8px] sm:text-[10px] text-muted-foreground leading-tight hidden sm:block">총 클릭 횟수</p>
+            </CardContent>
+          </Card>
 
-            <Card className="w-full">
-              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-0 pb-0 pt-1 px-1.5 sm:px-6">
-                <CardTitle className="text-[9px] sm:text-xs font-medium">검색</CardTitle>
-                <Search className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-muted-foreground hidden sm:block" />
-              </CardHeader>
-              <CardContent className="pt-0 pb-1 px-1.5 sm:px-6">
-                <div className="text-sm sm:text-xl font-bold leading-none mb-0">{data?.stats.totalSearches || 0}</div>
-                <p className="text-[8px] sm:text-[10px] text-muted-foreground leading-tight hidden sm:block">총 검색 횟수</p>
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="w-full col-span-1 py-3 gap-2">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-0 pb-0 pt-0 px-2 sm:px-4">
+              <CardTitle className="text-[9px] sm:text-xs font-medium">검색</CardTitle>
+              <Search className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-muted-foreground hidden sm:block" />
+            </CardHeader>
+            <CardContent className="pt-0 pb-1 px-2 sm:px-4">
+              <div className="text-sm sm:text-xl font-bold leading-none mb-0">{data?.stats.totalSearches || 0}</div>
+              <p className="text-[8px] sm:text-[10px] text-muted-foreground leading-tight hidden sm:block">총 검색 횟수</p>
+            </CardContent>
+          </Card>
         </div>
         {/* 중단: 구독 키워드 + 이메일 알림 통합 (좌측) + 최근 검색 키워드 (우측) */}
         <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
