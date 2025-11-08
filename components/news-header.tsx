@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { Search, Menu, Radio, RefreshCw, LogIn, LogOut, User, HelpCircle } from "lucide-react"
+import { Search, Menu, Radio, RefreshCw, LogIn, LogOut, User, HelpCircle, Loader2, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -23,6 +23,7 @@ interface NewsHeaderProps {
   hasUnsavedChanges?: boolean
   onLogoutAttempt?: () => void
   hideSearchBar?: boolean
+  isLoading?: boolean
 }
 
 export function NewsHeader({
@@ -37,11 +38,13 @@ export function NewsHeader({
   hasUnsavedChanges,
   onLogoutAttempt,
   hideSearchBar = false,
+  isLoading = false,
 }: NewsHeaderProps) {
   const [inputValue, setInputValue] = useState(searchQuery)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false)
   const [correctedKeyword, setCorrectedKeyword] = useState<string | null>(null)
+  const [showSuccess, setShowSuccess] = useState(false)
   const { user, signOut } = useAuth()
 
   const regions = [
@@ -63,6 +66,19 @@ export function NewsHeader({
       setInputValue("")
     }
   }, [searchQuery])
+
+  // 로딩 완료 시 잠시 성공 아이콘 표시
+  useEffect(() => {
+    if (!isLoading && searchQuery) {
+      setShowSuccess(true)
+      const timer = setTimeout(() => {
+        setShowSuccess(false)
+      }, 2000) // 2초 동안 표시
+      return () => clearTimeout(timer)
+    } else {
+      setShowSuccess(false)
+    }
+  }, [isLoading, searchQuery])
 
   const handleSearch = async (keyword: string) => {
     if (!keyword || keyword.trim().length === 0) {
@@ -211,7 +227,13 @@ export function NewsHeader({
         {!hideSearchBar && (
           <div className="hidden md:flex flex-1 max-w-3xl mx-8 gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              {isLoading ? (
+                <Loader2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary animate-spin" />
+              ) : showSuccess ? (
+                <CheckCircle2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-green-500" />
+              ) : (
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              )}
               <Input
                 type="search"
                 placeholder="Search news... (Press Enter)"

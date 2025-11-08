@@ -35,6 +35,7 @@ interface NewsFeedProps {
   onTotalCountChange?: (count: number) => void
   onPageChange?: (page: number) => void
   onTotalPagesChange?: (totalPages: number) => void
+  onLoadingChange?: (loading: boolean) => void
 }
 
 async function fetchNews(searchQuery: string, activeRegion: string, favoriteKeywords: string[]): Promise<NewsArticle[]> {
@@ -155,6 +156,7 @@ export function NewsFeed({
   onTotalCountChange,
   onPageChange,
   onTotalPagesChange,
+  onLoadingChange,
 }: NewsFeedProps) {
   const [allCategories, setAllCategories] = useState<Set<string>>(new Set())
   const [showLoadingMessage, setShowLoadingMessage] = useState(false)
@@ -296,6 +298,13 @@ export function NewsFeed({
       onTotalPagesChange(totalPages)
     }
   }, [totalPages, onTotalPagesChange])
+
+  // 로딩 상태를 상위 컴포넌트에 전달
+  useEffect(() => {
+    if (onLoadingChange) {
+      onLoadingChange(loading)
+    }
+  }, [loading, onLoadingChange])
 
   // 필터 변경 시 페이지 1로 리셋
   useEffect(() => {

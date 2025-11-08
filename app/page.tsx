@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Newspaper, Search, Star, X } from "lucide-react"
+import { Newspaper, Search, Star, X, Loader2, CheckCircle2 } from "lucide-react"
 import { NewsHeader } from "@/components/news-header"
 import { NewsFeed } from "@/components/news-feed"
 import { NewsCategories } from "@/components/news-categories"
@@ -62,23 +62,43 @@ export default function HomePage() {
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set())
 
   // 즐겨찾기 ON 상태이고 구독 키워드가 있으면 모든 키워드를 자동으로 선택
+  // 단, 검색어가 있으면 즐겨찾기 키워드는 비활성화
   useEffect(() => {
-    if (favoriteNewsEnabled && keywords && keywords.length > 0) {
+    if (searchQuery) {
+      // 검색어가 있으면 즐겨찾기 키워드 비활성화
+      setSelectedKeywords(new Set())
+    } else if (favoriteNewsEnabled && keywords && keywords.length > 0) {
+      // 검색어가 없고 즐겨찾기 ON이면 모든 키워드 선택
       setSelectedKeywords(new Set(keywords.map(kw => kw.keyword)))
     } else {
       setSelectedKeywords(new Set())
     }
-  }, [favoriteNewsEnabled, keywords])
+  }, [favoriteNewsEnabled, keywords, searchQuery])
 
   const [availableCategories, setAvailableCategories] = useState<Set<string> | undefined>(undefined)
   const [totalNewsCount, setTotalNewsCount] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(0)
+  const [isNewsLoading, setIsNewsLoading] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   // 디버깅: 키워드 로딩 상태 확인
   console.log('[HomePage] Keywords:', keywords)
   console.log('[HomePage] Keywords loading:', keywordsLoading)
   console.log('[HomePage] Keywords length:', keywords?.length)
+
+  // 로딩 완료 시 잠시 성공 아이콘 표시 (모바일용)
+  useEffect(() => {
+    if (!isNewsLoading && searchQuery) {
+      setShowSuccess(true)
+      const timer = setTimeout(() => {
+        setShowSuccess(false)
+      }, 2000) // 2초 동안 표시
+      return () => clearTimeout(timer)
+    } else {
+      setShowSuccess(false)
+    }
+  }, [isNewsLoading, searchQuery])
 
   const handleTrendingKeywordClick = (keyword: string) => {
     // 인기검색어 클릭 시 즐겨찾기 전체 해제하고 검색어 설정
@@ -183,6 +203,7 @@ export default function HomePage() {
         onRegionChange={handleRegionChange}
         timeRange={timeRange}
         onTimeRangeChange={handleTimeRangeChange}
+        isLoading={isNewsLoading}
       />
       <HeroSubscribeBanner />
 
@@ -289,18 +310,25 @@ export default function HomePage() {
             <div className="h-[40px] w-px bg-muted-foreground/30 shrink-0" />
             {/* 오른쪽: 키워드 입력창 + 검색 버튼 */}
             <div className="flex-1 flex items-center gap-2 min-w-0">
-              <input
-                type="text"
-                placeholder="키워드 검색..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    setSearchQuery(searchQuery)
-                  }
-                }}
-                className="flex-1 h-8 px-3 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0"
-              />
+              <div className="relative flex-1">
+                {isNewsLoading ? (
+                  <Loader2 className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-primary animate-spin" />
+                ) : showSuccess ? (
+                  <CheckCircle2 className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-green-500" />
+                ) : null}
+                <input
+                  type="text"
+                  placeholder="키워드 검색..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setSearchQuery(searchQuery)
+                    }
+                  }}
+                  className={`flex-1 w-full h-8 ${isNewsLoading || showSuccess ? 'pl-8' : 'pl-3'} pr-3 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0`}
+                />
+              </div>
               <Button
                 variant="default"
                 size="icon"
@@ -387,6 +415,7 @@ export default function HomePage() {
           onTotalCountChange={setTotalNewsCount}
           onPageChange={setCurrentPage}
           onTotalPagesChange={setTotalPages}
+          onLoadingChange={setIsNewsLoading}
         />
       </main>
 
