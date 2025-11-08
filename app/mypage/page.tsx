@@ -28,6 +28,7 @@ import { useRouter } from "next/navigation"
 import { useSubscribedKeywords } from "@/hooks/useSubscribedKeywords"
 import { useEmailSettings } from "@/hooks/useEmailSettings"
 import { useToast } from "@/hooks/use-toast"
+import { KeywordTrendsChart } from "@/components/keyword-trends-chart"
 
 interface MyPageData {
   stats: {
@@ -61,11 +62,9 @@ export default function MyPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [bookmarksPage, setBookmarksPage] = useState(1)
-  const [searchesPage, setSearchesPage] = useState(1)
   const [activeRegion, setActiveRegion] = useState("all")
   const [timeRange, setTimeRange] = useState(1)
   const bookmarksPerPage = 5
-  const searchesPerPage = 5
 
   // 구독 키워드 관련
   const { keywords, addKeyword, removeKeyword } = useSubscribedKeywords()
@@ -230,16 +229,6 @@ export default function MyPage() {
       }
     }
   }, [data?.recentBookmarks, bookmarksPage, bookmarksPerPage])
-
-  // 검색 데이터가 변경되면 페이지 범위 조정
-  useEffect(() => {
-    if (data?.recentSearches) {
-      const totalPages = Math.ceil(data.recentSearches.length / searchesPerPage)
-      if (searchesPage > totalPages && totalPages > 0) {
-        setSearchesPage(totalPages)
-      }
-    }
-  }, [data?.recentSearches, searchesPage, searchesPerPage])
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query)
@@ -1037,7 +1026,7 @@ export default function MyPage() {
 
           {/* 최근 검색 키워드 */}
           <Card className="w-full">
-            <CardHeader className="p-3 sm:p-6">
+            <CardHeader className="p-3 sm:p-5 pb-2 sm:pb-4">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
@@ -1071,78 +1060,11 @@ export default function MyPage() {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="p-3 sm:p-6">
+            <CardContent className="px-3 sm:px-5 pb-3 sm:pb-5 pt-0">
               {data?.recentSearches && data.recentSearches.length > 0 ? (
-                <>
-                  <div className="space-y-2">
-                    {data.recentSearches
-                      .slice((searchesPage - 1) * searchesPerPage, searchesPage * searchesPerPage)
-                      .map((search, index) => {
-                        const globalIndex = (searchesPage - 1) * searchesPerPage + index + 1
-                        return (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between p-2 rounded-lg border hover:bg-accent transition-colors"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline">{globalIndex}</Badge>
-                              <div>
-                                <div className="font-medium">{search.keyword}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {formatDistanceToNow(new Date(search.last_searched_at), { addSuffix: true, locale: ko })}
-                                </div>
-                              </div>
-                            </div>
-                            <Badge variant="secondary">{search.search_count}회</Badge>
-                          </div>
-                        )
-                      })}
-                  </div>
-
-                  {/* 페이지네이션 */}
-                  {data.recentSearches.length > searchesPerPage && (
-                    <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSearchesPage((prev) => Math.max(1, prev - 1))}
-                        disabled={searchesPage === 1}
-                      >
-                        이전
-                      </Button>
-                      <div className="flex items-center gap-1">
-                        {Array.from(
-                          { length: Math.ceil(data.recentSearches.length / searchesPerPage) },
-                          (_, i) => i + 1
-                        ).map((page) => (
-                          <Button
-                            key={page}
-                            variant={searchesPage === page ? "default" : "ghost"}
-                            size="sm"
-                            onClick={() => setSearchesPage(page)}
-                            className="w-8 h-8 p-0"
-                          >
-                            {page}
-                          </Button>
-                        ))}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          setSearchesPage((prev) =>
-                            Math.min(Math.ceil(data.recentSearches.length / searchesPerPage), prev + 1)
-                          )
-                        }
-                        disabled={searchesPage === Math.ceil(data.recentSearches.length / searchesPerPage)}
-                      >
-                        다음
-                      </Button>
-                    </div>
-                  )}
-                </>
+                <KeywordTrendsChart searches={data.recentSearches} />
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-6">검색 기록이 없습니다</p>
+                <p className="py-6 text-center text-sm text-muted-foreground">검색 기록이 없습니다</p>
               )}
             </CardContent>
           </Card>
