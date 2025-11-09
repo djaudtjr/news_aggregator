@@ -831,7 +831,7 @@ export default function MyPage() {
         <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
           {/* 뉴스 구독 설정 (키워드 + 이메일 알림 통합) - 강조 */}
           <Card className="w-full border-primary/50 shadow-lg shadow-primary/10 bg-gradient-to-br from-primary/5 to-background ring-1 ring-primary/20">
-            <CardHeader className="bg-primary/5 p-3 sm:p-6">
+            <CardHeader className="bg-primary/5 p-2 sm:p-3">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
@@ -847,7 +847,7 @@ export default function MyPage() {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="space-y-2.5 p-3 sm:p-6">
+            <CardContent className="space-y-2.5 p-2 sm:p-3">
               {/* 구독 키워드 섹션 */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -1132,7 +1132,7 @@ export default function MyPage() {
 
           {/* 최근 검색 키워드 */}
           <Card className="w-full">
-            <CardHeader className="p-3 sm:p-5 pb-2 sm:pb-4">
+            <CardHeader className="p-2 sm:p-3">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
@@ -1166,7 +1166,7 @@ export default function MyPage() {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="px-3 sm:px-5 pb-3 sm:pb-5 pt-0">
+            <CardContent className="px-2 sm:px-3 pb-2 sm:pb-3 pt-0">
               {data?.recentSearches && data.recentSearches.length > 0 ? (
                 <KeywordTrendsChart searches={data.recentSearches} />
               ) : (
