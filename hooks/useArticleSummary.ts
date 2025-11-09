@@ -32,6 +32,7 @@ export function useArticleSummary(newsId: string) {
   const [fromCache, setFromCache] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingMessage, setLoadingMessage] = useState("")
+  const [isBackgroundMode, setIsBackgroundMode] = useState(false) // 백그라운드 모드 상태
 
   // 컴포넌트 마운트 시 기존 요약 불러오기
   useEffect(() => {
@@ -70,7 +71,8 @@ export function useArticleSummary(newsId: string) {
     description: string,
     link: string,
     newsId: string,
-    category?: string
+    category?: string,
+    background: boolean = false // 백그라운드 모드 플래그
   ) => {
     // API 키 확인 (localStorage 또는 환경변수)
     const apiKey = localStorage.getItem("openai_api_key")
@@ -78,19 +80,29 @@ export function useArticleSummary(newsId: string) {
     setIsLoading(true)
     setError(null)
     setFromCache(false)
-    setLoadingProgress(0)
-    setLoadingMessage("기사 내용을 가져오는 중...")
+    setIsBackgroundMode(background) // 백그라운드 모드 상태 설정
+
+    // 백그라운드 모드가 아닐 때만 로딩 UI 업데이트
+    if (!background) {
+      setLoadingProgress(0)
+      setLoadingMessage("기사 내용을 가져오는 중...")
+    }
 
     try {
-      // 진행률 시뮬레이션
-      const progressInterval = setInterval(() => {
-        setLoadingProgress(prev => {
-          if (prev < 90) return prev + 10
-          return prev
-        })
-      }, 500)
+      // 진행률 시뮬레이션 (백그라운드 모드가 아닐 때만)
+      let progressInterval: NodeJS.Timeout | null = null
+      let messageTimeout: NodeJS.Timeout | null = null
 
-      setTimeout(() => setLoadingMessage("AI가 요약을 생성하는 중..."), 1500)
+      if (!background) {
+        progressInterval = setInterval(() => {
+          setLoadingProgress(prev => {
+            if (prev < 90) return prev + 10
+            return prev
+          })
+        }, 500)
+
+        messageTimeout = setTimeout(() => setLoadingMessage("AI가 요약을 생성하는 중..."), 1500)
+      }
 
       const response = await fetch("/api/summarize", {
         method: "POST",
@@ -105,12 +117,16 @@ export function useArticleSummary(newsId: string) {
           category,
           apiKey,
           userId: user?.id || null, // 로그인한 사용자 ID 전달 (비로그인은 null -> 'Anonymous')
+          background, // 백그라운드 모드 플래그 전달
         }),
       })
 
-      clearInterval(progressInterval)
-      setLoadingProgress(100)
-      setLoadingMessage("요약 완료!")
+      if (!background) {
+        if (progressInterval) clearInterval(progressInterval)
+        if (messageTimeout) clearTimeout(messageTimeout)
+        setLoadingProgress(100)
+        setLoadingMessage("요약 완료!")
+      }
 
       if (!response.ok) {
         throw new Error("Failed to summarize")
@@ -207,6 +223,7 @@ export function useArticleSummary(newsId: string) {
     fromCache,
     loadingProgress,
     loadingMessage,
+    isBackgroundMode,
     generateSummary,
     resetSummary,
   }

@@ -23,7 +23,7 @@ interface NewsCardProps {
 function NewsCardComponent({ article }: NewsCardProps) {
   const [timeAgo, setTimeAgo] = useState<string>("")
   const { user } = useAuth()
-  const { summary, keyPoints, isLoading, fromCache, loadingProgress, loadingMessage, generateSummary } = useArticleSummary(article.id)
+  const { summary, keyPoints, isLoading, fromCache, loadingProgress, loadingMessage, isBackgroundMode, generateSummary } = useArticleSummary(article.id)
   const { addRecentArticle } = useRecentArticles()
   const { toggleBookmark, isBookmarked } = useBookmarks()
 
@@ -39,12 +39,12 @@ function NewsCardComponent({ article }: NewsCardProps) {
 
   // 요약이 완료되면 자동으로 Modal 열기
   useEffect(() => {
-    // 요약이 새로 생성되었을 때만 모달 열기 (캐시에서 가져온 것 제외)
-    if (summary && !fromCache && previousSummaryRef.current !== summary) {
+    // 요약이 새로 생성되었을 때만 모달 열기 (캐시에서 가져온 것 제외, 백그라운드 모드 제외)
+    if (summary && !fromCache && !isBackgroundMode && previousSummaryRef.current !== summary) {
       setIsModalOpen(true)
       previousSummaryRef.current = summary
     }
-  }, [summary, fromCache])
+  }, [summary, fromCache, isBackgroundMode])
 
   // URL 유효성 검사
   const isValidUrl = (url: string | undefined): boolean => {
@@ -122,6 +122,19 @@ function NewsCardComponent({ article }: NewsCardProps) {
       console.log(`[NewsCard] View count incremented for ${article.id}`)
     } catch (error) {
       console.error("Failed to increment view count:", error)
+    }
+
+    // AI 요약이 없으면 백그라운드로 요약 생성 (모달 없이)
+    if (!summary && !isLoading) {
+      console.log(`[NewsCard] Starting background AI summary for ${article.id}`)
+      generateSummary(
+        article.title,
+        article.description,
+        article.link,
+        article.id,
+        article.category,
+        true // 백그라운드 모드
+      )
     }
 
     // 링크 클릭 추적 (백그라운드로 실행, 에러 무시)
