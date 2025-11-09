@@ -106,6 +106,24 @@ function NewsCardComponent({ article }: NewsCardProps) {
       pubDate: article.pubDate,
     })
 
+    // view_count 증가 (백그라운드로 실행, 에러 무시)
+    try {
+      await fetch("/api/news/view", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          newsId: article.id,
+          title: article.title,
+          link: article.link,
+        }),
+      })
+      console.log(`[NewsCard] View count incremented for ${article.id}`)
+    } catch (error) {
+      console.error("Failed to increment view count:", error)
+    }
+
     // 링크 클릭 추적 (백그라운드로 실행, 에러 무시)
     try {
       await fetch("/api/analytics/link-click", {
