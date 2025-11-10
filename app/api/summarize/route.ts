@@ -133,18 +133,45 @@ export async function POST(request: NextRequest) {
           Authorization: `Bearer ${openaiApiKey}`,
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "gpt-5-nano",
           messages: [
             {
               role: "system",
-              content: `당신은 뉴스 기사를 정확하게 분석하고 분류하는 전문가입니다.
-주어진 뉴스 기사를 분석하여 다음 JSON 형식으로 응답해주세요:
-
+              content: `뉴스 기사를 정확하게 분석 및 분류하여 다음 JSON 형식으로 응답하세요:
 {
-  "summary": "3-5문장으로 핵심 내용을 간결하게 요약 (300자 이내)",
+  "summary": "주요 내용을 3-5문장으로 300자 이내로 요약합니다.",
   "keyPoints": ["핵심 포인트 1", "핵심 포인트 2", "핵심 포인트 3"],
-  "category": "카테고리 코드"
+  "category": "적절한 카테고리 코드 (예: 정치, 경제, 사회, 문화, 국제, IT/과학, 스포츠 등)"
 }
+- 기사 본문을 주의 깊게 읽고 핵심 내용을 파악합니다.
+- reasoning: 기사 내용 분석 → 요약에 반영할 주요 정보 파악 → 요약문 작성 → 3가지 핵심 포인트 도출 → 카테고리 선정 (이 순서를 반드시 지킵니다; 절대 결과부터 시작하지 마세요.)
+- conclusion: summary, keyPoints, category를 위 JSON 구조에 맞춰 최종적으로 작성합니다.
+- 반드시 reasoning(분석과 판단) 후 결론(응답 JSON)을 제시합니다.
+- 응답은 반드시 위의 JSON 구조로만 작성하며, 코드블록으로 감싸지 않습니다.
+
+요약 및 핵심 포인트 작성 규칙:
+1. summary: 핵심 내용만 간결하게 요약, 중요한 사실과 수치 포함, 객관적이고 중립적인 톤 유지, 300자 이내, 한국어로 작성
+2. keyPoints: 3-5개의 핵심 포인트를 배열로 제공, 각 포인트는 간결하게 작성
+3. category: 위의 분류 기준에 따라 가장 적합한 카테고리의 코드만 입력 (괄호 안의 한글은 제외하고 영문 코드만)
+
+예시:
+입력:
+[뉴스 기사 본문]
+
+출력:
+{
+  "summary": "이 뉴스는 [주요 내용 요약, 3-5문장, 300자 이내].",
+  "keyPoints": [
+    "[핵심 정보 1]",
+    "[핵심 정보 2]",
+    "[핵심 정보 3]"
+  ],
+  "category": "[카테고리 예: 경제]"
+}
+(실제 뉴스 기사 입력의 길이에 따라 summary, keyPoints 항목 내용이 더 구체적이고 풍부해야 합니다.)
+
+중요: 기사 분석, 요약, 핵심 포인트 추출, 카테고리 분류(순서대로), 그 후에만 결과 JSON을 작성하세요. 항상 reasoning을 결론보다 먼저 수행하세요.
+
 
 카테고리 선택 가능 목록:
 ${availableCategories.join(", ")}
@@ -167,22 +194,13 @@ ${availableCategories.join(", ")}
    - "축구 선수 A가 B팀으로 이적, 이적료 100억" → sports
    - "배우 C가 드라마 출연료 1억 받아" → entertainment
    - "삼성전자 영업이익 증가" → business
-   - "AI 기술로 신약 개발" → technology (또는 science)
-
-요약 및 핵심 포인트 작성 규칙:
-1. summary: 핵심 내용만 간결하게 요약, 중요한 사실과 수치 포함, 객관적이고 중립적인 톤 유지, 300자 이내, 한국어로 작성
-2. keyPoints: 3-5개의 핵심 포인트를 배열로 제공, 각 포인트는 간결하게 작성
-3. category: 위의 분류 기준에 따라 가장 적합한 카테고리의 코드만 입력 (괄호 안의 한글은 제외하고 영문 코드만)
-4. 반드시 유효한 JSON 형식으로 응답`,
+   - "AI 기술로 신약 개발" → technology (또는 science)`,
             },
             {
               role: "user",
               content: `다음 뉴스 기사를 분석하고 분류해주세요:\n\n${content}`,
             },
           ],
-          max_tokens: 1000,
-          temperature: 0.2,
-          response_format: { type: "json_object" },
         }),
       })
 
