@@ -51,7 +51,8 @@ export function useArticleSummary(newsId: string) {
       const response = await fetch(`/api/summary/${newsId}`)
       if (response.ok) {
         const data = await response.json()
-        if (data.summary) {
+        // 유효한 요약만 로드 (에러 메시지는 제외)
+        if (data.summary && data.summary !== "요약을 생성할 수 없습니다.") {
           setSummary(data.summary)
           setKeyPoints(data.keyPoints || [])
           setFromCache(true)

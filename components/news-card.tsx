@@ -39,8 +39,9 @@ function NewsCardComponent({ article }: NewsCardProps) {
 
   // 요약이 완료되면 자동으로 Modal 열기
   useEffect(() => {
-    // 요약이 새로 생성되었을 때만 모달 열기 (캐시에서 가져온 것 제외, 백그라운드 모드 제외)
-    if (summary && !fromCache && !isBackgroundMode && previousSummaryRef.current !== summary) {
+    // 요약이 새로 생성되었을 때만 모달 열기 (캐시에서 가져온 것 제외, 백그라운드 모드 제외, 유효한 요약만)
+    const isValidNewSummary = summary && summary !== "요약을 생성할 수 없습니다."
+    if (isValidNewSummary && !fromCache && !isBackgroundMode && previousSummaryRef.current !== summary) {
       setIsModalOpen(true)
       previousSummaryRef.current = summary
     }
@@ -59,6 +60,9 @@ function NewsCardComponent({ article }: NewsCardProps) {
 
   const [imageUrl, setImageUrl] = useState(isValidUrl(article.imageUrl) ? article.imageUrl : null)
   const [retryCount, setRetryCount] = useState(0)
+
+  // 유효한 요약인지 확인 (에러 메시지는 제외)
+  const hasValidSummary = summary && summary !== "요약을 생성할 수 없습니다."
 
   const handleSummarize = () => {
     // AI 요약 생성
@@ -124,8 +128,8 @@ function NewsCardComponent({ article }: NewsCardProps) {
       console.error("Failed to increment view count:", error)
     }
 
-    // AI 요약이 없으면 백그라운드로 요약 생성 (모달 없이)
-    if (!summary && !isLoading) {
+    // AI 요약이 없거나 유효하지 않으면 백그라운드로 요약 생성 (모달 없이)
+    if (!hasValidSummary && !isLoading) {
       console.log(`[NewsCard] Starting background AI summary for ${article.id}`)
       generateSummary(
         article.title,
@@ -230,7 +234,7 @@ function NewsCardComponent({ article }: NewsCardProps) {
       <CardContent className="flex-1 p-3 md:p-6 pt-0 md:pt-0">
         <CardDescription className="line-clamp-2 text-xs md:text-sm leading-snug md:leading-normal">{article.description}</CardDescription>
         {/* 요약이 완료되고 펼쳐진 상태일 때만 표시 */}
-        {summary && isExpanded && (
+        {hasValidSummary && isExpanded && (
           <div className="mt-2 md:mt-4 p-2.5 md:p-4 bg-muted rounded-xl md:rounded-2xl border shadow-sm">
             <div className="flex items-center justify-between mb-1.5 md:mb-2">
               <div className="flex items-center gap-1.5 md:gap-2">
@@ -267,7 +271,7 @@ function NewsCardComponent({ article }: NewsCardProps) {
       </CardContent>
       <CardFooter className="flex flex-col gap-1.5 md:gap-2 p-3 md:p-6 pt-0 md:pt-0">
         {/* AI 요약 버튼 */}
-        {summary ? (
+        {hasValidSummary ? (
           // 요약 완료 상태: Popup 아이콘 + 요약완료 버튼
           <div className="flex items-center gap-2 w-full">
             {/* Popover로 감싼 Popup 아이콘 - 마우스 오버 시 요약 내용 표시 */}
