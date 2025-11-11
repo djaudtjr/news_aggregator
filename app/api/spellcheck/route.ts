@@ -19,7 +19,7 @@ async function correctSpelling(keyword: string): Promise<{ corrected: string; ha
         Authorization: `Bearer ${openaiApiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-5-nano",
         messages: [
           {
             role: "system",
@@ -58,8 +58,6 @@ async function correctSpelling(keyword: string): Promise<{ corrected: string; ha
             content: keyword,
           },
         ],
-        max_tokens: 100,
-        temperature: 0.1,
       }),
     })
 
