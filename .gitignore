@@ -29,3 +29,5 @@ next-env.d.ts
 DEV_GUIDE.md
 /.claude
 GEMINI.md
+.vscode/launch.json
+AGENTS.md
