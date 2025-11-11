@@ -87,7 +87,10 @@ export async function POST(request: NextRequest) {
       return (bookmarkOrder.get(a.id) ?? 0) - (bookmarkOrder.get(b.id) ?? 0)
     })
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.nextUrl.origin
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    if (!baseUrl) {
+      throw new Error("Server misconfiguration: NEXT_PUBLIC_BASE_URL must be set");
+    }
     const summarizedBookmarks = await Promise.all(
       sortedBookmarks.map((bookmark) => summarizeBookmark(bookmark, baseUrl))
     )
